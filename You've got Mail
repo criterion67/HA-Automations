@@ -1,0 +1,69 @@
+alias: "You've Got Mail! "
+description: >-
+  This automation notifies you when new mail has been delivered. It also
+  prevents multiple notifications for the same delivery day, allowing you to
+  retrieve the mail without receiving repeated alerts. A separate automation
+  resets the mail notification input boolean at 11:59pm every night. This
+  process ensures you are alerted to new mail promptly without being disturbed
+  by multiple alerts for the same delivery.
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.mailbox_sensor_door
+    from: "off"
+    to: "on"
+condition:
+  - condition: state
+    entity_id: input_boolean.input_boolean_mailbox_notified
+    state: "off"
+action:
+  - service: media_player.play_media
+    target:
+      entity_id: media_player.ha_group
+    data:
+      media_content_id: media-source://media_source/local/success-fanfare-trumpets-6185.mp3
+      media_content_type: audio/mpeg
+    metadata:
+      title: success-fanfare-trumpets-6185.mp3
+      thumbnail: null
+      media_class: music
+      children_media_class: null
+      navigateIds:
+        - {}
+        - media_content_type: app
+          media_content_id: media-source://media_source
+  - service: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.last_mail_notification
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+  - delay:
+      seconds: 3
+  - service: media_player.play_media
+    target:
+      entity_id: media_player.ha_group
+    data:
+      media_content_id: >-
+        media-source://tts/cloud?message=You%27ve+got+mail&language=en-US&voice=AriaNeural
+      media_content_type: provider
+    metadata:
+      title: You've got mail
+      thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
+      media_class: app
+      children_media_class: null
+      navigateIds:
+        - {}
+        - media_content_type: app
+          media_content_id: media-source://tts
+        - media_content_type: provider
+          media_content_id: >-
+            media-source://tts/cloud?message=You%27ve+got+mail&language=en-US&voice=AriaNeural
+  - service: notify.mobile_app_pixel_7
+    data:
+      message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
+      title: Mailbox Notification
+  - service: input_boolean.turn_on
+    data: {}
+    target:
+      entity_id: input_boolean.input_boolean_mailbox_notified
+mode: single
