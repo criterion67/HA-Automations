@@ -1,6 +1,6 @@
 alias: Attic Lights - Door Controlled
 description: >-
-  Attic light is switched on and off based on the open) closed state of either
+  Attic light is switched on and off based on the open/closed state of either
   interior or garage attic doors.
 trigger:
   - type: opened
