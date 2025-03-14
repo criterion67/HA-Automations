@@ -1,0 +1,123 @@
+blueprint:
+  name: Evening Routine: Lock Doors and Turn Off Lights
+  description: >-
+    This blueprint locks only unlocked doors at a specified time and turns off
+    only lights and switches that are on at another time. It also sends notifications
+    when doors are locked.
+  domain: automation
+  input:
+    lock_time:
+      name: Time to Lock Doors
+      description: When should doors be locked?
+      selector:
+        time: {}
+    lights_off_time:
+      name: Time to Turn Off Lights
+      description: When should lights and switches be turned off?
+      selector:
+        time: {}
+    door_locks:
+      name: Door Locks
+      description: Select all door locks to be checked.
+      selector:
+        entity:
+          domain: lock
+          multiple: true
+    light_switches:
+      name: Switches
+      description: Select all switches to be turned off.
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+    lights:
+      name: Lights
+      description: Select all lights to be turned off.
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    notify_service:
+      name: Notification Service
+      description: Enter the notification service (e.g., notify.mobile_app_yourphone).
+      selector:
+        text: {}
+    media_player:
+      name: Media Player for Announcement
+      description: Select a media player for TTS notifications.
+      selector:
+        entity:
+          domain: media_player
+
+mode: single
+trigger:
+  - platform: time
+    at: !input lock_time
+    id: lock_doors
+  - platform: time
+    at: !input lights_off_time
+    id: lights_off
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: lock_doors
+        sequence:
+          - variables:
+              unlocked_doors: >-
+                {{ expand(!input door_locks) | selectattr('state', 'eq', 'unlocked') | map(attribute='entity_id') | list }}
+              door_names: >-
+                {{ unlocked_doors | map('state_attr', 'friendly_name') | list | join(', ') }}
+          - condition: template
+            value_template: "{{ unlocked_doors | length > 0 }}"
+          - service: lock.lock
+            target:
+              entity_id: "{{ unlocked_doors }}"
+          - service: !input notify_service
+            data:
+              title: "Door Lock Notification"
+              message: >-
+                {% if unlocked_doors | length > 0 %}
+                  Locked doors: {{ door_names }}
+                {% else %}
+                  All doors were already locked.
+                {% endif %}
+          - service: media_player.play_media
+            target:
+              entity_id: !input media_player
+            data:
+              media_content_id: >-
+                media-source://tts/cloud?message=All+unlocked+doors+have+been+locked&language=en-US&voice=JennyNeural
+              media_content_type: provider
+
+      - conditions:
+          - condition: trigger
+            id: lights_off
+        sequence:
+          - variables:
+              switches_on: >-
+                {{ expand(!input light_switches) | selectattr('state', 'eq', 'on') | map(attribute='entity_id') | list }}
+              lights_on: >-
+                {{ expand(!input lights) | selectattr('state', 'eq', 'on') | map(attribute='entity_id') | list }}
+          - condition: template
+            value_template: "{{ switches_on | length > 0 or lights_on | length > 0 }}"
+          - if:
+              - condition: template
+                value_template: "{{ switches_on | length > 0 }}"
+            then:
+              - service: switch.turn_off
+                target:
+                  entity_id: "{{ switches_on }}"
+          - if:
+              - condition: template
+                value_template: "{{ lights_on | length > 0 }}"
+            then:
+              - service: light.turn_off
+                target:
+                  entity_id: "{{ lights_on }}"
+          - delay:
+              seconds: 5
+          - service: scene.turn_on
+            target:
+              entity_id: scene.outside_lights_off
