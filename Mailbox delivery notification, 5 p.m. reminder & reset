@@ -1,0 +1,111 @@
+alias: Mailbox delivery notification, 5 p.m. reminder & reset
+description: >
+  Notifies when mail is delivered (only on first open of the day), resets the
+  notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM only
+  if the mailbox hasn't been opened a second time, and allows a manual reset
+  using a dashboard button.
+triggers:
+  - entity_id: binary_sensor.mailbox_sensor_door
+    from: "off"
+    to: "on"
+    trigger: state
+  - at: "06:00:00"
+    trigger: time
+  - at: "17:00:00"
+    trigger: time
+  - entity_id: input_button.mailbox_manual_reset
+    to: "on"
+    trigger: state
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.entity_id == 'binary_sensor.mailbox_sensor_door' }}"
+          - condition: numeric_state
+            entity_id: input_number.mailbox_open_count
+            below: 1
+        sequence:
+          - target:
+              entity_id: input_number.mailbox_open_count
+            action: input_number.increment
+          - target:
+              entity_id: media_player.zone_2_2
+            data:
+              volume_level: 0.7
+            action: media_player.volume_set
+          - target:
+              entity_id: media_player.zone_2_2
+            data:
+              media:
+                media_content_id: >-
+                  media-source://media_source/local/success-fanfare-trumpets-6185.mp3
+                media_content_type: audio/mpeg
+                metadata: {}
+            action: media_player.play_media
+          - delay:
+              seconds: 3
+          - target:
+              entity_id: media_player.zone_2_2
+            data:
+              media:
+                media_content_id: >-
+                  media-source://tts/cloud?message=You%27ve+got+mail&language=en-US&voice=AndrewNeural
+                media_content_type: provider
+                metadata: {}
+            action: media_player.play_media
+          - data:
+              title: Mailbox Notification
+              message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
+            action: notify.mobile_app_pixel_9
+          - data:
+              title: Mailbox Notification
+              message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
+            action: notify.mobile_app_bill_s_phone
+          - target:
+              entity_id:
+                - input_boolean.mailbox_notified
+                - input_boolean.mail_dashboard_indicator
+            action: input_boolean.turn_on
+      - conditions:
+          - condition: template
+            value_template: "{{ now().hour == 17 and trigger.platform == 'time' }}"
+          - condition: state
+            entity_id: input_boolean.mailbox_notified
+            state: "on"
+          - condition: numeric_state
+            entity_id: input_number.mailbox_open_count
+            below: 2
+        sequence:
+          - data:
+              message: Don't forget to check the mail today!
+            action: notify.mobile_app_pixel_9
+          - data:
+              message: Don't forget to check the mail today!
+            action: notify.mobile_app_bill_s_phone
+      - conditions:
+          - condition: template
+            value_template: "{{ now().hour == 6 and trigger.platform == 'time' }}"
+        sequence:
+          - target:
+              entity_id: input_boolean.mailbox_notified
+            action: input_boolean.turn_off
+          - target:
+              entity_id: input_number.mailbox_open_count
+            data:
+              value: 0
+            action: input_number.set_value
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.entity_id == 'input_button.mailbox_manual_reset' }}"
+        sequence:
+          - target:
+              entity_id: input_boolean.mailbox_notified
+            action: input_boolean.turn_off
+          - target:
+              entity_id: input_number.mailbox_open_count
+            data:
+              value: 0
+            action: input_number.set_value
+mode: queued
+max: 10
