@@ -73,24 +73,24 @@
   - trigger: state
     entity_id: switch.office_lamps
     to: 'on'
-    id: Switch On
+    id: switch-on
   - trigger: state
     entity_id: switch.office_lamps
     to: 'off'
-    id: Switch Off
+    id: switch-off
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: trigger
-        id: Switch On
+        id: switch-on
       sequence:
       - action: light.turn_on
         target:
           entity_id: light.office_lamps
     - conditions:
       - condition: trigger
-        id: Switch Off
+        id: switch-off
       sequence:
       - action: light.turn_off
         target:
@@ -101,110 +101,70 @@
         - press-on-zha
         - press-on-z2m
       sequence:
-      - if:
-        - condition: state
-          entity_id: input_boolean.office_remote_on_double_press_in_progress
-          state: 'on'
-        then:
-        - action: switch.toggle
-          target:
-            entity_id: switch.desk_lamp_mini
-        - action: input_boolean.turn_off
-          target:
-            entity_id: input_boolean.office_remote_on_double_press_in_progress
-        - stop: double press handled
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.office_remote_on_double_press_in_progress
-      - delay:
+      - wait_for_trigger:
+        - trigger: event
+          event_type: zha_event
+          event_data:
+            device_id: 5d3ae8e2e2566334bef57eebaaea1280
+            command: 'on'
+            cluster_id: 6
+            endpoint_id: 1
+        - trigger: mqtt
+          topic: zigbee2mqtt//action
+          payload: 'on'
+        timeout:
           milliseconds: 250
-      - if:
-        - condition: state
-          entity_id: input_boolean.office_remote_on_double_press_in_progress
-          state: 'on'
-        then:
-        - action: light.toggle
-          target:
-            entity_id: light.office_lamps
-        - action: input_boolean.turn_off
-          target:
-            entity_id: input_boolean.office_remote_on_double_press_in_progress
+        continue_on_timeout: true
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is not none }}'
+          sequence:
+          - action: switch.toggle
+            target:
+              entity_id: switch.desk_lamp_mini
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is none }}'
+          sequence:
+          - action: light.toggle
+            target:
+              entity_id: light.office_lamps
     - conditions:
       - condition: trigger
         id:
         - press-off-zha
         - press-off-z2m
       sequence:
-      - if:
-        - condition: template
-          value_template: '{{ off_double_press }}'
-        then:
-        - wait_for_trigger:
-          - trigger: event
-            event_type: zha_event
-            event_data:
-              device_id: '{{ zha_remote }}'
-              command: 'off'
-              cluster_id: 6
-              endpoint_id: 1
-          - trigger: mqtt
-            topic: '{{ z2m_base_topic ~ ''/'' ~ z2m_controller ~ ''/action'' }}'
-            payload: 'off'
-          timeout:
-            milliseconds: 250
-          continue_on_timeout: true
-        - choose:
-          - conditions:
-            - condition: template
-              value_template: '{{ wait.trigger is none }}'
-            sequence:
-            - choose:
-              - conditions:
-                - condition: state
-                  entity_id: switch.office_ceiling_light
-                  state: 'on'
-                sequence:
-                - action: switch.turn_off
-                  target:
-                    entity_id: switch.office_ceiling_light
-                - action: input_boolean.turn_off
-                  target:
-                    entity_id: input_boolean.office_ceiling_presence_enabled
-              - conditions:
-                - condition: state
-                  entity_id: switch.office_ceiling_light
-                  state: 'off'
-                sequence:
-                - action: switch.turn_on
-                  target:
-                    entity_id: switch.office_ceiling_light
-                - action: input_boolean.turn_on
-                  target:
-                    entity_id: input_boolean.office_ceiling_presence_enabled
-        else:
-        - choose:
-          - conditions:
-            - condition: state
+      - wait_for_trigger:
+        - trigger: event
+          event_type: zha_event
+          event_data:
+            device_id: 5d3ae8e2e2566334bef57eebaaea1280
+            command: 'off'
+            cluster_id: 6
+            endpoint_id: 1
+        - trigger: mqtt
+          topic: zigbee2mqtt//action
+          payload: 'off'
+        timeout:
+          milliseconds: 250
+        continue_on_timeout: true
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is not none }}'
+          sequence:
+          - action: input_boolean.toggle
+            target:
+              entity_id: input_boolean.office_ceiling_presence_enabled
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is none }}'
+          sequence:
+          - action: switch.toggle
+            target:
               entity_id: switch.office_ceiling_light
-              state: 'on'
-            sequence:
-            - action: switch.turn_off
-              target:
-                entity_id: switch.office_ceiling_light
-            - action: input_boolean.turn_off
-              target:
-                entity_id: input_boolean.office_ceiling_presence_enabled
-          - conditions:
-            - condition: state
-              entity_id: switch.office_ceiling_light
-              state: 'off'
-            sequence:
-            - action: switch.turn_on
-              target:
-                entity_id: switch.office_ceiling_light
-            - action: input_boolean.turn_on
-              target:
-                entity_id: input_boolean.office_ceiling_presence_enabled
     - conditions:
       - condition: trigger
         id:
@@ -218,12 +178,12 @@
             - trigger: event
               event_type: zha_event
               event_data:
-                device_id: '{{ zha_remote }}'
+                device_id: 5d3ae8e2e2566334bef57eebaaea1280
                 command: stop_with_on_off
                 cluster_id: 8
                 endpoint_id: 1
             - trigger: mqtt
-              topic: '{{ z2m_base_topic ~ ''/'' ~ z2m_controller ~ ''/action'' }}'
+              topic: zigbee2mqtt//action
               payload: brightness_stop
             timeout:
               milliseconds: 250
@@ -246,12 +206,12 @@
             - trigger: event
               event_type: zha_event
               event_data:
-                device_id: '{{ zha_remote }}'
+                device_id: 5d3ae8e2e2566334bef57eebaaea1280
                 command: stop_with_on_off
                 cluster_id: 8
                 endpoint_id: 1
             - trigger: mqtt
-              topic: '{{ z2m_base_topic ~ ''/'' ~ z2m_controller ~ ''/action'' }}'
+              topic: zigbee2mqtt//action
               payload: brightness_stop
             timeout:
               milliseconds: 250
@@ -262,8 +222,3 @@
             then:
             - stop: button released
   mode: restart
-  variables:
-    off_double_press: true
-    zha_remote: 5d3ae8e2e2566334bef57eebaaea1280
-    z2m_base_topic: zigbee2mqtt
-    z2m_controller: ''

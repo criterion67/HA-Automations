@@ -1,6 +1,6 @@
 # _Uncategorized
 
-58 automation(s) in this category.
+59 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -45,6 +45,7 @@
 | NFC - Rear Door Lock is scanned |  |
 | NFC - Sunroom Door Lock is scanned |  |
 | NFC - Toggle Garage Door from Keypad | When NFC tag is scanned, open/close garage door. Located in keypad on garage door frame. |
+| Office- Ceiling Light Presence Control V2 | Turns ceiling light on with presence, turns it off after 5 min of no presence, and resets manual override. |
 | Office- Ceiling Light Presence Control V2 | Turns ceiling light on with presence, turns it off after 5 min of no presence, and resets manual override. |
 | Office- Desk Lighting Remote (Unified) | Unified automation to handle both remote control and wall switch control. |
 | Pantry Door: Light On/Off | This automation controls the pantry light based on the door's status. It turns the light on when the door is opened, turns it off when the door is closed, and automatically turns it off if the door is left open for more than 5 minutes. |
