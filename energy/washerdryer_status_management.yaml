@@ -1,0 +1,236 @@
+- id: '1751772259530'
+  alias: Washer/Dryer Status Management
+  description: 'This automation monitors the washer and dryer''s status, providing
+    voice notifications for each cycle change. It also uses light color changes and
+    mobile notifications to alert when cycles start or finish.
+
+    '
+  triggers:
+  - entity_id: sensor.sv346034n_laundry_machine_state
+    to: Run
+    id: 'On'
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Load Size Detection
+    id: Load Size Detection
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Fill
+    id: Fill
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Wash
+    id: Wash
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Rinse
+    id: Rinse
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Drain
+    id: Drain
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Spin
+    id: Spin
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Drying
+    id: Drying
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    to: Cool Down
+    id: Cool Down
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_machine_state
+    to: Finished
+    id: Finished
+    trigger: state
+  - entity_id: sensor.sv346034n_laundry_machine_state
+    to: 'Off'
+    id: 'Off'
+    enabled: false
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: 'On'
+      sequence:
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: 100
+          color_name: magenta
+        action: light.turn_on
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+on&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+      - delay: 00:00:15
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: 100
+          color_name: white
+        action: light.turn_on
+      - delay: 00:00:02
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id: Load Size Detection
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+detecting+load+size&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Fill
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+filling&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Wash
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+wash+mode&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Rinse
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+rinse+mode&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Drain
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+draining&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Spin
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+spin+mode&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Drying
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Laundry+load+is+now+drying&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: Cool Down
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+in+cool+down+mode&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: 100
+          color_name: blue
+        action: light.turn_on
+      - delay: 00:00:30
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id: Finished
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+has+finished.&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: 100
+          color_name: green
+        action: light.turn_on
+      - delay: 00:00:15
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: 100
+          color_name: white
+        action: light.turn_on
+      - delay: 00:00:02
+      - target:
+          entity_id: light.bedroom_ceiling_lights
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id: 'Off'
+      sequence:
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+now+off&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
+        action: media_player.play_media
+  - target:
+      entity_id: scene.downlightsbefore
+    action: scene.turn_on
+  mode: single

@@ -1,0 +1,50 @@
+- id: '1757355570578'
+  alias: HVAC UV Bulb Monitor
+  description: Notify if the HVAC UV purifier draws <5W for 24h; allow Snooze or Dismiss
+    from the notification.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.hvac_uv_purifier_power
+    below: 5
+    for:
+      hours: 24
+  conditions: []
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: ⚠️ HVAC UV Bulb Alert
+      message: UV purifier has been < 5W for 24 hours. The bulb may have failed.
+      data:
+        tag: hvac_uv_bulb_low_power
+        sticky: true
+        channel: HVAC Alerts
+        actions:
+        - action: UV_SNOOZE_24H
+          title: Snooze 24h
+        - action: UV_DISMISS
+          title: Dismiss
+  - wait_for_trigger:
+    - event_type: mobile_app_notification_action
+      event_data:
+        action: UV_SNOOZE_24H
+      trigger: event
+    - event_type: mobile_app_notification_action
+      event_data:
+        action: UV_DISMISS
+      trigger: event
+    timeout: 02:00:00
+    continue_on_timeout: true
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ wait.trigger is not none and\n   wait.trigger.event is\
+          \ defined and\n   wait.trigger.event.data.action == 'UV_SNOOZE_24H' }}\n"
+      sequence:
+      - delay: '24:00:00'
+    - conditions:
+      - condition: template
+        value_template: "{{ wait.trigger is not none and\n   wait.trigger.event is\
+          \ defined and\n   wait.trigger.event.data.action == 'UV_DISMISS' }}\n"
+      sequence: []
+    default: []
+  mode: single

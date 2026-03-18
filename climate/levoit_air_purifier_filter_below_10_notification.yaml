@@ -1,0 +1,74 @@
+- id: '1772667751581'
+  alias: Levoit Air Purifier Filter Below 10% Notification
+  description: Sends a daily notification when the Levoit filter life drops below
+    10%, with snooze and dismiss actions.
+  triggers:
+  - entity_id:
+    - sensor.bedroom_air_purifier_filter_life
+    below: 20
+    trigger: numeric_state
+  - at: 09:00:00
+    trigger: time
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: SNOOZE
+    trigger: event
+  - event_type: mobile_app_notification_action
+    event_data:
+      action: DISMISS
+    trigger: event
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.bedroom_air_purifier_filter_life
+    below: 10
+  - condition: or
+    conditions:
+    - condition: template
+      value_template: '{{ trigger.platform == ''numeric_state'' }}'
+    - condition: template
+      value_template: "{{ trigger.platform == 'time' and \n   now().strftime('%Y-%m-%dT%H:%M:%S')\
+        \ >= \n   states('input_datetime.air_purifier_filter_reminder_snooze_time')\
+        \ }}"
+  - condition: template
+    value_template: '{{ now() >= strptime(states(''input_datetime.air_purifier_filter_dismiss_until''),
+      ''%Y-%m-%d %H:%M:%S'') }}'
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == ''event'' and trigger.event.data.action
+          == ''SNOOZE'' }}'
+      sequence:
+      - target:
+          entity_id: input_datetime.air_purifier_filter_reminder_snooze_time
+        data:
+          date: '{{ (now() + timedelta(days=1)).date() }}'
+          time: 08:00:00
+        action: input_datetime.set_datetime
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == ''event'' and trigger.event.data.action
+          == ''DISMISS'' }}'
+      sequence:
+      - target:
+          entity_id: input_datetime.air_purifier_filter_dismiss_until
+        data:
+          date: '{{ (now() + timedelta(days=1)).date() }}'
+          time: 00:00:00
+        action: input_datetime.set_datetime
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.platform in [''numeric_state'', ''time''] }}'
+      sequence:
+      - data:
+          title: Filter Change Needed
+          message: Time to clean or replace the Levoit air purifier filter.
+          data:
+            actions:
+            - action: SNOOZE
+              title: Snooze
+            - action: DISMISS
+              title: Dismiss
+        action: notify.mobile_app_pixel_9
+  mode: single

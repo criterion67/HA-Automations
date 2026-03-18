@@ -1,0 +1,17 @@
+- id: '1718479224079'
+  alias: Rudy's Heater Offline Alert (New)
+  description: ''
+  triggers:
+  - device_id: b1d404f2cf619b0becc88158a23fea62
+    domain: zha
+    type: device_offline
+    subtype: device_offline
+    trigger: device
+    id: Garage Heater
+  conditions: []
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      message: 'Rudy''s heater is offline. '
+      title: Offline notification
+  mode: single

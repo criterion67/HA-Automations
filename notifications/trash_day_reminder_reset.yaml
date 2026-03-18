@@ -1,0 +1,151 @@
+- id: '1726712803952'
+  alias: Trash Day Reminder & Reset
+  description: ''
+  triggers:
+  - at: '18:00:00'
+    id: 6pm
+    trigger: time
+  - at: '22:00:00'
+    id: 10pm
+    trigger: time
+  - at: 00:00:00
+    id: 12am
+    trigger: time
+  - at: 00:01:00
+    id: 1201am
+    trigger: time
+  - at: 06:00:00
+    id: 6am
+    trigger: time
+  - at: 07:30:00
+    id: 730am
+    trigger: time
+  - at: 08:30:00
+    id: 830am
+    trigger: time
+  - entity_id: input_boolean.trash_day_tomorrow
+    id: led_tomorrow
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: led_tomorrow
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.trash_day_tomorrow
+            state: 'on'
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+            data:
+              rgb_color:
+              - 0
+              - 255
+              - 0
+              brightness_pct: 95
+        - conditions:
+          - condition: state
+            entity_id: input_boolean.trash_day_tomorrow
+            state: 'off'
+          sequence:
+          - action: light.turn_off
+            target:
+              entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+    - conditions:
+      - condition: trigger
+        id: 6pm
+      - condition: time
+        weekday:
+        - wed
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.trash_day_tomorrow
+        data: {}
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Trash Day Reminder
+          message: Trash Day is Tomorrow
+    - conditions:
+      - condition: trigger
+        id: 10pm
+      - condition: state
+        entity_id: input_boolean.trash_day_tomorrow
+        state: 'on'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+    - conditions:
+      - condition: trigger
+        id: 12am
+      - condition: time
+        weekday:
+        - thu
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.trash_day_tomorrow
+        data: {}
+      - action: light.turn_off
+        target:
+          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+    - conditions:
+      - condition: trigger
+        id: 1201am
+      - condition: time
+        weekday:
+        - thu
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.trash_day_today
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: 6am
+      - condition: state
+        entity_id: input_boolean.trash_day_today
+        state: 'on'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+        data:
+          rgb_color:
+          - 255
+          - 0
+          - 0
+          brightness_pct: 95
+    - conditions:
+      - condition: trigger
+        id: 730am
+      - condition: time
+        weekday:
+        - thu
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Trash Day Reminder
+          message: Trash Day is Today
+    - conditions:
+      - condition: trigger
+        id: 830am
+      - condition: time
+        weekday:
+        - thu
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.trash_day_today
+        data: {}
+      - action: light.turn_off
+        target:
+          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+  mode: queued
+  max: 10

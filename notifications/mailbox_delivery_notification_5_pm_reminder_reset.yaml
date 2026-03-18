@@ -1,0 +1,200 @@
+- id: '1772666835186'
+  alias: Mailbox delivery notification, 5 p.m. reminder & reset
+  description: Notifies when mail is delivered (only on first open of the day), resets
+    the notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM only
+    if the mailbox hasn't been opened a second time, and allows a manual reset using
+    a dashboard button. Adds actionable notification buttons to reset or dismiss on
+    Scott's phone only.
+  triggers:
+  - id: mailbox_open
+    entity_id: binary_sensor.mailbox_sensor_door
+    from: 'off'
+    to: 'on'
+    platform: state
+  - id: daily_reset
+    at: 06:00:00
+    platform: time
+  - id: reminder_5pm
+    at: '17:00:00'
+    platform: time
+  - id: manual_reset
+    entity_id: input_button.mailbox_manual_reset
+    platform: state
+  - id: mobile_reset
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MAILBOX_RESET
+    platform: event
+  - id: mobile_dismiss
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MAILBOX_DISMISS
+    platform: event
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: mailbox_open
+      - condition: numeric_state
+        entity_id: input_number.mailbox_open_count
+        below: 1
+      sequence:
+      - target:
+          entity_id: input_number.mailbox_open_count
+        action: input_number.increment
+      - target:
+          entity_id: media_player.zone_0
+        data:
+          volume_level: 0.7
+        action: media_player.volume_set
+      - target:
+          entity_id: media_player.zone_0
+        data:
+          media:
+            media_content_id: media-source://media_source/local/Nbc Chimes Fast.mp3
+            media_content_type: audio/mpeg
+        action: media_player.play_media
+      - delay:
+          seconds: 3
+      - target:
+          entity_id: media_player.zone_0
+        data:
+          media:
+            media_content_id: media-source://tts/cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+        action: media_player.play_media
+      - data:
+          title: Mailbox Notification
+          message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
+          data:
+            tag: mailbox_delivery_scott
+            actions:
+            - action: MAILBOX_RESET
+              title: Reset
+            - action: MAILBOX_DISMISS
+              title: Dismiss
+        action: notify.mobile_app_pixel_9
+      - data:
+          title: Mailbox Notification
+          message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
+        action: notify.mobile_app_bill_s_phone
+      - target:
+          entity_id:
+          - input_boolean.mailbox_notified
+          - input_boolean.mail_dashboard_indicator
+        action: input_boolean.turn_on
+    - conditions:
+      - condition: trigger
+        id: reminder_5pm
+      - condition: state
+        entity_id: input_boolean.mailbox_notified
+        state: 'on'
+      - condition: numeric_state
+        entity_id: input_number.mailbox_open_count
+        below: 2
+      sequence:
+      - data:
+          message: Don't forget to check the mail today!
+          data:
+            tag: mailbox_reminder_scott
+            actions:
+            - action: MAILBOX_RESET
+              title: Reset
+            - action: MAILBOX_DISMISS
+              title: Dismiss
+        action: notify.mobile_app_pixel_9
+      - data:
+          message: Don't forget to check the mail today!
+        action: notify.mobile_app_bill_s_phone
+    - conditions:
+      - condition: trigger
+        id: daily_reset
+      sequence:
+      - target:
+          entity_id: input_boolean.mailbox_notified
+        action: input_boolean.turn_off
+      - target:
+          entity_id: input_boolean.mail_dashboard_indicator
+        action: input_boolean.turn_off
+      - target:
+          entity_id: input_number.mailbox_open_count
+        data:
+          value: 0
+        action: input_number.set_value
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_delivery_scott
+        action: notify.mobile_app_pixel_9
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_reminder_scott
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id: manual_reset
+      sequence:
+      - target:
+          entity_id: input_boolean.mailbox_notified
+        action: input_boolean.turn_off
+      - target:
+          entity_id: input_boolean.mail_dashboard_indicator
+        action: input_boolean.turn_off
+      - target:
+          entity_id: input_number.mailbox_open_count
+        data:
+          value: 0
+        action: input_number.set_value
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_delivery_scott
+        action: notify.mobile_app_pixel_9
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_reminder_scott
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id: mobile_reset
+      sequence:
+      - target:
+          entity_id: input_boolean.mailbox_notified
+        action: input_boolean.turn_off
+      - target:
+          entity_id: input_boolean.mail_dashboard_indicator
+        action: input_boolean.turn_off
+      - target:
+          entity_id: input_number.mailbox_open_count
+        data:
+          value: 0
+        action: input_number.set_value
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_delivery_scott
+        action: notify.mobile_app_pixel_9
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_reminder_scott
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id: mobile_dismiss
+      sequence:
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_delivery_scott
+        action: notify.mobile_app_pixel_9
+      - data:
+          message: clear_notification
+          data:
+            tag: mailbox_reminder_scott
+        action: notify.mobile_app_pixel_9
+  mode: queued
+  max: 10

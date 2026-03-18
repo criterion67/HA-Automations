@@ -1,0 +1,74 @@
+- id: '1753663543034'
+  alias: 'V2: Doorbell - Button Pressed Notification Chime'
+  description: Doorbell button pressed - streams cameras to TVs, plays chime and TTS
+    announcement on Dining Room Speaker.
+  triggers:
+  - type: turned_on
+    device_id: 0eabd36a048b5abc5e30b2a1a43f060c
+    entity_id: 600f996ebe0bf1a60fed3e7d687101db
+    domain: binary_sensor
+    platform: device
+  conditions: []
+  actions:
+  - parallel:
+    - data:
+        media_player: media_player.bedroom_tv_chromecast
+        format: hls
+      target:
+        entity_id: camera.doorbell_fluent_2
+      action: camera.play_stream
+    - data:
+        media_player: media_player.onn_streaming_device_4k_pro
+        format: hls
+      target:
+        entity_id: camera.doorbell_fluent_2
+      action: camera.play_stream
+    - sequence:
+      - repeat:
+          count: 3
+          sequence:
+          - data:
+              media:
+                media_content_id: media-source://media_source/local/sounds_sounds_ring_button_Chime.wav
+                media_content_type: audio/x-wav
+                metadata:
+                  title: sounds_sounds_ring_button_Chime.wav
+                  thumbnail: null
+                  media_class: music
+                  children_media_class: null
+                  navigateIds:
+                  - {}
+                  - media_content_type: app
+                    media_content_id: media-source://media_source
+            target:
+              entity_id: media_player.googlehome3309
+            action: media_player.play_media
+          - delay:
+              seconds: 3
+      - delay:
+          seconds: 2
+      - data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata:
+              title: Someone's at the front door.
+              thumbnail: https://brands.home-assistant.io/_/tts/logo.png
+              media_class: app
+              children_media_class: null
+              navigateIds:
+              - {}
+              - media_content_type: app
+                media_content_id: media-source://tts
+              - media_content_type: provider
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=AndrewNeural
+        target:
+          entity_id: media_player.googlehome3309
+        action: media_player.play_media
+    - data:
+        media_player: media_player.living_room_tv_2
+        format: hls
+      target:
+        entity_id: camera.doorbell_fluent_2
+      action: camera.play_stream
+  mode: single

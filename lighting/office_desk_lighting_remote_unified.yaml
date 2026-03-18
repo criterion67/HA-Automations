@@ -1,0 +1,228 @@
+- id: '1745982816417'
+  alias: Office- Desk Lighting Remote (Unified)
+  description: Unified automation to handle both remote control and wall switch control.
+  triggers:
+  - event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: 'on'
+      cluster_id: 6
+      endpoint_id: 1
+    id: press-on-zha
+    trigger: event
+  - topic: zigbee2mqtt//action
+    payload: 'on'
+    id: press-on-z2m
+    trigger: mqtt
+  - event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: 'off'
+      cluster_id: 6
+      endpoint_id: 1
+    id: press-off-zha
+    trigger: event
+  - topic: zigbee2mqtt//action
+    payload: 'off'
+    id: press-off-z2m
+    trigger: mqtt
+  - event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: move_with_on_off
+      cluster_id: 8
+      endpoint_id: 1
+      args:
+      - 0
+      - 83
+    id: hold-on-zha
+    trigger: event
+  - topic: zigbee2mqtt//action
+    payload: brightness_move_up
+    id: hold-on-z2m
+    trigger: mqtt
+  - event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: move
+      cluster_id: 8
+      endpoint_id: 1
+      args:
+      - 1
+      - 83
+      - 0
+      - 0
+    id: hold-off-zha
+    trigger: event
+  - topic: zigbee2mqtt//action
+    payload: brightness_move_down
+    id: hold-off-z2m
+    trigger: mqtt
+  - event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      endpoint_id: 1
+      cluster_id: 8
+      command: stop_with_on_off
+    id: release-zha
+    trigger: event
+  - topic: zigbee2mqtt//action
+    payload: brightness_stop
+    id: release-z2m
+    trigger: mqtt
+  - entity_id: switch.office_lamps
+    to: 'on'
+    id: Switch On
+    trigger: state
+  - entity_id: switch.office_lamps
+    to: 'off'
+    id: Switch Off
+    trigger: state
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Switch On
+      sequence:
+      - target:
+          entity_id: light.office_lamps
+        action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id: Switch Off
+      sequence:
+      - target:
+          entity_id: light.office_lamps
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id:
+        - press-on-zha
+        - press-on-z2m
+      sequence:
+      - if:
+        - condition: state
+          entity_id: input_boolean.office_remote_on_double_press_in_progress
+          state: 'on'
+        then:
+        - target:
+            entity_id: switch.desk_lamp_mini
+          action: switch.toggle
+        - target:
+            entity_id: input_boolean.office_remote_on_double_press_in_progress
+          action: input_boolean.turn_off
+        - stop: double press handled
+      - target:
+          entity_id: input_boolean.office_remote_on_double_press_in_progress
+        action: input_boolean.turn_on
+      - delay:
+          milliseconds: 250
+      - if:
+        - condition: state
+          entity_id: input_boolean.office_remote_on_double_press_in_progress
+          state: 'on'
+        then:
+        - target:
+            entity_id: light.office_lamps
+          action: light.toggle
+        - target:
+            entity_id: input_boolean.office_remote_on_double_press_in_progress
+          action: input_boolean.turn_off
+    - conditions:
+      - condition: trigger
+        id:
+        - press-off-zha
+        - press-off-z2m
+      sequence:
+      - if:
+        - condition: template
+          value_template: '{{ off_double_press }}'
+        then:
+        - wait_for_trigger:
+          - event_type: zha_event
+            event_data:
+              device_id: '{{ zha_remote }}'
+              command: 'off'
+              cluster_id: 6
+              endpoint_id: 1
+            trigger: event
+          - topic: '{{ z2m_base_topic ~ ''/'' ~ z2m_controller ~ ''/action'' }}'
+            payload: 'off'
+            trigger: mqtt
+          timeout:
+            milliseconds: 250
+          continue_on_timeout: true
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: '{{ wait.trigger.idx is not defined }}'
+            sequence:
+            - target:
+                entity_id: switch.office_ceiling_light
+              action: switch.toggle
+        else:
+        - target:
+            entity_id: switch.office_ceiling_light
+          action: switch.toggle
+    - conditions:
+      - condition: trigger
+        id:
+        - hold-on-zha
+        - hold-on-z2m
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - wait_for_trigger:
+            - event_type: zha_event
+              event_data:
+                device_id: '{{ zha_remote }}'
+                command: stop_with_on_off
+                cluster_id: 8
+                endpoint_id: 1
+              trigger: event
+            - topic: '{{ z2m_base_topic ~ ''/'' ~ z2m_controller ~ ''/action'' }}'
+              payload: brightness_stop
+              trigger: mqtt
+            timeout:
+              milliseconds: 250
+            continue_on_timeout: true
+          - if:
+            - condition: template
+              value_template: '{{ wait.trigger.idx is defined }}'
+            then:
+            - stop: button released
+    - conditions:
+      - condition: trigger
+        id:
+        - hold-off-zha
+        - hold-off-z2m
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - wait_for_trigger:
+            - event_type: zha_event
+              event_data:
+                device_id: '{{ zha_remote }}'
+                command: stop_with_on_off
+                cluster_id: 8
+                endpoint_id: 1
+              trigger: event
+            - topic: '{{ z2m_base_topic ~ ''/'' ~ z2m_controller ~ ''/action'' }}'
+              payload: brightness_stop
+              trigger: mqtt
+            timeout:
+              milliseconds: 250
+            continue_on_timeout: true
+          - if:
+            - condition: template
+              value_template: '{{ wait.trigger.idx is defined }}'
+            then:
+            - stop: button released
+  mode: restart
+  variables:
+    off_double_press: true
+    zha_remote: 5d3ae8e2e2566334bef57eebaaea1280
+    z2m_base_topic: zigbee2mqtt
+    z2m_controller: ''

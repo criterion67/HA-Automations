@@ -1,0 +1,23 @@
+- id: '1773536601423'
+  alias: Update Forecast Low Temp Today
+  description: Calls weather.get_forecasts daily and on startup to store today's forecast
+    low in input_number.forecast_low_temp_today for use in dashboard visibility conditions.
+  triggers:
+  - trigger: time
+    at: 00:01:00
+  - trigger: homeassistant
+    event: start
+  actions:
+  - action: weather.get_forecasts
+    target:
+      entity_id: weather.pirateweather
+    data:
+      type: daily
+    response_variable: forecast_data
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.forecast_low_temp_today
+    data:
+      value: '{{ forecast_data[''weather.pirateweather''][''forecast''][0][''templow'']
+        }}'
+  mode: single

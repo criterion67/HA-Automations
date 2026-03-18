@@ -1,0 +1,64 @@
+- id: '1757834616096'
+  alias: V2.1 Garage Presence Lighting Control
+  description: 'Controls garage lights based on presence detection unless the manual
+    override is enabled. Lights will not turn on between 11:00 p.m. and 6:00 a.m.
+    unless the time override toggle is enabled. Also resets the time override toggle
+    each morning at 6:00 a.m.
+
+    '
+  triggers:
+  - entity_id: sensor.garage_presence_target_count
+    above: 0
+    id: presence_detected
+    trigger: numeric_state
+  - entity_id: sensor.garage_presence_target_count
+    below: 1
+    for:
+      seconds: 60
+    id: no_presence
+    trigger: numeric_state
+  - at: 06:00:00
+    id: reset_override
+    trigger: time
+  conditions:
+  - condition: state
+    entity_id: input_boolean.garage_presence_override
+    state: 'off'
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: presence_detected
+      - condition: state
+        entity_id: switch.garage_lights
+        state: 'off'
+      - condition: or
+        conditions:
+        - condition: not
+          conditions:
+          - condition: time
+            after: '23:00:00'
+          - condition: time
+            before: 06:00:00
+        - condition: state
+          entity_id: input_boolean.garage_light_time_override
+          state: 'on'
+      sequence:
+      - target:
+          entity_id: switch.garage_lights
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id: no_presence
+      sequence:
+      - target:
+          entity_id: switch.garage_lights
+        action: switch.turn_off
+    - conditions:
+      - condition: trigger
+        id: reset_override
+      sequence:
+      - target:
+          entity_id: input_boolean.garage_light_time_override
+        action: input_boolean.turn_off
+  mode: single

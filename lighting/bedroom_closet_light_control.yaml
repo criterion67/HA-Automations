@@ -1,0 +1,30 @@
+- id: '1706063905864'
+  alias: 'Bedroom Closet: Light Control'
+  description: Door sensor turns on/off bedroom closet light.
+  triggers:
+  - entity_id: binary_sensor.bedroom_closet_door
+    to: 'on'
+    id: Open
+    trigger: state
+  - entity_id: binary_sensor.bedroom_closet_door
+    to: 'off'
+    id: Closed
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Open
+      sequence:
+      - target:
+          entity_id: switch.bedroom_closet_light
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id: Closed
+      sequence:
+      - target:
+          entity_id: switch.bedroom_closet_light
+        action: switch.turn_off
+  mode: single

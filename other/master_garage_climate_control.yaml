@@ -1,0 +1,142 @@
+- id: '1764972742421'
+  alias: Master Garage Climate Control
+  description: 'Central controller for garage heat and cool based on button, temperature,
+    and freeze protection.
+
+    '
+  triggers:
+  - device_id: 0692e92c3a10fc27e64992758dbd5f9f
+    domain: zha
+    type: remote_button_short_press
+    subtype: remote_button_short_press
+    trigger: device
+    id: button
+  - entity_id:
+    - sensor.temp_sensor_garage
+    - sensor.temp_sensor_rudys_crate
+    above: 89
+    for:
+      minutes: 5
+    trigger: numeric_state
+    id: high_temp_cool
+  - entity_id: climate.garage_ac
+    attribute: current_temperature
+    below: 72.1
+    trigger: numeric_state
+    id: dry_to_cool
+  - entity_id: sensor.temp_sensor_garage
+    below: 42
+    for:
+      minutes: 5
+    trigger: numeric_state
+    id: freeze_protect
+  conditions: []
+  actions:
+  - variables:
+      mode_boolean: '{{ states(''input_boolean.garage_heat_cool_mode'') }}'
+      vacation: '{{ states(''input_boolean.vacation'') }}'
+      bill_home: '{{ is_state(''person.bill_funk'', ''home'') }}'
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: button
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ mode_boolean == ''on'' }}'
+          sequence:
+          - target:
+              entity_id: input_boolean.garage_heat_cool_mode
+            action: input_boolean.turn_off
+          - target:
+              entity_id: climate.garage_ac
+            action: climate.turn_off
+          - delay:
+              seconds: 5
+          - target:
+              entity_id: media_player.dining_room_speaker
+            data:
+              media:
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Garage+heat+mode+activated&language=en-US&voice=AndrewNeural
+                media_content_type: provider
+                metadata: {}
+            action: media_player.play_media
+        - conditions:
+          - condition: template
+            value_template: '{{ mode_boolean == ''off'' }}'
+          sequence:
+          - target:
+              entity_id: input_boolean.garage_heat_cool_mode
+            action: input_boolean.turn_on
+          - target:
+              entity_id: climate.garage_ac
+            data:
+              temperature: 80
+              hvac_mode: dry
+            action: climate.set_temperature
+          - delay:
+              seconds: 5
+          - target:
+              entity_id: media_player.dining_room_speaker
+            data:
+              media:
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Garage+A+C+mode+activated&language=en-US&voice=AndrewNeural
+                media_content_type: provider
+                metadata: {}
+            action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id: high_temp_cool
+      sequence:
+      - condition: template
+        value_template: "{{ mode_boolean == 'off' and vacation == 'off' and bill_home\
+          \ and\n   is_state('climate.garage_ac', 'off') and\n   is_state('cover.athom_garage_door',\
+          \ 'closed') and\n   is_state('binary_sensor.rear_door', 'off') }}\n"
+      - target:
+          entity_id: climate.garage_ac
+        data:
+          temperature: 80
+          hvac_mode: dry
+        action: climate.set_temperature
+      - data:
+          title: Garage AC
+          message: Garage AC has been activated due to high temperature.
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id: dry_to_cool
+      sequence:
+      - condition: template
+        value_template: "{{ mode_boolean == 'off' and vacation == 'off' and\n   is_state_attr('climate.garage_ac',\
+          \ 'hvac_mode', 'dry') }}\n"
+      - target:
+          entity_id: climate.garage_ac
+        data:
+          temperature: 80
+          hvac_mode: cool
+        action: climate.set_temperature
+      - data:
+          title: Garage AC
+          message: Garage AC has switched from dry to cool.
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id: freeze_protect
+      sequence:
+      - condition: template
+        value_template: '{{ mode_boolean == ''on'' and vacation == ''off'' and bill_home
+          }}'
+      - target:
+          entity_id: climate.garage_heater
+        data:
+          temperature: 44
+        action: climate.set_temperature
+      - target:
+          entity_id: climate.garage_ac
+        action: climate.turn_off
+      - data:
+          title: Garage Heater
+          message: Temperature below 42. Heat target set for freeze protection.
+        action: notify.mobile_app_pixel_9
+  mode: single

@@ -1,0 +1,18 @@
+- id: '1772322585913'
+  alias: Camera Quiet Mode - Activate
+  description: When Camera Quiet Mode is toggled on, disable person detection on all
+    cameras with the Camera Snooze label and start a 1-hour timer to auto re-enable.
+  triggers:
+  - platform: state
+    entity_id: input_boolean.camera_quiet_mode
+    to: 'on'
+  actions:
+  - action: switch.turn_off
+    target:
+      label_id: camera_snooze
+  - action: timer.start
+    target:
+      entity_id: timer.camera_quiet_mode_timer
+    data:
+      duration: 01:00:00
+  mode: single

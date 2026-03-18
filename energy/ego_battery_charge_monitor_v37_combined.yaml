@@ -1,0 +1,147 @@
+- id: '1759025426226'
+  alias: Ego Battery Charge Monitor v3.7 (Combined)
+  description: 'Monitors both Ego battery chargers (Plug 1 & Plug 2). Notifies when
+    charging starts and when the battery is ✅ Fully Charged, powers off plug with
+    failsafe, and provides actionable notification (Snooze/Reset) with a 3-snooze
+    limit. Includes startup recovery and failsafe cutoff.
+
+    '
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.ego_battery_monitor_power_1
+    above: 100
+    for: 00:01:00
+    id: reset
+  - trigger: numeric_state
+    entity_id: sensor.ego_battery_monitor_power_1
+    below: 5
+    for: 00:02:00
+    id: notify
+  - trigger: numeric_state
+    entity_id: sensor.ego_battery_monitor_power_2
+    above: 100
+    for: 00:01:00
+    id: reset
+  - trigger: numeric_state
+    entity_id: sensor.ego_battery_monitor_power_2
+    below: 5
+    for: 00:02:00
+    id: notify
+  - trigger: homeassistant
+    event: start
+    id: startup
+  conditions: []
+  actions:
+  - variables:
+      plug_map:
+        sensor.ego_battery_monitor_power_1:
+          switch: switch.ego_battery_charge_monitor_1
+          charging: input_boolean.ego_battery_charging_active_1
+          charged: input_boolean.ego_battery_charged_indicator_1
+          snooze: counter.ego_battery_snooze_1
+          tag: Plug 1
+          snooze_action: SNOOZE_CHARGER_1
+          reset_action: RESET_CHARGER_1
+        sensor.ego_battery_monitor_power_2:
+          switch: switch.ego_battery_charge_monitor_2
+          charging: input_boolean.ego_battery_charging_active_2
+          charged: input_boolean.ego_battery_charged_indicator_2
+          snooze: counter.ego_battery_snooze_2
+          tag: Plug 2
+          snooze_action: SNOOZE_CHARGER_2
+          reset_action: RESET_CHARGER_2
+      cfg: '{{ plug_map.get(trigger.entity_id) if trigger.entity_id is defined else
+        None }}'
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: notify
+      - condition: template
+        value_template: '{{ cfg is not none and is_state(cfg.charging, ''on'') }}'
+      sequence:
+      - data:
+          title: Ego Battery Charge Update ({{ cfg.tag }})
+          message: '✅ Fully Charged. Your Ego battery on {{ cfg.tag }} is now fully
+            charged. The charger has been turned off automatically to preserve battery
+            life.
+
+            '
+          data:
+            sticky: true
+            actions:
+            - action: '{{ cfg.snooze_action }}'
+              title: Snooze
+            - action: '{{ cfg.reset_action }}'
+              title: Dismiss / Reset
+        action: notify.mobile_app_pixel_9
+      - data:
+          entity_id: '{{ cfg.switch }}'
+        action: switch.turn_off
+      - data:
+          entity_id: '{{ cfg.charging }}'
+        action: input_boolean.turn_off
+      - data:
+          entity_id: '{{ cfg.charged }}'
+        action: input_boolean.turn_on
+      - delay: 03:00:00
+      - condition: template
+        value_template: '{{ is_state(cfg.switch, ''on'') }}'
+      - data:
+          entity_id: '{{ cfg.switch }}'
+        action: switch.turn_off
+    - conditions:
+      - condition: trigger
+        id: reset
+      sequence:
+      - data:
+          entity_id: '{{ cfg.snooze }}'
+        action: counter.reset
+      - data:
+          entity_id: '{{ cfg.charging }}'
+        action: input_boolean.turn_on
+      - data:
+          title: Ego Battery Charge Update ({{ cfg.tag }})
+          message: 'Your Ego battery on {{ cfg.tag }} has begun charging. You''ll
+            be notified once it is ✅ Fully Charged.
+
+            '
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id: startup
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ states(''sensor.ego_battery_monitor_power_1'')|float
+              > 20 }}'
+          sequence:
+          - data:
+              entity_id: input_boolean.ego_battery_charging_active_1
+            action: input_boolean.turn_on
+        - conditions:
+          - condition: template
+            value_template: "{{ is_state('switch.ego_battery_charge_monitor_1', 'on')\n\
+              \   and states('sensor.ego_battery_monitor_power_1')|float < 5 }}\n"
+          sequence:
+          - data:
+              entity_id: switch.ego_battery_charge_monitor_1
+            action: switch.turn_off
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ states(''sensor.ego_battery_monitor_power_2'')|float
+              > 20 }}'
+          sequence:
+          - data:
+              entity_id: input_boolean.ego_battery_charging_active_2
+            action: input_boolean.turn_on
+        - conditions:
+          - condition: template
+            value_template: "{{ is_state('switch.ego_battery_charge_monitor_2', 'on')\n\
+              \   and states('sensor.ego_battery_monitor_power_2')|float < 5 }}\n"
+          sequence:
+          - data:
+              entity_id: switch.ego_battery_charge_monitor_2
+            action: switch.turn_off
+  mode: single

@@ -1,0 +1,133 @@
+- id: '1759124281059'
+  alias: Jarvis – Finish Cleanup (Notify + Reset)
+  description: Clears room selections and sends notifications when Jarvis finishes.
+  triggers:
+  - id: docked
+    trigger: state
+    entity_id: vacuum.jarvis
+    to: docked
+    for:
+      seconds: 5
+  - id: idle
+    trigger: state
+    entity_id: vacuum.jarvis
+    to: idle
+    for:
+      seconds: 5
+  - id: completed
+    trigger: state
+    entity_id: sensor.jarvis_task_status
+    to: completed
+    for:
+      seconds: 5
+  - id: drying
+    trigger: state
+    entity_id: sensor.jarvis_state
+    to: drying
+    for:
+      minutes: 1
+  actions:
+  - variables:
+      from_state: '{{ trigger.from_state.state if trigger.from_state is not none else
+        ''none'' }}'
+      to_state: '{{ trigger.to_state.state if trigger.to_state is not none else ''none''
+        }}'
+      valid_transition: '{{ trigger.from_state is not none and trigger.from_state.state
+        not in [''unknown'',''unavailable''] }}'
+      v_state: '{{ states(''vacuum.jarvis'') }}'
+      task_status: '{{ states(''sensor.jarvis_task_status'') }}'
+      dryer: '{{ states(''sensor.jarvis_state'') }}'
+      area: '{{ state_attr(''vacuum.jarvis'',''cleaned_area'') or '''' }}'
+      time_min: '{{ state_attr(''vacuum.jarvis'',''cleaning_time'') or '''' }}'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.id == ''drying'' and valid_transition }}'
+      sequence:
+      - variables:
+          msg: Jarvis has completed cleaning and is now drying.
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.id == 'docked'\n   and valid_transition\n   and\
+          \ from_state in ['cleaning','returning','paused'] }}\n"
+      sequence:
+      - variables:
+          msg: 'Jarvis has returned to the dock.{{ '' Cleaned '' ~ area ~ '' m² in
+            '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
+
+            '
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.id == 'idle'\n   and valid_transition\n   and\
+          \ from_state in ['cleaning','returning','paused'] }}\n"
+      sequence:
+      - variables:
+          msg: 'Jarvis is idle, cleaning cycle ended.{{ '' Cleaned '' ~ area ~ ''
+            m² in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
+
+            '
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.id == 'completed'\n   and valid_transition\n \
+          \  and from_state not in ['completed'] }}\n"
+      sequence:
+      - variables:
+          msg: 'Jarvis has completed the cleaning cycle.{{ '' Cleaned '' ~ area ~
+            '' m² in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
+
+            '
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          title: Jarvis update
+          message: '{{ msg }}'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.id in ['docked','idle','completed','drying']\n\
+          \   and valid_transition\n   and from_state in ['cleaning','returning','paused']\
+          \ }}\n"
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id:
+          - input_boolean.clean_bathroom
+          - input_boolean.clean_bedroom
+          - input_boolean.clean_living_room
+          - input_boolean.clean_kitchen
+          - input_boolean.clean_laundry_room
+          - input_boolean.clean_office
+          - input_boolean.clean_dining_room
+          - input_boolean.clean_sunroom
+          - input_boolean.clean_foyer
+          - input_boolean.clean_bath_2
+          - input_boolean.clean_custom_1
+          - input_boolean.clean_custom_2
+  mode: restart

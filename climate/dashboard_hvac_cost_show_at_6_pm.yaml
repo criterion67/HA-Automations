@@ -1,0 +1,16 @@
+- id: '1773099658344'
+  alias: Dashboard - HVAC Cost Show at 6 PM
+  description: Show HVAC cost summary cards on tablet for 30 minutes at 6 PM daily
+  triggers:
+  - trigger: time
+    at: '18:00:00'
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.show_hvac_cost
+  - delay:
+      minutes: 30
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.show_hvac_cost
+  mode: single

@@ -1,0 +1,64 @@
+- id: '1773096059524'
+  alias: Doorbell - Delivery Vehicle AI Notification
+  description: When a vehicle is detected by the Driveway 2 camera, OR when the mailbox
+    or parcel box sensors trip, captures snapshots from both Driveway 2 and the doorbell,
+    sends both to LLM Vision to identify delivery carriers (USPS, FedEx, UPS, Amazon)
+    and whether a package is being left. Suppresses notification if no delivery is
+    detected.
+  triggers:
+  - entity_id: binary_sensor.driveway_2_vehicle_detected_2
+    to: 'on'
+    for:
+      seconds: 5
+    platform: state
+  - entity_id: binary_sensor.mailbox_sensor_door
+    to: 'on'
+    platform: state
+  - entity_id: binary_sensor.parcel_box_contact
+    to: 'on'
+    platform: state
+  conditions: []
+  actions:
+  - action: camera.snapshot
+    target:
+      entity_id: camera.driveway_2_high_resolution_channel
+    data:
+      filename: /config/www/snapshots/delivery_driveway.png
+  - action: camera.snapshot
+    target:
+      entity_id: camera.doorbell_clear_2
+    data:
+      filename: /config/www/snapshots/delivery_doorbell.png
+  - delay:
+      seconds: 2
+  - action: llmvision.image_analyzer
+    metadata: {}
+    data:
+      provider: 01JBPN7YR0C9Y9CGVMJ8TCQEZ5
+      image_entity:
+      - camera.driveway_2_high_resolution_channel
+      - camera.doorbell_clear_2
+      message: 'You are seeing two camera views of the same property. The first image
+        is a wide driveway and street view. The second image is the front porch close-up.
+        Is there a delivery vehicle or driver from USPS, FedEx, UPS, or Amazon visible
+        in either image? If yes: identify the carrier, describe the vehicle or driver,
+        and state whether a package appears to have been left at the front door. If
+        no delivery vehicle or driver is visible, respond only with: No delivery detected.
+        Respond in 2 sentences or less.'
+      target_width: 1280
+      detail: high
+      max_tokens: 120
+      temperature: 0.2
+      include_filename: false
+    response_variable: response
+  - condition: template
+    value_template: '{{ ''no delivery'' not in response.response_text | lower }}'
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: Delivery Detected! 📦
+      message: '{{ response.response_text }}'
+      data:
+        tag: doorbell_delivery_ai
+        image: /local/snapshots/delivery_driveway.png
+        url: homeassistant://navigate/lovelace
+  mode: single

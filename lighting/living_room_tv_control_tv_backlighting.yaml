@@ -1,0 +1,44 @@
+- id: '1761021204331'
+  alias: Living Room TV - Control TV Backlighting
+  description: 'Turns the Living Room TV backlight on or off based on the TV''s power
+    state. Includes a 3-second retry for turn-off if the light fails to respond.
+
+    '
+  triggers:
+  - type: turned_on
+    device_id: 2a61d779e94de9fbde083e995ee0bd20
+    entity_id: 2e9792c41d6560bf77e8f2ccdb0ecb64
+    domain: remote
+    id: Living Room TV On
+    trigger: device
+  - type: turned_off
+    device_id: 2a61d779e94de9fbde083e995ee0bd20
+    entity_id: 2e9792c41d6560bf77e8f2ccdb0ecb64
+    domain: remote
+    id: Living Room TV Off
+    trigger: device
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Living Room TV On
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.lr_tv_backlight
+    - conditions:
+      - condition: trigger
+        id: Living Room TV Off
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.lr_tv_backlight
+      - delay: 00:00:03
+      - condition: state
+        entity_id: light.lr_tv_backlight
+        state: 'on'
+      - action: light.turn_off
+        target:
+          entity_id: light.lr_tv_backlight
+  mode: single

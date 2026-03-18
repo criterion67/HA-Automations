@@ -1,0 +1,29 @@
+- id: '1771093915410'
+  alias: Bedroom Sensor Recovery - Re-enable Control When Available
+  description: When bedroom sensor comes back online, dismiss the unavailability notification.
+  triggers:
+  - platform: state
+    entity_id: sensor.temp_sensor_bedroom
+    from:
+    - unavailable
+    - unknown
+    for:
+      minutes: 2
+  conditions:
+  - condition: template
+    value_template: '{{ states(''sensor.temp_sensor_bedroom'') not in [''unavailable'',
+      ''unknown'', ''none''] }}'
+  - condition: template
+    value_template: '{{ states(''sensor.temp_sensor_bedroom'') | float(0) > 32 and
+      states(''sensor.temp_sensor_bedroom'') | float(0) < 120 }}'
+  actions:
+  - action: persistent_notification.dismiss
+    data:
+      notification_id: bedroom_sensor_failsafe
+  - action: persistent_notification.create
+    data:
+      title: ✅ Bedroom Temp Sensor Restored
+      message: 'The bedroom temperature sensor is back online. Current temperature:
+        {{ states(''sensor.temp_sensor_bedroom'') }}°F'
+      notification_id: bedroom_sensor_recovery
+  mode: single

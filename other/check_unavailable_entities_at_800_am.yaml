@@ -1,0 +1,26 @@
+- id: '1742348122871'
+  alias: Check Unavailable Entities at 8:00 AM
+  description: ''
+  triggers:
+  - at: 08:00:00
+    trigger: time
+  actions:
+  - variables:
+      ignored_domains:
+      - media_player
+      unavailable_entities: "{{ states\n   | selectattr('state', 'eq', 'unavailable')\n\
+        \   | map(attribute='entity_id')\n   | reject('match', '^(%s)\\.' % ignored_domains\
+        \ | join('|'))\n   | list }}\n"
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ unavailable_entities | length > 0 }}'
+      sequence:
+      - data:
+          title: Entities Still Unavailable
+          message: "{% if unavailable_entities | length == 1 %}\n  The following entity\
+            \ is still unavailable:\n  {{ unavailable_entities[0] }}\n{% else %}\n\
+            \  The following entities are still unavailable:\n  {{ unavailable_entities\
+            \ | join(', ') }}\n{% endif %}\n"
+        action: notify.mobile_app_pixel_9
+  mode: single

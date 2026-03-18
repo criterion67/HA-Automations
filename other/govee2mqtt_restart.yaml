@@ -1,0 +1,13 @@
+- id: '1733063216337'
+  alias: Govee2MQTT restart
+  description: ''
+  triggers:
+  - event: sunset
+    offset: -00:10:00
+    trigger: sun
+  conditions: []
+  actions:
+  - data:
+      addon: b9845f46_govee2mqtt
+    action: hassio.addon_restart
+  mode: single

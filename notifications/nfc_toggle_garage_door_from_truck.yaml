@@ -1,0 +1,61 @@
+- id: '1757264925777'
+  alias: NFC - Toggle Garage Door from Truck
+  description: NFC tag on dashboard will toggle garage door and lock/unlock laundry
+    room door with failsafe notification.
+  triggers:
+  - tag_id: b38fed34-ef7f-4575-a5ba-f28347be2b49
+    trigger: tag
+  conditions: []
+  actions:
+  - action: cover.toggle
+    target:
+      entity_id: cover.athom_garage_door
+  - wait_for_trigger:
+    - entity_id: binary_sensor.athom_garage_door_contact
+      to: 'on'
+      trigger: state
+    - entity_id: binary_sensor.athom_garage_door_contact
+      to: 'off'
+      trigger: state
+    timeout: 00:00:30
+    continue_on_timeout: true
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.athom_garage_door_contact
+        state: 'on'
+      sequence:
+      - condition: state
+        entity_id: lock.laundry_room_door_lock
+        state: locked
+      - action: lock.unlock
+        target:
+          entity_id: lock.laundry_room_door_lock
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Garage Door + Laundry Lock
+          message: Garage door is open and laundry door unlocked.
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.athom_garage_door_contact
+        state: 'off'
+      sequence:
+      - condition: state
+        entity_id: lock.laundry_room_door_lock
+        state: unlocked
+      - action: lock.lock
+        target:
+          entity_id: lock.laundry_room_door_lock
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Garage Door + Laundry Lock
+          message: Garage door is closed and laundry door locked.
+    - conditions:
+      - condition: template
+        value_template: '{{ wait.completed == false }}'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Garage Door + Laundry Lock
+          message: Garage door state unknown — laundry lock unchanged.
+  mode: single

@@ -1,0 +1,33 @@
+- id: '1742347955789'
+  alias: Entity Unavailable Notification (Immediate)
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: state_changed
+  conditions:
+  - condition: time
+    after: 08:00:00
+    before: '22:00:00'
+  - condition: template
+    value_template: "{{ trigger.event.data.new_state is not none\n   and trigger.event.data.new_state.state\
+      \ == 'unavailable' }}\n"
+  - condition: template
+    value_template: "{{ trigger.event.data.entity_id.split('.')[0]\n   not in ['media_player',\
+      \ 'image'] }}\n"
+  - condition: state
+    entity_id: timer.entity_unavailable_cooldown
+    state: idle
+  actions:
+  - variables:
+      first_unavailable: '{{ trigger.event.data.entity_id }}'
+  - data:
+      title: Entity Unavailable
+      message: 'The following entity just became unavailable: {{ first_unavailable
+        }}
+
+        '
+    action: notify.mobile_app_pixel_9
+  - target:
+      entity_id: timer.entity_unavailable_cooldown
+    action: timer.start
+  mode: single

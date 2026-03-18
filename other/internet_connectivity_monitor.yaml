@@ -1,0 +1,103 @@
+- id: '1757806464320'
+  alias: Internet Connectivity Monitor
+  description: Notify + change cabinet lights when internet goes down or comes back
+    up. Forces light ON for red warning.
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.8_8_8_8
+    to: 'off'
+    for: 00:00:10
+    id: internet_down
+  - trigger: state
+    entity_id: binary_sensor.8_8_8_8
+    to: 'on'
+    id: internet_up
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: internet_down
+      sequence:
+      - data:
+          title: Internet Down
+          message: The internet has been unreachable for 10 seconds (test).
+        action: notify.mobile_app_pixel_9
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ ''Red'' in (state_attr(''select.network_cabinet_ws2811_preset'',''options'')
+              or []) }}
+
+              '
+          sequence:
+          - target:
+              entity_id: select.network_cabinet_ws2811_preset
+            data:
+              option: Red
+            action: select.select_option
+        default:
+        - target:
+            entity_id: light.network_cabinet_ws2811
+          data:
+            rgb_color:
+            - 255
+            - 0
+            - 0
+            brightness_pct: 100
+          action: light.turn_on
+      - target:
+          entity_id: light.network_cabinet_ws2811
+        action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id: internet_up
+      sequence:
+      - data:
+          title: Internet Restored
+          message: The internet connection is back online.
+        action: notify.mobile_app_pixel_9
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: light.network_cabinet_ws2811
+            state: 'on'
+          sequence:
+          - choose:
+            - conditions:
+              - condition: template
+                value_template: '{{ ''UniFi Blue'' in (state_attr(''select.network_cabinet_ws2811_preset'',''options'')
+                  or []) }}
+
+                  '
+              sequence:
+              - target:
+                  entity_id: select.network_cabinet_ws2811_preset
+                data:
+                  option: UniFi Blue
+                action: select.select_option
+            default:
+            - target:
+                entity_id: light.network_cabinet_ws2811
+              data:
+                rgb_color:
+                - 0
+                - 102
+                - 255
+                brightness_pct: 100
+              action: light.turn_on
+        default:
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: '{{ ''UniFi Blue'' in (state_attr(''select.network_cabinet_ws2811_preset'',''options'')
+                or []) }}
+
+                '
+            sequence:
+            - target:
+                entity_id: select.network_cabinet_ws2811_preset
+              data:
+                option: UniFi Blue
+              action: select.select_option
+  mode: single

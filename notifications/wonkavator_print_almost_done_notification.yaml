@@ -1,0 +1,19 @@
+- id: '1766497249465'
+  alias: Wonkavator Print Almost Done Notification
+  description: ''
+  triggers:
+  - entity_id: sensor.wonkavator_3d_remaining_time
+    below: 0.034
+    above: 0.02
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: sensor.wonkavator_3d_print_status
+    state: running
+  actions:
+  - data:
+      title: Wonkavator Almost Finished
+      message: Another pure imagination creation will be ready to come out of the
+        oven in about 2 minutes!
+    action: notify.mobile_app_pixel_9
+  mode: single

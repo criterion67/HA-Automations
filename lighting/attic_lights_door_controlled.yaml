@@ -1,0 +1,57 @@
+- id: '1719185920035'
+  alias: 'Attic Lights: Door Controlled'
+  description: Attic light is switched on and off based on the open) closed state
+    of either interior or garage attic doors.
+  triggers:
+  - type: opened
+    device_id: 6c0064af47945901b8f85ce9631f4672
+    entity_id: 0758d9ba429a433200d73509a81b2531
+    domain: binary_sensor
+    trigger: device
+    id: Attic Door 1 Open
+  - type: not_opened
+    device_id: 6c0064af47945901b8f85ce9631f4672
+    entity_id: 0758d9ba429a433200d73509a81b2531
+    domain: binary_sensor
+    trigger: device
+    id: Attic Door 1 Closed
+  - type: opened
+    device_id: c189cc6a3c80d4ab9a3d3902bb86aa14
+    entity_id: 0983627f19e975ba625a292b0f23a0f4
+    domain: binary_sensor
+    trigger: device
+    id: Attic Door 2 Open
+  - type: not_opened
+    device_id: c189cc6a3c80d4ab9a3d3902bb86aa14
+    entity_id: 0983627f19e975ba625a292b0f23a0f4
+    domain: binary_sensor
+    trigger: device
+    id: Attic Door 2 Closed
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Attic Door 1 Open
+        - Attic Door 2 Open
+      sequence:
+      - target:
+          entity_id:
+          - switch.attic_hallway_light
+          - switch.attic_garage_light
+        data: {}
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id:
+        - Attic Door 1 Closed
+        - Attic Door 2 Closed
+      sequence:
+      - target:
+          entity_id:
+          - switch.attic_hallway_light
+          - switch.attic_garage_light
+        data: {}
+        action: switch.turn_off
+  mode: single

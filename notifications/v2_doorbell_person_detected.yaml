@@ -1,0 +1,54 @@
+- id: '1746302122163'
+  alias: V2- Doorbell - Person Detected
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.doorbell_person_2
+    from: 'off'
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.front_door
+    state: 'off'
+  - condition: state
+    entity_id: input_boolean.doorbell_cooldown
+    state: 'off'
+  actions:
+  - target:
+      entity_id: input_boolean.doorbell_cooldown
+    action: input_boolean.turn_on
+    data: {}
+  - data:
+      scene_id: doorbell_cooldown_restore
+      snapshot_entities:
+      - light.bedroom_alert_light
+    action: scene.create
+  - target:
+      entity_id: light.bedroom_alert_light
+    data:
+      color_name: green
+      brightness: 200
+    action: light.turn_on
+  - delay: 00:05:00
+  - target:
+      entity_id: scene.doorbell_cooldown_restore
+    action: scene.turn_on
+    data: {}
+  - target:
+      entity_id: input_boolean.doorbell_cooldown
+    action: input_boolean.turn_off
+    data: {}
+  - data:
+      title: Person Detected!
+      message: There's a person at the front door!
+    action: notify.mobile_app_pixel_9
+  - metadata: {}
+    data:
+      media_player: media_player.bedroom_tv_1
+      format: hls
+    target:
+      entity_id:
+      - camera.doorbell_fluent_2
+    action: camera.play_stream
+  mode: single

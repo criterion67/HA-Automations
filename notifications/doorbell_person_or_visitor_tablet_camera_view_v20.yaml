@@ -1,0 +1,45 @@
+- id: '1762182206207'
+  alias: Doorbell Person or Visitor - Tablet Camera View v2.0
+  description: When a person is detected or someone presses the doorbell, wake all
+    tablets, show the doorbell camera in full screen for 30 seconds, then return to
+    the main dashboard.
+  triggers:
+  - entity_id: binary_sensor.doorbell_person_2
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.doorbell_visitor_2
+    to: 'on'
+    trigger: state
+  actions:
+  - alias: Turn on all tablet screens
+    action: switch.turn_on
+    target:
+      entity_id:
+      - switch.galaxy_tab_a9_screen
+      - switch.galaxy_tab_a9_2_screen
+      - switch.fire_tablet_screen
+  - alias: Wait 2 seconds for screens to wake
+    delay: 00:00:02
+  - alias: Open full-screen doorbell camera on all tablets
+    action: fully_kiosk.load_url
+    data:
+      device_id:
+      - 9b6f1d82aeb414da86e3d7afd9156e83
+      - a9214fb40d85cc451175d4ccb7262585
+      - a6ead26dd26d0b43b3059d9ef2554da3
+      url: http://192.168.10.168:8123/doorbell-camera/0?hide_header&hide_sidebar
+  - alias: Wait 30 seconds while displaying camera
+    delay: 00:00:30
+  - alias: Return all tablets to main dashboard
+    action: fully_kiosk.load_url
+    data:
+      device_id:
+      - 9b6f1d82aeb414da86e3d7afd9156e83
+      - a9214fb40d85cc451175d4ccb7262585
+      - a6ead26dd26d0b43b3059d9ef2554da3
+      url: http://192.168.10.168:8123/dashboard-tablet/0
+  - alias: Turn off Fire Tablet screen after viewing
+    action: switch.turn_off
+    target:
+      entity_id: switch.fire_tablet_screen
+  mode: single

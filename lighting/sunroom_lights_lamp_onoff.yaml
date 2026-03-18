@@ -1,0 +1,40 @@
+- id: '1704933466218'
+  alias: 'Sunroom Lights: Lamp - on/off'
+  description: When ceiling light wall switch is turned on or off, sunroom lamp will
+    also turn on or off as well.
+  triggers:
+  - type: turned_on
+    device_id: 7d6691fde8602cde88df17aa18db5889
+    entity_id: 74a7bbe0dafba48f4b22639231adcedb
+    domain: switch
+    id: 'On'
+    trigger: device
+  - type: turned_off
+    device_id: 7d6691fde8602cde88df17aa18db5889
+    entity_id: 74a7bbe0dafba48f4b22639231adcedb
+    domain: switch
+    id: 'Off'
+    trigger: device
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 'On'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.sunroom_lamp
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 'Off'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id:
+          - light.sunroom_lamp
+        data: {}
+  mode: single

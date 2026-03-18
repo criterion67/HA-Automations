@@ -1,0 +1,74 @@
+- id: '1768404848896'
+  alias: 'Lock Batteries: Alert below 15% with Snooze and Dismiss'
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.bedroom_closet_door_lock_battery
+    - sensor.front_door_lock_battery
+    - sensor.laundry_room_door_lock_battery
+    - sensor.rear_door_lock_battery
+    - sensor.sunroom_door_lock_battery
+    below: 15
+    for: 00:05:00
+  conditions:
+  - condition: template
+    value_template: "{% set key = trigger.entity_id %} {% set store = states('input_text.lock_battery_alert_snoozed_until')\
+      \ %} {% if store in ['unknown','unavailable',''] %}\n  true\n{% else %}\n  {%\
+      \ set data = store | from_json %}\n  {% set until = data.get(key, '') %}\n \
+      \ {% if until == '' %}\n    true\n  {% else %}\n    now() >= as_datetime(until)\n\
+      \  {% endif %}\n{% endif %}\n"
+  actions:
+  - variables:
+      battery_entity: '{{ trigger.entity_id }}'
+      battery_level: '{{ trigger.to_state.state | int(0) }}'
+      lock_name: '{{ state_attr(trigger.entity_id, ''friendly_name'') or trigger.entity_id
+        }}'
+      store_raw: '{{ states(''input_text.lock_battery_alert_snoozed_until'') }}'
+      store: "{% if store_raw in ['unknown','unavailable',''] %}\n  {}\n{% else %}\n\
+        \  {{ store_raw | from_json }}\n{% endif %}\n"
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: Lock battery low
+      message: '{{ lock_name }} is at {{ battery_level }}%.'
+      data:
+        tag: lock_batt_{{ battery_entity }}
+        persistent: true
+        actions:
+        - action: LOCK_BATT_SNOOZE|{{ battery_entity }}
+          title: Snooze 12h
+        - action: LOCK_BATT_DISMISS|{{ battery_entity }}
+          title: Dismiss 48h
+  - wait_for_trigger:
+    - trigger: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: LOCK_BATT_SNOOZE|{{ battery_entity }}
+    - trigger: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: LOCK_BATT_DISMISS|{{ battery_entity }}
+    timeout: '12:00:00'
+    continue_on_timeout: false
+  - variables:
+      picked: '{{ wait.trigger.event.data.action }}'
+      picked_entity: '{{ picked.split(''|'')[1] }}'
+      new_until: "{% if picked.startswith('LOCK_BATT_SNOOZE|') %}\n  {{ (now() + timedelta(hours=12)).isoformat()\
+        \ }}\n{% else %}\n  {{ (now() + timedelta(hours=48)).isoformat() }}\n{% endif\
+        \ %}\n"
+      new_store: '{% set merged = dict(store) %} {% set _ = merged.update({picked_entity:
+        new_until}) %} {{ merged | to_json }}
+
+        '
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.lock_battery_alert_snoozed_until
+    data:
+      value: '{{ new_store }}'
+  - action: notify.mobile_app_pixel_9
+    data:
+      message: clear_notification
+      data:
+        tag: lock_batt_{{ battery_entity }}
+  mode: parallel
+  max: 10

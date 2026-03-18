@@ -1,0 +1,36 @@
+- id: '1742245066704'
+  alias: Laundry Room Presence  Lighting Control
+  description: 'Lighting control based on motion. '
+  triggers:
+  - entity_id:
+    - binary_sensor.laundry_room_presence_radar_target
+    to: 'on'
+    id: Detected
+    trigger: state
+  - entity_id:
+    - binary_sensor.laundry_room_presence_radar_target
+    to: 'off'
+    id: Clear
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Detected
+      sequence:
+      - action: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.laundry_room_light
+    - conditions:
+      - condition: trigger
+        id:
+        - Clear
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.laundry_room_light
+        data: {}
+  mode: single

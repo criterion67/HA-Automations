@@ -1,0 +1,37 @@
+- id: '1771535020419'
+  alias: 'David Mowie: Stuck or Error Alert'
+  description: Notify phone and announce via Cloud TTS when mower goes from mowing
+    to error, 15 minute cooldown.
+  triggers:
+  - trigger: state
+    entity_id: lawn_mower.david_mowie
+    from: mowing
+    to: error
+  conditions:
+  - condition: template
+    value_template: '{% set last = state_attr(''automation.david_mowie_stuck_or_error_alert'',
+      ''last_triggered'') %} {% set last_ts = as_timestamp(last) if last else 0 %}
+      {{ (as_timestamp(now()) - last_ts) > 900 }}
+
+      '
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: 🚨 David Mowie is Stuck!
+      message: David Mowie has gotten stuck and needs assistance.
+      data:
+        tag: david_mowie_stuck
+        notification_icon: mdi:robot-mower
+        channel: Lawn Mower Alerts
+        priority: high
+        ttl: 0
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.googlehome4496
+    data:
+      metadata: {}
+      media:
+        media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+gotten+stuck+and+needs+assistance.&language=en-US&voice=AndrewNeural
+        media_content_type: provider
+        metadata: {}
+  mode: single

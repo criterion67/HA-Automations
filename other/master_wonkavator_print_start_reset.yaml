@@ -1,0 +1,16 @@
+- id: '1764984305796'
+  alias: Master Wonkavator Print Start Reset
+  description: Resets announcement state only when a REAL new print begins
+  triggers:
+  - entity_id: sensor.wonkavator_3d_print_status
+    to:
+    - prepare
+    - slicing
+    - running
+    - init
+    trigger: state
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.wonkavator_print_announced
+  mode: single

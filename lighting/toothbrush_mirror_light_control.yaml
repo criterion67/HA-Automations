@@ -1,0 +1,38 @@
+- id: '1772668914658'
+  alias: 'Toothbrush: Mirror Light Control'
+  description: Turns bathroom mirror light on when toothbrush is running, off when
+    idle.
+  triggers:
+  - platform: state
+    entity_id:
+    - sensor.io_series_6_7_fb9f_state
+    to: running
+    id: Running
+  - platform: state
+    entity_id:
+    - sensor.io_series_6_7_fb9f_state
+    to: idle
+    id: Idle
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Running
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id:
+          - switch.bathroom_mirror
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - Idle
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.bathroom_mirror
+        data: {}
+  mode: single

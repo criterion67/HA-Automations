@@ -1,0 +1,96 @@
+- id: '1748132295130'
+  alias: Bills phone location based light - Home + Neighborhood
+  description: 'Turns Bill’s light on when he arrives at Neighborhood or Home, and
+    off when he leaves. Also checks state on Home Assistant startup.
+
+    '
+  triggers:
+  - entity_id: device_tracker.bill_s_phone
+    to: Neighborhood
+    id: Neighborhood
+    trigger: state
+  - entity_id: device_tracker.bill_s_phone
+    to: home
+    id: Home
+    trigger: state
+  - entity_id: device_tracker.bill_s_phone
+    to:
+    - Casey's
+    - Horse Arena
+    - Office
+    - Shop
+    - not_home
+    - Away
+    for: 00:02:30
+    id: Away
+    trigger: state
+  - event: start
+    id: Startup
+    trigger: homeassistant
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Home
+        - Neighborhood
+      - condition: state
+        entity_id: light.living_room_bills_light
+        state: 'off'
+      - condition: template
+        value_template: '{{ (now() - states.device_tracker.bill_s_phone.last_changed).total_seconds()
+          < 300 }}
+
+          '
+      sequence:
+      - target:
+          entity_id: light.living_room_bills_light
+        action: light.turn_on
+        data: {}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 1
+          milliseconds: 0
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media_content_id: media-source://media_source/local/Best Chime Tone.mp3
+          media_content_type: audio/mpeg
+        metadata:
+          title: Best Chime Tone.mp3
+        action: media_player.play_media
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 2
+          milliseconds: 0
+    - conditions:
+      - condition: trigger
+        id: Away
+      - condition: state
+        entity_id: light.living_room_bills_light
+        state: 'on'
+      sequence:
+      - target:
+          entity_id: light.living_room_bills_light
+        action: light.turn_off
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: Startup
+      - condition: state
+        entity_id: device_tracker.bill_s_phone
+        state:
+        - home
+        - Neighborhood
+      - condition: state
+        entity_id: light.living_room_bills_light
+        state: 'on'
+      sequence:
+      - target:
+          entity_id: light.living_room_bills_light
+        action: light.turn_on
+        data: {}
+  mode: single

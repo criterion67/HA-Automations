@@ -1,0 +1,41 @@
+- id: '1772667736481'
+  alias: CO2 Level Monitor
+  description: Changes Apollo sensor LED to purple when CO2 exceeds 1300ppm, returns
+    to teal when below 1000ppm.
+  triggers:
+  - entity_id:
+    - sensor.apollo_air_1_3e9fe4_co2
+    above: 1300
+    id: High Co2
+    platform: numeric_state
+  - entity_id:
+    - sensor.apollo_air_1_3e9fe4_co2
+    id: Normal Co2
+    below: 1000
+    platform: numeric_state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - High Co2
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.apollo_air_1_3e9fe4_rgb_light
+        data:
+          color_name: purple
+          brightness_pct: 85
+    - conditions:
+      - condition: trigger
+        id:
+        - Normal Co2
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.apollo_air_1_3e9fe4_rgb_light
+        data:
+          color_name: teal
+          brightness_pct: 25
+  mode: single

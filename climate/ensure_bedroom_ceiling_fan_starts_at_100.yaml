@@ -1,0 +1,15 @@
+- id: '1741325677435'
+  alias: Ensure Bedroom Ceiling Fan Starts at 100%
+  description: ''
+  triggers:
+  - entity_id: fan.bedroom_ceiling_fan
+    to: 'on'
+    trigger: state
+  actions:
+  - delay: 00:00:01
+  - target:
+      entity_id: fan.bedroom_ceiling_fan
+    data:
+      percentage: 100
+    action: fan.set_percentage
+  mode: restart

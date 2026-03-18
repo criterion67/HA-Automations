@@ -1,0 +1,17 @@
+- id: '1718472036626'
+  alias: 'Bedroom Closet Alert Notification '
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - lock.bedroom_closet_door_lock
+    to: unlocked
+  condition: []
+  action:
+  - metadata: {}
+    data:
+      title: Bedroom Closet Alert
+      data: {}
+      message: Closet Door was unlocked! {{now().strftime('%I:%M %p on %b %-d')}}
+    action: notify.mobile_app_pixel_9
+  mode: single

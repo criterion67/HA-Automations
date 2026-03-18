@@ -1,0 +1,121 @@
+- id: '1745720049235'
+  alias: Dishwasher Cycle Timer and Pod Tracker
+  description: Monitors dishwasher cycles, sends notifications, manages pod usage,
+    and stores start time for cycle countdown.
+  triggers:
+  - entity_id: sensor.dishwasher_pm_electric_consumption_w
+    above: 5
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+    id: running
+    trigger: numeric_state
+  - entity_id: sensor.dishwasher_pm_electric_consumption_w
+    below: 5
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    id: 'off'
+    trigger: numeric_state
+  - tag_id: 30876148-21db-4379-8028-58e688bcff9a
+    id: nfc_scan
+    trigger: tag
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: running
+      - condition: state
+        entity_id: input_select.dishwasher
+        state: 'Off'
+      - condition: template
+        value_template: '{{ (as_timestamp(now()) - as_timestamp(states.input_select.dishwasher.last_changed
+          | default(now(), true))) > 300 }}'
+      sequence:
+      - data:
+          brightness_step_pct: 100
+          color_name: green
+        target:
+          entity_id:
+          - light.bedroom_ceiling_lights
+        action: light.turn_on
+      - data:
+          title: Dishwasher Status
+          message: Dishwasher cycle started running at {{now().strftime('%I:%M %p
+            on %b %-d')}}
+        action: notify.mobile_app_pixel_9
+      - data:
+          option: Running
+        target:
+          entity_id: input_select.dishwasher
+        action: input_select.select_option
+      - target:
+          entity_id: input_datetime.dishwasher_cycle_start
+        data:
+          datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+        action: input_datetime.set_datetime
+      - target:
+          entity_id: counter.dishwasher_pods
+        action: counter.decrement
+        data: {}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 15
+          milliseconds: 0
+      - data:
+          color_name: white
+        target:
+          entity_id: light.bedroom_ceiling_lights
+        action: light.turn_on
+      - target:
+          entity_id:
+          - light.bedroom_ceiling_lights
+        action: light.turn_off
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: 'off'
+      - condition: state
+        entity_id: input_select.dishwasher
+        state: Running
+      sequence:
+      - data:
+          title: Dishwasher Status
+          message: Dishwasher cycle finished at {{now().strftime('%I:%M %p on %b %-d')}}
+        action: notify.mobile_app_pixel_9
+      - data:
+          option: 'Off'
+        target:
+          entity_id: input_select.dishwasher
+        action: input_select.select_option
+      - data:
+          brightness_step_pct: 100
+          color_name: magenta
+        target:
+          entity_id:
+          - light.bedroom_ceiling_lights
+        action: light.turn_on
+      - data:
+          color_name: white
+        target:
+          entity_id:
+          - light.bedroom_ceiling_lights
+        action: light.turn_on
+      - target:
+          entity_id:
+          - light.bedroom_ceiling_lights
+        action: light.turn_off
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: nfc_scan
+      sequence:
+      - target:
+          entity_id: counter.dishwasher_pods
+        action: counter.reset
+        data: {}
+  mode: single

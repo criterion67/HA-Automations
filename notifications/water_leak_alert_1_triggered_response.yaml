@@ -1,0 +1,89 @@
+- id: '1751428822023'
+  alias: Water Leak Alert 1 - Triggered Response
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.leak_sensor_1_moisture_2
+    - binary_sensor.kitchen_leak_sensor_2_moisture
+    - binary_sensor.leak_sensor_3_moisture
+    - binary_sensor.leak_sensor_4_moisture
+    - binary_sensor.bathroom_leak_sensor_5_moisture
+    - binary_sensor.bathroom_leak_sensor_6_moisture
+    - binary_sensor.bathroom_2_leak_sensor_7_moisture
+    - binary_sensor.bathroom_2_leak_sensor_8_moisture
+    - binary_sensor.hvac_condensate_pan_sensor_9
+    to: 'on'
+    trigger: state
+  actions:
+  - variables:
+      triggered_sensor: '{{ trigger.to_state.name }}'
+  - repeat:
+      while:
+      - condition: or
+        conditions:
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: binary_sensor.leak_sensor_1_moisture_2
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.kitchen_leak_sensor_2_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.leak_sensor_3_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.leak_sensor_4_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.bathroom_leak_sensor_5_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.bathroom_leak_sensor_6_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.bathroom_2_leak_sensor_7_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.bathroom_2_leak_sensor_8_moisture
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.hvac_condensate_pan_sensor_9
+            state: 'on'
+        - condition: state
+          entity_id: input_boolean.leak_alert_snoozed
+          state: 'on'
+      sequence:
+      - data:
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Attention%2C+a+water+leak+has+been+detected+at+the+{{
+            triggered_sensor | replace(' ', '+') }}.+Please+check+the+area+and+turn+off+the+water.&language=en-US&voice=AndrewNeural
+          media_content_type: provider
+        target:
+          entity_id: media_player.whole_house
+        action: media_player.play_media
+      - data:
+          title: 🚨 URGENT - Water Leak Detected!
+          message: Leak detected at {{ triggered_sensor }}. Tap to respond.
+          data:
+            actions:
+            - action: SNOOZE_LEAK
+              title: Snooze
+            - action: DISMISS_LEAK
+              title: Dismiss
+        action: notify.mobile_app_pixel_9
+      - delay: 00:00:10
+      - repeat:
+          count: 3
+          sequence:
+          - target:
+              entity_id: switch.foley_alarm_siren
+            action: switch.turn_on
+            data: {}
+          - delay: 00:00:08
+          - target:
+              entity_id: switch.foley_alarm_siren
+            action: switch.turn_off
+            data: {}
+          - delay: 00:00:12
+      - delay: 00:05:00
+  mode: restart

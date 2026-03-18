@@ -1,0 +1,241 @@
+- id: '1772668934745'
+  alias: Aqara 6-button remote (updated)
+  description: This automation configures actions for the Aqara 6-button remote. Camera
+    streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast).
+  triggers:
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_1
+    id: 1st pressed 1x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_1
+    id: 1st pressed 2x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_2
+    id: 2nd pressed 1x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_2
+    id: 2nd pressed 2x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_short_press
+    subtype: button_3
+    id: 3rd pressed 1x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_3
+    id: 3rd pressed 2x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_4
+    id: 4th pressed 1x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_4
+    id: 4th pressed 2x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_5
+    id: 5th pressed 1x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_5
+    id: 5th pressed 2x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_6
+    id: 6th pressed 1x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_6
+    id: 6th pressed 2x
+    platform: device
+  - device_id: 5a336e9dd50ab3414fe213761591cad8
+    domain: zha
+    type: remote_button_triple_press
+    subtype: button_6
+    id: 6th pressed 3x
+    platform: device
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: 1st pressed 1x
+      sequence:
+      - target:
+          entity_id: cover.bedroom_curtains
+        action: cover.close_cover
+    - conditions:
+      - condition: trigger
+        id: 1st pressed 2x
+      sequence:
+      - target:
+          entity_id: cover.bedroom_curtains
+        action: cover.open_cover
+    - conditions:
+      - condition: trigger
+        id: 2nd pressed 1x
+      sequence:
+      - target:
+          entity_id: lock.front_door_lock
+        action: lock.lock
+    - conditions:
+      - condition: trigger
+        id: 2nd pressed 2x
+      sequence:
+      - target:
+          entity_id: lock.front_door_lock
+        action: lock.unlock
+      - domain: select
+        device_id: 0eabd36a048b5abc5e30b2a1a43f060c
+        entity_id: f135b2e56f3beed57214be3c0c63f482
+        type: select_option
+        option: Come in, the Door is unlocked
+    - conditions:
+      - condition: trigger
+        id: 3rd pressed 1x
+      sequence: []
+    - conditions:
+      - condition: trigger
+        id: 3rd pressed 2x
+      sequence:
+      - action: script.reset_chromecast_power
+    - conditions:
+      - condition: trigger
+        id: 4th pressed 1x
+      sequence:
+      - target:
+          entity_id: cover.athom_garage_door
+        action: cover.close_cover
+      - parallel:
+        - sequence:
+          - type: issue_all_led_effect
+            domain: zha
+            device_id: cf2b54ede5b6725a721039bc1f9bb552
+            effect_type: Medium_Falling
+            color: 125
+            level: 79
+            duration: 15
+          - target:
+              entity_id: light.bedroom_alert_light
+            action: light.turn_off
+        - sequence:
+          - target:
+              entity_id: media_player.whole_house
+            data:
+              cache: true
+              message: The garage door has been closed
+              language: en-US
+              voice: AndrewNeural
+            action: tts.speak
+    - conditions:
+      - condition: trigger
+        id: 4th pressed 2x
+      sequence:
+      - target:
+          entity_id: cover.athom_garage_door
+        action: cover.open_cover
+      - parallel:
+        - sequence:
+          - type: issue_all_led_effect
+            domain: zha
+            device_id: cf2b54ede5b6725a721039bc1f9bb552
+            effect_type: Medium_Rising
+            color: 221
+            level: 79
+            duration: 15
+          - target:
+              entity_id: light.bedroom_alert_light
+            data:
+              rgb_color:
+              - 255
+              - 0
+              - 0
+              flash: short
+            action: light.turn_on
+        - sequence:
+          - target:
+              entity_id: media_player.whole_house
+            data:
+              cache: true
+              message: The garage door has been opened
+              language: en-US
+              voice: AndrewNeural
+            action: tts.speak
+    - conditions:
+      - condition: trigger
+        id: 5th pressed 1x
+      sequence:
+      - target:
+          entity_id: camera.doorbell_fluent_2
+        data:
+          media_player: media_player.bedroom_tv_chromecast
+          format: hls
+        action: camera.play_stream
+    - conditions:
+      - condition: trigger
+        id: 5th pressed 2x
+      sequence:
+      - target:
+          entity_id: camera.g6_ptz_high_resolution_channel
+        data:
+          media_player: media_player.bedroom_tv_chromecast
+          format: hls
+        action: camera.play_stream
+    - conditions:
+      - condition: trigger
+        id: 6th pressed 1x
+      sequence:
+      - target:
+          entity_id: camera.driveway_1_high_resolution_channel
+        data:
+          media_player: media_player.bedroom_tv_chromecast
+          format: hls
+        action: camera.play_stream
+    - conditions:
+      - condition: trigger
+        id: 6th pressed 2x
+      sequence:
+      - target:
+          entity_id: camera.driveway_2_high_resolution_channel
+        data:
+          media_player: media_player.bedroom_tv_chromecast
+          format: hls
+        action: camera.play_stream
+    - conditions:
+      - condition: trigger
+        id: 6th pressed 3x
+      sequence:
+      - target:
+          entity_id: camera.garage_1_fluent
+        data:
+          media_player: media_player.bedroom_tv_chromecast
+          format: hls
+        action: camera.play_stream
+  mode: single

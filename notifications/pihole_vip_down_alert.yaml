@@ -1,0 +1,21 @@
+- id: '1772690456024'
+  alias: Pi-hole VIP Down Alert
+  description: Sends a mobile notification when the Pi-hole VIP (192.168.10.49) stops
+    responding to pings for 2 minutes, indicating DNS filtering may be offline.
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.192_168_10_49
+    to: 'off'
+    for:
+      minutes: 2
+  conditions: []
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: ⚠️ Pi-hole DNS Down
+      message: Pi-hole VIP (192.168.10.49) is not responding. DNS filtering may be
+        offline. Check pihole-primary and pihole-secondary.
+      data:
+        priority: high
+        ttl: 0
+  mode: single

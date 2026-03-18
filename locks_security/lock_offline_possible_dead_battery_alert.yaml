@@ -1,0 +1,81 @@
+- id: '1773524065682'
+  alias: 'Lock Offline: Possible Dead Battery Alert'
+  description: If any lock is unavailable for 2+ hours, send a notification with Snooze
+    24h and Replaced options. Uses the same snooze store as the low battery alert.
+    Replaced sets a 7-day snooze.
+  triggers:
+  - trigger: state
+    entity_id:
+    - lock.front_door_lock
+    - lock.rear_door_lock
+    - lock.sunroom_door_lock
+    - lock.laundry_room_door_lock
+    - lock.bedroom_closet_door_lock
+    to: unavailable
+    for:
+      hours: 2
+  conditions:
+  - condition: template
+    value_template: "{% set key = trigger.entity_id %}\n{% set store = states('input_text.lock_battery_alert_snoozed_until')\
+      \ %}\n{% if store in ['unknown','unavailable',''] %}\n  true\n{% else %}\n \
+      \ {% set data = store | from_json %}\n  {% set until = data.get(key, '') %}\n\
+      \  {% if until == '' %}\n    true\n  {% else %}\n    now() >= as_datetime(until)\n\
+      \  {% endif %}\n{% endif %}"
+  actions:
+  - variables:
+      lock_entity: '{{ trigger.entity_id }}'
+      lock_name: '{{ state_attr(trigger.entity_id, ''friendly_name'') or trigger.entity_id
+        }}'
+      store_raw: '{{ states(''input_text.lock_battery_alert_snoozed_until'') }}'
+      store: "{% if store_raw in ['unknown','unavailable',''] %}\n  {}\n{% else %}\n\
+        \  {{ store_raw | from_json }}\n{% endif %}"
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: Lock Offline - Possible Dead Battery
+      message: '{{ lock_name }} has been offline for 2+ hours. Battery may need replacing.'
+      data:
+        tag: lock_offline_{{ lock_entity }}
+        persistent: true
+        actions:
+        - action: LOCK_OFFLINE_SNOOZE|{{ lock_entity }}
+          title: Snooze 24h
+        - action: LOCK_OFFLINE_REPLACED|{{ lock_entity }}
+          title: Replaced
+  - wait_for_trigger:
+    - trigger: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: LOCK_OFFLINE_SNOOZE|{{ lock_entity }}
+    - trigger: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: LOCK_OFFLINE_REPLACED|{{ lock_entity }}
+    - trigger: template
+      value_template: '{{ states(lock_entity) != ''unavailable'' }}'
+    timeout: '24:00:00'
+    continue_on_timeout: false
+  - action: notify.mobile_app_pixel_9
+    data:
+      message: clear_notification
+      data:
+        tag: lock_offline_{{ lock_entity }}
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ wait.trigger is not none and wait.trigger.event is defined
+          }}'
+      sequence:
+      - variables:
+          picked: '{{ wait.trigger.event.data.action }}'
+          new_until: "{% if picked.startswith('LOCK_OFFLINE_SNOOZE|') %}\n  {{ (now()\
+            \ + timedelta(hours=24)).isoformat() }}\n{% else %}\n  {{ (now() + timedelta(hours=168)).isoformat()\
+            \ }}\n{% endif %}"
+          new_store: '{% set merged = dict(store) %}{% set _ = merged.update({lock_entity:
+            new_until}) %}{{ merged | to_json }}'
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.lock_battery_alert_snoozed_until
+        data:
+          value: '{{ new_store }}'
+  mode: parallel
+  max: 5

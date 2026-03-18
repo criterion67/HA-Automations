@@ -1,0 +1,79 @@
+- id: '1773430866085'
+  alias: 'Alert Light: Migraine Green Therapy Toggle (Aqara B1 Hold)'
+  description: Hold the Front Door Aqara B1 button to activate 520nm migraine therapy
+    green (RGB 0,255,0) at 100%. Uses input_boolean.migraine_therapy_mode_active as
+    a clean flag. Snapshots previous light state into input_text.migraine_light_restore_state
+    before activating, and restores it on deactivation.
+  triggers:
+  - id: hold_press
+    type: action
+    domain: mqtt
+    subtype: hold
+    trigger: device
+    device_id: 9f47190752b6ab62fbb551223b91b5dd
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.migraine_therapy_mode_active
+        state: 'off'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: light.bedroom_alert_light
+            state: 'off'
+          sequence:
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.migraine_light_restore_state
+            data:
+              value: 'off'
+        default:
+        - action: input_text.set_value
+          target:
+            entity_id: input_text.migraine_light_restore_state
+          data:
+            value: '{{ {''rgb'': state_attr(''light.bedroom_alert_light'', ''rgb_color''),
+              ''bri'': ((state_attr(''light.bedroom_alert_light'', ''brightness'')
+              | int / 2.55) | round(0)) | int} | to_json }}'
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.migraine_therapy_mode_active
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_alert_light
+        data:
+          rgb_color:
+          - 0
+          - 255
+          - 0
+          brightness_pct: 100
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.migraine_therapy_mode_active
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.migraine_therapy_mode_active
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ states(''input_text.migraine_light_restore_state'')
+              == ''off'' }}'
+          sequence:
+          - action: light.turn_off
+            target:
+              entity_id: light.bedroom_alert_light
+        default:
+        - action: light.turn_on
+          target:
+            entity_id: light.bedroom_alert_light
+          data:
+            rgb_color: '{{ (states(''input_text.migraine_light_restore_state'') |
+              from_json).rgb }}'
+            brightness_pct: '{{ (states(''input_text.migraine_light_restore_state'')
+              | from_json).bri }}'
+  mode: single

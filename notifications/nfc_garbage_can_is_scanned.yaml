@@ -1,0 +1,27 @@
+- id: '1728523351907'
+  alias: NFC - Garbage Can is scanned
+  description: ''
+  triggers:
+  - tag_id: c5100db2-1d33-4338-8c3a-7d0ce419f7c2
+    trigger: tag
+  conditions: []
+  actions:
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.googlehome4496
+    data:
+      media:
+        media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+garbage+can+has+been+set+on+the+street+for+pickup&language=en-US&voice=JennyNeural
+        media_content_type: provider
+        metadata:
+          title: The garbage can has been set on the street for pickup
+          thumbnail: https://brands.home-assistant.io/_/tts/logo.png
+          media_class: app
+          children_media_class: null
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://tts
+          - media_content_type: provider
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+garbage+can+has+been+set+on+the+street+for+pickup&language=en-US&voice=JennyNeural
+  mode: single

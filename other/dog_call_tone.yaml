@@ -1,0 +1,69 @@
+- id: '1695193719243'
+  alias: Dog call tone
+  description: 12 khz tone to call the dogs
+  triggers:
+  - device_id: 386e180e5c5a6e650e907299105adf5c
+    domain: zha
+    type: remote_button_short_press
+    subtype: remote_button_short_press
+    trigger: device
+    id: Bedside Button
+  - trigger: state
+    entity_id:
+    - input_boolean.dog_call
+    to: 'on'
+    id: Helper Button
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Bedside Button
+      sequence:
+      - target:
+          entity_id: media_player.dogs
+        data:
+          media_content_id: media-source://media_source/local/12000.wav
+          media_content_type: audio/x-wav
+        metadata:
+          title: 12000.wav
+          thumbnail: null
+          media_class: music
+          children_media_class: null
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://media_source
+        action: media_player.play_media
+    - conditions:
+      - condition: trigger
+        id:
+        - Helper Button
+      sequence:
+      - target:
+          entity_id: media_player.dogs
+        data:
+          media_content_id: media-source://media_source/local/12000.wav
+          media_content_type: audio/x-wav
+        metadata:
+          title: 12000.wav
+          thumbnail: null
+          media_class: music
+          children_media_class: null
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://media_source
+        action: media_player.play_media
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 10
+          milliseconds: 0
+      - action: input_boolean.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.dog_call
+  mode: single

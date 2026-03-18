@@ -1,0 +1,20 @@
+- id: '1772667727371'
+  alias: Vacuum Bedroom & Bathroom via Inovelli Config Button
+  description: Hold the config button on the Inovelli bedroom switch to vacuum bedroom
+    (segment 1) and bathroom (segment 2).
+  triggers:
+  - device_id: cf2b54ede5b6725a721039bc1f9bb552
+    domain: zha
+    type: hold
+    subtype: Config
+    platform: device
+  conditions: []
+  actions:
+  - target:
+      device_id: dc04449302bfc891611f3db1646158a1
+    data:
+      segments:
+      - 1
+      - 2
+    action: dreame_vacuum.vacuum_clean_segment
+  mode: single

@@ -1,0 +1,74 @@
+- id: '1717540704356'
+  alias: Smoke Detection Alert
+  description: ''
+  triggers:
+  - entity_id:
+    - binary_sensor.smoke_detectors_smoke_detectors
+    to: 'on'
+    trigger: state
+  conditions: []
+  actions:
+  - action: lock.unlock
+    target:
+      entity_id: lock.front_door_lock
+    data: {}
+  - repeat:
+      count: 10
+      sequence:
+      - data:
+          color_name: red
+          brightness_pct: 100
+          flash: short
+        action: light.turn_on
+        target:
+          entity_id: light.living_room_lights
+  - target:
+      entity_id: media_player.whole_house
+    data:
+      media:
+        media_content_id: media-source://media_source/local/emergency-alarm-with-reverb-29431.mp3
+        media_content_type: audio/mpeg
+        metadata:
+          title: emergency-alarm-with-reverb-29431.mp3
+          thumbnail: null
+          media_class: music
+          children_media_class: null
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://media_source
+    action: media_player.play_media
+  - target:
+      entity_id: media_player.whole_house
+    data:
+      media:
+        media_content_id: media-source://tts/tts.home_assistant_cloud?message=Alert%2C+Alert%2C+Smoke+has+been+detected+in+the+house%21+Please+exit+immediately%21+&language=en-US&voice=JennyNeural
+        media_content_type: provider
+        metadata:
+          title: 'Alert, Alert, Smoke has been detected in the house! Please exit
+            immediately! '
+          thumbnail: https://brands.home-assistant.io/_/tts/logo.png
+          media_class: app
+          children_media_class: null
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://tts
+          - media_content_type: provider
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Alert%2C+Alert%2C+Smoke+has+been+detected+in+the+house%21+Please+exit+immediately%21+&language=en-US&voice=JennyNeural
+    action: media_player.play_media
+  - metadata: {}
+    data:
+      message: 'Smoke has been detected in the house! '
+      title: URGENT - Smoke Detected!
+    action: notify.mobile_app_pixel_9
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
+  - data: {}
+    action: light.turn_off
+    target:
+      entity_id: light.living_room_lights
+  mode: single

@@ -1,0 +1,129 @@
+- id: '1762155215972'
+  alias: Bathroom Lighting Control (Presence + TV v2.3)
+  description: 'Smart bathroom lighting tied to bedroom TV activity and mmWave presence
+    with corrected overnight time handling.
+
+    '
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.bathroom_presence_radar_target
+    to: 'on'
+    id: Presence_On
+  - trigger: state
+    entity_id: binary_sensor.bathroom_presence_radar_target
+    to: 'off'
+    id: Presence_Off
+  - trigger: state
+    entity_id: media_player.bedroom_tv_chromecast
+    to: paused
+    for:
+      seconds: 5
+    id: TV_Paused
+  - trigger: state
+    entity_id: media_player.bedroom_tv_chromecast
+    to: playing
+    for:
+      seconds: 5
+    id: TV_Playing
+  conditions:
+  - condition: template
+    value_template: "{% if trigger.id in ['Presence_On', 'Presence_Off'] %}\n  {{\
+      \ (now_ts - presence_cd) > cooldown_time or presence_cd == 0 }}\n{% elif trigger.id\
+      \ in ['TV_Paused', 'TV_Playing'] %}\n  {{ (now_ts - tv_cd) > cooldown_time or\
+      \ tv_cd == 0 }}\n{% else %}\n  true\n{% endif %}\n"
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Presence_On
+      sequence:
+      - target:
+          entity_id: input_datetime.bathroom_presence_cooldown
+        data:
+          datetime: '{{ now().isoformat() }}'
+        action: input_datetime.set_datetime
+      - choose:
+        - conditions:
+          - condition: or
+            conditions:
+            - condition: time
+              after: '23:00:00'
+            - condition: time
+              before: 06:00:00
+          sequence:
+          - target:
+              entity_id: switch.bathroom_mirror
+            action: switch.turn_on
+        - conditions:
+          - condition: time
+            after: 06:00:00
+            before: '23:00:00'
+          sequence:
+          - target:
+              entity_id: light.bathroom_vanity_light_group
+            action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id: Presence_Off
+      sequence:
+      - target:
+          entity_id: input_datetime.bathroom_presence_cooldown
+        data:
+          datetime: '{{ now().isoformat() }}'
+        action: input_datetime.set_datetime
+      - target:
+          entity_id: light.bathroom_vanity_light_group
+        action: light.turn_off
+      - target:
+          entity_id: switch.bathroom_mirror
+        action: switch.turn_off
+      - delay: 5
+      - target:
+          entity_id: switch.fire_tablet_screen
+        action: switch.turn_off
+    - conditions:
+      - condition: trigger
+        id: TV_Paused
+      - condition: sun
+        after: sunset
+        before: sunrise
+      - condition: state
+        entity_id: binary_sensor.bathroom_presence_radar_target
+        state: 'off'
+      sequence:
+      - target:
+          entity_id: input_datetime.bathroom_tv_cooldown
+        data:
+          datetime: '{{ now().isoformat() }}'
+        action: input_datetime.set_datetime
+      - delay: 2
+      - target:
+          entity_id: light.bathroom_vanity_light_group
+        action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id: TV_Playing
+      - condition: state
+        entity_id: binary_sensor.bathroom_presence_radar_target
+        state: 'off'
+      sequence:
+      - target:
+          entity_id: input_datetime.bathroom_tv_cooldown
+        data:
+          datetime: '{{ now().isoformat() }}'
+        action: input_datetime.set_datetime
+      - delay: 5
+      - target:
+          entity_id:
+          - light.bathroom_vanity_light_group
+          - switch.bathroom_mirror
+          - switch.fire_tablet_screen
+        action: homeassistant.turn_off
+  variables:
+    cooldown_time: 30
+    presence_cd: '{{ as_timestamp(states(''input_datetime.bathroom_presence_cooldown''))
+      }}'
+    tv_cd: '{{ as_timestamp(states(''input_datetime.bathroom_tv_cooldown'')) }}'
+    now_ts: '{{ now().timestamp() }}'
+  mode: single
+  max_exceeded: silent

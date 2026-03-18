@@ -1,0 +1,145 @@
+- id: '1763771518580'
+  alias: Garage Door position change notifications v2
+  description: ''
+  triggers:
+  - device_id: a235607541ed6fc61e5c8d84cdc1859c
+    domain: cover
+    entity_id: 7147eec9a271d8064c360350e440406a
+    type: opened
+    id: Opening
+    trigger: device
+    enabled: false
+  - device_id: a235607541ed6fc61e5c8d84cdc1859c
+    domain: cover
+    entity_id: 7147eec9a271d8064c360350e440406a
+    type: closed
+    id: Closing
+    trigger: device
+    enabled: false
+  - trigger: state
+    entity_id:
+    - binary_sensor.garage_door_position
+    id: Opening
+    from:
+    - 'off'
+    to:
+    - 'on'
+  - trigger: state
+    entity_id:
+    - binary_sensor.garage_door_position
+    id: Closing
+    from:
+    - 'on'
+    to:
+    - 'off'
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Opening
+      sequence:
+      - data:
+          rgb_color:
+          - 255
+          - 0
+          - 0
+          flash: short
+        action: light.turn_on
+        target:
+          entity_id:
+          - light.bedroom_alert_light
+      - data:
+          rgb_color:
+          - 255
+          - 0
+          - 0
+        action: light.turn_on
+        target:
+          entity_id:
+          - light.living_room_floor_lamp_1
+        enabled: false
+      - target:
+          entity_id:
+          - media_player.bedroom_group_3
+        data:
+          media:
+            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata:
+              title: The garage door has been opened
+              thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
+              media_class: app
+              navigateIds:
+              - {}
+              - media_content_type: app
+                media_content_id: media-source://tts
+              - media_content_type: provider
+                media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=AndrewNeural
+        action: media_player.play_media
+      - action: notify.mobile_app_pixel_9
+        metadata: {}
+        data:
+          message: Garage door has been opened.
+          title: Garage Door Position Changed
+      - type: issue_all_led_effect
+        domain: zha
+        device_id: cf2b54ede5b6725a721039bc1f9bb552
+        effect_type: Medium_Rising
+        color: 221
+        level: 79
+        duration: 15
+    - conditions:
+      - condition: trigger
+        id:
+        - Closing
+      sequence:
+      - data: {}
+        target:
+          entity_id:
+          - light.bedroom_alert_light
+        action: light.turn_off
+      - target:
+          entity_id:
+          - media_player.bedroom_group
+        data:
+          media:
+            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata:
+              title: The garage door has been closed
+              thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
+              media_class: app
+              navigateIds:
+              - {}
+              - media_content_type: app
+                media_content_id: media-source://tts
+              - media_content_type: provider
+                media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=JennyNeural
+        action: media_player.play_media
+      - type: issue_all_led_effect
+        domain: zha
+        device_id: cf2b54ede5b6725a721039bc1f9bb552
+        effect_type: Medium_Falling
+        color: 125
+        level: 79
+        duration: 15
+      - action: notify.mobile_app_pixel_9
+        metadata: {}
+        data:
+          message: Garage door has been closed.
+          title: Garage Door Position Changed
+      - action: light.turn_off
+        target:
+          entity_id:
+          - light.living_room_floor_lamp_1
+        data: {}
+        enabled: false
+      - delay:
+          seconds: 1
+      - action: light.turn_off
+        target:
+          entity_id: light.living_room_floor_lamp_1
+        data: {}
+  mode: single

@@ -1,0 +1,97 @@
+- id: plant_watering_pct_crossing_specific
+  alias: Plant Watering Reminder by Moisture Percentage
+  description: Notify when a plant drops below its moisture threshold, with Watered
+    action and specific plant name. 24-hour cooldown to prevent duplicate notifications.
+  triggers:
+  - entity_id: sensor.soil_sensor_1_soil_moisture
+    below: 25
+    platform: numeric_state
+    for:
+      minutes: 5
+  - entity_id: sensor.soil_sensor_2_soil_moisture
+    below: 28
+    platform: numeric_state
+    for:
+      minutes: 5
+  - entity_id: sensor.soil_sensor_3_soil_moisture
+    below: 10
+    platform: numeric_state
+    for:
+      minutes: 5
+  - event_type: mobile_app_notification_action
+    platform: event
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == ''event'' and trigger.event.data.action
+          == ''PLANT_WATERED'' }}'
+      sequence:
+      - data:
+          message: clear_notification
+          data:
+            tag: plant_watering
+        action: notify.mobile_app_pixel_9
+      - data:
+          name: Plants
+          message: Watered acknowledged
+          entity_id: sensor.soil_sensor_1_soil_moisture
+        action: logbook.log
+      - delay:
+          hours: 24
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == ''numeric_state'' }}'
+      sequence:
+      - variables:
+          trigger_name: "{% set trig = trigger.entity_id %}\n{% set match = plants\
+            \ | selectattr('entity_id','eq', trig) | list | first %}\n{% if match\
+            \ is defined and match is not none %}\n  {{ match.name }}\n{% else %}\n\
+            \  {{ state_attr(trig, 'friendly_name') or trig }}\n{% endif %}"
+          trigger_value: '{{ states(trigger.entity_id) | float(0) | round(0) }}'
+          trigger_threshold: "{% set trig = trigger.entity_id %}\n{% set match = plants\
+            \ | selectattr('entity_id','eq', trig) | list | first %}\n{% if match\
+            \ is defined and match is not none %}\n  {{ match.threshold }}\n{% else\
+            \ %}\n  0\n{% endif %}"
+          low_list: "{% set ns = namespace(text='') %}\n{% for p in plants %}\n  {%\
+            \ set val = states(p.entity_id) | float(999) %}\n  {% if val < p.threshold\
+            \ and p.entity_id != trigger.entity_id %}\n    {% set ns.text = ns.text\
+            \ + p.name ~ ' (' ~ (val | round(0)) ~ '% < ' ~ p.threshold ~ '%), ' %}\n\
+            \  {% endif %}\n{% endfor %}\n{{ ns.text[:-2] if ns.text != '' else ''\
+            \ }}"
+      - data:
+          title: '{{ trigger_name }} needs water'
+          message: '{% if low_list != '''' %}
+
+            {{ trigger_name }} is at {{ trigger_value }}% which is below its {{ trigger_threshold
+            }}% threshold. Other plants also low: {{ low_list }}.
+
+            {% else %}
+
+            {{ trigger_name }} is at {{ trigger_value }}% which is below its {{ trigger_threshold
+            }}% threshold.
+
+            {% endif %}'
+          data:
+            tag: plant_watering
+            ttl: 0
+            priority: high
+            action:
+            - action: PLANT_WATERED
+              title: Watered
+        action: notify.mobile_app_pixel_9
+      - delay:
+          hours: 24
+  mode: single
+  max_exceeded: silent
+  variables:
+    plants:
+    - name: Spider Plant
+      entity_id: sensor.soil_sensor_1_soil_moisture
+      threshold: 25
+    - name: Red Aglaonema
+      entity_id: sensor.soil_sensor_2_soil_moisture
+      threshold: 28
+    - name: Snake Plant
+      entity_id: sensor.soil_sensor_3_soil_moisture
+      threshold: 10

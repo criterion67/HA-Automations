@@ -1,0 +1,78 @@
+- id: '1764984275601'
+  alias: Master Wonkavator Print Finished TTS
+  description: Announce when Wonkavator finishes printing with speaker fallback and
+    light cue
+  triggers:
+  - entity_id: sensor.wonkavator_3d_print_status
+    to: finish
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: input_boolean.wonkavator_print_announced
+    state: 'off'
+  - condition: template
+    value_template: '{{ trigger.from_state.state != ''finish'' }}'
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.wonkavator_print_announced
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.googlehome4496
+    data:
+      media:
+        media_content_id: media-source://media_source/local/Best Chime Tone.mp3
+        media_content_type: audio/mpeg
+        metadata:
+          title: Best Chime Tone.mp3
+  - delay:
+      seconds: 2
+  - choose:
+    - conditions:
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: media_player.bedroom_group_3
+          state: unavailable
+      sequence:
+      - action: media_player.play_media
+        target:
+          entity_id: media_player.bedroom_group_3
+        data:
+          media:
+            media_content_id: "{{\n  \"media-source://tts/tts.home_assistant_cloud?message=Wonkavator\
+              \ print \"\n  ~ states('sensor.wonkavator_3d_task_name')\n  ~ \" has\
+              \ finished&language=en-US&voice=AndrewNeural\"\n}}\n"
+            media_content_type: provider
+            metadata:
+              title: Wonkavator print finished
+              thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
+              media_class: app
+    - conditions:
+      - condition: state
+        entity_id: media_player.bedroom_group_3
+        state: unavailable
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: 'Wonkavator print {{ states(''sensor.wonkavator_3d_task_name'')
+            }} has finished, but the bedroom speaker is unavailable.
+
+            '
+  - repeat:
+      count: 3
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_alert_light
+        data:
+          color_name: blue
+          brightness_pct: 100
+      - delay:
+          seconds: 1
+      - action: light.turn_off
+        target:
+          entity_id: light.bedroom_alert_light
+      - delay:
+          seconds: 1
+  mode: single

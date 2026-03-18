@@ -1,0 +1,11 @@
+- id: '1773105156320'
+  alias: Dashboard - Reset Dog Bowl Dismissed When Bowl Refilled
+  triggers:
+  - trigger: state
+    entity_id: sensor.dog_bowl_water_level
+    to: Full
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.dog_bowl_empty_dismissed
+  mode: single

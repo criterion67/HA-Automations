@@ -1,0 +1,18 @@
+- id: '1730302526508'
+  alias: Dishwasher Pods Low Notification
+  description: ''
+  triggers:
+  - entity_id:
+    - counter.dishwasher_pods
+    below: 10
+    trigger: numeric_state
+  actions:
+  - data:
+      message: 'Alert: Only {{ states(''counter.dishwasher_pods'') }} dishwasher pods
+        left. Time to restock!'
+    action: notify.mobile_app_pixel_9
+  - data:
+      item: Buy more dishwasher pods
+    action: todo.add_item
+    target:
+      entity_id: todo.consumables

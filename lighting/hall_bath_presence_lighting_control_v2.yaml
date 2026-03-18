@@ -1,0 +1,45 @@
+- id: '1769881970294'
+  alias: Hall Bath Presence Lighting Control v2
+  description: Lighting control based on presence with day and night split.
+  triggers:
+  - entity_id: binary_sensor.hall_bath_presence_radar_target
+    to: 'on'
+    id: Detected
+    trigger: state
+  - entity_id: binary_sensor.hall_bath_presence_radar_target
+    to: 'off'
+    id: Clear
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Detected
+      - condition: time
+        after: 06:00:00
+        before: '21:00:00'
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.hall_bath_light
+    - conditions:
+      - condition: trigger
+        id: Detected
+      - condition: time
+        after: '21:01:00'
+        before: 06:00:00
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.hall_bath_heater
+    - conditions:
+      - condition: trigger
+        id: Clear
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id:
+          - switch.hall_bath_light
+          - switch.hall_bath_heater
+  mode: single

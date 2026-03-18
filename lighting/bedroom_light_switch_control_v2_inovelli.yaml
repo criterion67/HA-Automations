@@ -1,0 +1,113 @@
+- id: '1760660365438'
+  alias: Bedroom Light Switch Control - V2 Inovelli
+  description: Controlling bedroom lights via the Innovelli Smart switch mode.
+  use_blueprint:
+    path: fxlt/zha-inovelli-vzm31-sn-blue-series-2-1-switch.yaml
+    input:
+      inovelli_switch: cf2b54ede5b6725a721039bc1f9bb552
+      button_1:
+      - action: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.bedroom_ceiling_lights
+      button_2:
+      - action: light.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.bedroom_ceiling_lights
+      button_1_hold:
+      - device_id: fccfc73e16d3ae5f86e686e7826bb59d
+        domain: light
+        entity_id: 1b59198ad1eac8f1c28bbd8a501a11ff
+        type: brightness_decrease
+        enabled: false
+      - device_id: 7771523f2fa355455fffb440b83a6872
+        domain: light
+        entity_id: d34ec57a1eb72e9ffa8133b9b03f9287
+        type: brightness_decrease
+        enabled: false
+      - device_id: 8454f2dd904e3ef31cea15cb2622f60a
+        domain: light
+        entity_id: 50974130028e60c72a2726ef561bf0ef
+        type: brightness_decrease
+        enabled: false
+      - device_id: 365bd8309445ffbfb20f7d14e47fa14e
+        domain: light
+        entity_id: 99ff4a1eb68efe290e76694f8f5e8c52
+        type: brightness_decrease
+        enabled: false
+      button_2_hold:
+      - device_id: fccfc73e16d3ae5f86e686e7826bb59d
+        domain: light
+        entity_id: 1b59198ad1eac8f1c28bbd8a501a11ff
+        type: brightness_increase
+        enabled: false
+      - device_id: 7771523f2fa355455fffb440b83a6872
+        domain: light
+        entity_id: d34ec57a1eb72e9ffa8133b9b03f9287
+        type: brightness_increase
+        enabled: false
+      - device_id: 8454f2dd904e3ef31cea15cb2622f60a
+        domain: light
+        entity_id: 50974130028e60c72a2726ef561bf0ef
+        type: brightness_increase
+        enabled: false
+      - device_id: 365bd8309445ffbfb20f7d14e47fa14e
+        domain: light
+        entity_id: 99ff4a1eb68efe290e76694f8f5e8c52
+        type: brightness_increase
+        enabled: false
+      button_3_double:
+      - target:
+          device_id: dc04449302bfc891611f3db1646158a1
+        data:
+          segments: 1,6
+        action: dreame_vacuum.vacuum_clean_segment
+        enabled: false
+      - action: dreame_vacuum.vacuum_clean_segment
+        metadata: {}
+        target:
+          device_id: 229916033cfaeeaf0a79ac35dab59d53
+        data:
+          segments: 8
+      button_2_double:
+      - target:
+          entity_id: scene.bedside_lights_daylight
+        metadata: {}
+        action: scene.turn_on
+        data: {}
+        enabled: false
+      button_1_triple:
+      - target:
+          entity_id: scene.bedroom_lights_all_off
+        metadata: {}
+        action: scene.turn_on
+        data: {}
+        enabled: false
+      button_2_triple:
+      - target:
+          entity_id: scene.bedroom_lights_all_on
+        metadata: {}
+        action: scene.turn_on
+        data: {}
+        enabled: false
+      button_1_quadruple: []
+      button_1_quintuple:
+      - device_id: a235607541ed6fc61e5c8d84cdc1859c
+        domain: cover
+        entity_id: 7147eec9a271d8064c360350e440406a
+        type: close
+      button_2_quintuple:
+      - device_id: a235607541ed6fc61e5c8d84cdc1859c
+        domain: cover
+        entity_id: 7147eec9a271d8064c360350e440406a
+        type: open
+      button_3_quintuple:
+      - data: {}
+        action: lock.unlock
+        target:
+          entity_id: lock.front_door_lock
+      button_3_triple: []
+      button_3_quadruple: []

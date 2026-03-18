@@ -1,0 +1,28 @@
+- id: '1772661391431'
+  alias: Master Zigbee2MQTT Watchdog
+  description: 'State-based watchdog: if the Z2M bridge connection sensor goes offline
+    for 10 minutes (giving the built-in Z2M watchdog time to self-recover), automatically
+    restart the Z2M addon and send a mobile notification.'
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.zigbee2mqtt_bridge_connection_state
+    to: 'off'
+    for: 00:10:00
+    id: z2m_down
+  conditions: []
+  actions:
+  - action: hassio.addon_restart
+    data:
+      addon: 45df7312_zigbee2mqtt
+  - delay: 00:00:10
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: ⚠️ Zigbee2MQTT Restarted
+      message: Z2M bridge was offline for 10+ minutes and was automatically restarted
+        at {{ now().strftime('%I:%M %p on %b %-d') }}. Check that devices are responding.
+      data:
+        ttl: 0
+        priority: high
+        notification_icon: mdi:zigbee
+        channel: System Alerts
+  mode: single

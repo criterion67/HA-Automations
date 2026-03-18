@@ -1,0 +1,45 @@
+- id: '1769749220185'
+  alias: Garbage/Recycling Pickup AI Notification
+  description: Detects when green garbage can or blue recycling bin have been emptied
+    by city trucks on Thursday mornings.
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.driveway_2_vehicle_detected_2
+    to: 'on'
+  conditions:
+  - condition: time
+    after: 06:00:00
+    before: 07:30:00
+  - condition: time
+    weekday:
+    - thu
+  actions:
+  - action: camera.snapshot
+    target:
+      entity_id: camera.driveway_2_high_resolution_channel
+    data:
+      filename: /config/www/snapshots/garbage_pickup.png
+  - action: llmvision.image_analyzer
+    data:
+      provider: 01JBPN7YR0C9Y9CGVMJ8TCQEZ5
+      image_entity:
+      - camera.driveway_2_high_resolution_channel
+      message: 'Look at the upper left area of the camera view. Are the garbage/recycling
+        bins visible there? The GREEN bin is garbage, the BLUE bin is recycling. Report:
+        1) Are bins visible in upper left? 2) If NOT visible there, have they been
+        moved/emptied? 3) Is there a city garbage truck? Respond concisely.'
+      target_width: 1280
+      detail: high
+      max_tokens: 150
+      temperature: 0.2
+      include_filename: false
+    response_variable: response
+  - delay:
+      seconds: 1
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: Garbage/Recycling Pickup Detected! 🗑️♻️
+      message: '{{ response.response_text }}'
+      data:
+        image: /local/snapshots/garbage_pickup.png
+  mode: single

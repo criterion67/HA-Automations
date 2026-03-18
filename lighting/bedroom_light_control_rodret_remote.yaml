@@ -1,0 +1,34 @@
+- id: '1761723459974'
+  alias: 'Bedroom Light Control: Rodret Remote'
+  description: Updated for light.bedroom_bedside_lamps_group
+  use_blueprint:
+    path: damru/ikea-rodret_E2201_ZHA-Z2M_control-anything.yaml
+    input:
+      remote_device: 5f9179111485c8a6e2eb7b365b887b6e
+      on_press_action:
+      - target:
+          entity_id: light.bedroom_bedside_lamps_group
+        action: light.turn_on
+      off_press_action:
+      - target:
+          entity_id: light.bedroom_bedside_lamps_group
+        action: light.turn_off
+      on_hold_action:
+      - target:
+          entity_id: light.bedroom_bedside_lamps_group
+        data:
+          brightness_step: 20
+          transition: 0.3
+        action: light.turn_on
+      off_hold_action:
+      - target:
+          entity_id: light.bedroom_bedside_lamps_group
+        data:
+          brightness_step: -20
+          transition: 0.3
+        action: light.turn_on
+      on_double_press: true
+      on_double_press_action: []
+      off_double_press: true
+      off_double_press_action: []
+      helper_double_press_delay: 255

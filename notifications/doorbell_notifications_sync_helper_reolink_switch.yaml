@@ -1,0 +1,54 @@
+- id: '1752172675006'
+  alias: Doorbell Notifications Sync (Helper <-> Reolink Switch)
+  description: ''
+  triggers:
+  - entity_id: input_boolean.doorbell_notifications
+    id: helper
+    trigger: state
+  - entity_id: switch.doorbell_push_notifications_2
+    id: switch
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: helper
+      - condition: template
+        value_template: "{{ is_state('input_boolean.doorbell_notifications', 'on')\
+          \ and\n   is_state('switch.doorbell_push_notifications_2', 'off') }}\n"
+      sequence:
+      - target:
+          entity_id: switch.doorbell_push_notifications_2
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id: helper
+      - condition: template
+        value_template: "{{ is_state('input_boolean.doorbell_notifications', 'off')\
+          \ and\n   is_state('switch.doorbell_push_notifications_2', 'on') }}\n"
+      sequence:
+      - target:
+          entity_id: switch.doorbell_push_notifications_2
+        action: switch.turn_off
+    - conditions:
+      - condition: trigger
+        id: switch
+      - condition: template
+        value_template: "{{ is_state('switch.doorbell_push_notifications_2', 'on')\
+          \ and\n   is_state('input_boolean.doorbell_notifications', 'off') }}\n"
+      sequence:
+      - target:
+          entity_id: input_boolean.doorbell_notifications
+        action: input_boolean.turn_on
+    - conditions:
+      - condition: trigger
+        id: switch
+      - condition: template
+        value_template: "{{ is_state('switch.doorbell_push_notifications_2', 'off')\
+          \ and\n   is_state('input_boolean.doorbell_notifications', 'on') }}\n"
+      sequence:
+      - target:
+          entity_id: input_boolean.doorbell_notifications
+        action: input_boolean.turn_off
+  mode: restart

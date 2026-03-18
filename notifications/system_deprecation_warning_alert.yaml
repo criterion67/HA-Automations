@@ -1,0 +1,27 @@
+- id: '1759297625936'
+  alias: System - Deprecation Warning Alert
+  description: Notifies when a deprecation warning appears in the HA logs.
+  triggers:
+  - event_type: system_log_event
+    event_data:
+      level: WARNING
+    trigger: event
+  conditions:
+  - condition: template
+    value_template: '{{ ''deprecated'' in trigger.event.data.message|lower }}
+
+      '
+  actions:
+  - data:
+      title: ⚠️ Home Assistant Deprecation
+      message: 'A deprecation warning was logged: {{ trigger.event.data.message }}
+
+        '
+    action: notify.mobile_app_pixel_9
+  - data:
+      title: Home Assistant Deprecation Warning
+      message: '{{ trigger.event.data.message }}
+
+        '
+    action: persistent_notification.create
+  mode: queued

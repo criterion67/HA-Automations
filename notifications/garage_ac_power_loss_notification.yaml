@@ -1,0 +1,21 @@
+- id: '1720565781972'
+  alias: Garage AC Power Loss Notification
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.garage_ac_plug_voltage
+    attribute: Voltage
+    to: '0'
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+  condition: []
+  action:
+  - metadata: {}
+    data:
+      message: 'Garage AC Energy monitoring smart plug has detected a power loss! '
+      title: 'Garage AC Power Loss! '
+    action: notify.mobile_app_pixel_9
+  mode: single

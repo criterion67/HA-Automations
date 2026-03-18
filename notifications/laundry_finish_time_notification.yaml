@@ -1,0 +1,12 @@
+- id: '1730303083036'
+  alias: Laundry Finish Time Notification
+  description: ''
+  triggers:
+  - value_template: '{{ now().strftime(''%H:%M'') == states(''sensor.laundry_finish_time'')[0:5]
+      }}'
+    trigger: template
+  conditions: []
+  actions:
+  - data:
+      message: Laundry is done! Please check your clothes.
+    action: notify.mobile_app_pixel_9

@@ -1,0 +1,32 @@
+- id: '1722498990756'
+  alias: Garage Door Chime
+  description: ''
+  trigger:
+  - platform: time
+    at: '23:00:00'
+    id: 'Off'
+  - platform: time
+    at: 07:00:00
+    id: 'On'
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 'Off'
+      sequence:
+      - type: turn_off
+        device_id: 6dced99d538fef72de8541e6f9e5e44d
+        entity_id: 563b14da516c8355a7819be70f781074
+        domain: switch
+    - conditions:
+      - condition: trigger
+        id:
+        - 'On'
+      sequence:
+      - type: turn_on
+        device_id: 6dced99d538fef72de8541e6f9e5e44d
+        entity_id: 563b14da516c8355a7819be70f781074
+        domain: switch
+  mode: single

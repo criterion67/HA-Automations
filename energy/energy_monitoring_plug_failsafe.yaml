@@ -1,0 +1,65 @@
+- id: '1759373223573'
+  alias: Energy Monitoring Plug Failsafe
+  description: Keeps all energy monitoring plugs ON. If any are turned off, they are
+    restored and a notification is sent.
+  triggers:
+  - event: start
+    id: ha_start
+    trigger: homeassistant
+  - id: any_off
+    value_template: "{{ expand(state_attr('switch.energy_monitoring_plugs_failsafe',\
+      \ 'entity_id'))\n   | selectattr('state', 'eq', 'off')\n   | list | count >\
+      \ 0 }}\n"
+    trigger: template
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: ha_start
+      sequence:
+      - delay: 00:00:05
+      - variables:
+          off_plugs: "{{ expand(state_attr('switch.energy_monitoring_plugs_failsafe',\
+            \ 'entity_id'))\n   | selectattr('state','eq','off')\n   | map(attribute='entity_id')\
+            \ | list }}\n"
+          friendly_names: "{{ expand(state_attr('switch.energy_monitoring_plugs_failsafe',\
+            \ 'entity_id'))\n   | selectattr('state','eq','off')\n   | map(attribute='name')\
+            \ | list }}\n"
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ off_plugs | length > 0 }}'
+          sequence:
+          - target:
+              entity_id: '{{ off_plugs }}'
+            action: switch.turn_on
+          - data:
+              title: Energy Plug Failsafe
+              message: 'Turned back on at startup: {{ friendly_names | join('', '')
+                }}
+
+                '
+            action: notify.mobile_app_pixel_9
+    default:
+    - variables:
+        off_plugs: "{{ expand(state_attr('switch.energy_monitoring_plugs_failsafe',\
+          \ 'entity_id'))\n   | selectattr('state','eq','off')\n   | map(attribute='entity_id')\
+          \ | list }}\n"
+        friendly_names: "{{ expand(state_attr('switch.energy_monitoring_plugs_failsafe',\
+          \ 'entity_id'))\n   | selectattr('state','eq','off')\n   | map(attribute='name')\
+          \ | list }}\n"
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ off_plugs | length > 0 }}'
+        sequence:
+        - target:
+            entity_id: '{{ off_plugs }}'
+          action: switch.turn_on
+        - data:
+            title: Energy Plug Failsafe
+            message: 'Turned back on: {{ friendly_names | join('', '') }}
+
+              '
+          action: notify.mobile_app_pixel_9
+  mode: restart

@@ -1,0 +1,20 @@
+- id: '1773100113548'
+  alias: Dashboard - Reset BP Reminder Dismissed
+  description: Re-show the BP reminder card at midnight (new day) and again at 7 PM
+    as an evening check-in
+  triggers:
+  - trigger: time
+    at: 00:00:00
+  - trigger: time
+    at: '19:00:00'
+  conditions:
+  - condition: template
+    value_template: '{% set last = states.sensor.pixel_9_systolic_bp.last_changed
+      %}
+
+      {{ last.date() < now().date() }}'
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.bp_reminder_dismissed
+  mode: single

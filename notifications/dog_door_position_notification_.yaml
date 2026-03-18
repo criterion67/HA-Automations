@@ -1,0 +1,39 @@
+- id: '1727834948348'
+  alias: 'Dog Door Position Notification '
+  description: When the position of the dog door changes, provide a push notification
+    for specific change.
+  trigger:
+  - type: opened
+    platform: device
+    device_id: a317c78833ecada28d98b49893fcaca1
+    entity_id: 863c62caf1dd02c6a7a8b2192d0e5c1b
+    domain: binary_sensor
+    id: Dog Door Opened
+  - type: not_opened
+    platform: device
+    device_id: a317c78833ecada28d98b49893fcaca1
+    entity_id: 863c62caf1dd02c6a7a8b2192d0e5c1b
+    domain: binary_sensor
+    id: Dog Door Closed
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Dog Door Opened
+      sequence:
+      - data:
+          message: Dog Door has been opened. {{now().strftime('%I:%M %p on %b %-d')}}
+          title: Dog Door Position
+        action: notify.mobile_app_pixel_9
+    - conditions:
+      - condition: trigger
+        id:
+        - Dog Door Closed
+      sequence:
+      - data:
+          message: Dog Door has been closed. {{now().strftime('%I:%M %p on %b %-d')}}
+          title: Dog Door Position
+        action: notify.mobile_app_pixel_9
+  mode: single

@@ -1,0 +1,14 @@
+- id: '1770834155909'
+  alias: GitHub Backup - Daily
+  description: Automatically backup Home Assistant configuration and automations to
+    GitHub daily at 3 AM
+  triggers:
+  - at: 03:00:00
+    trigger: time
+  conditions: []
+  actions:
+  - data: {}
+    action: shell_command.github_backup
+  - data: {}
+    action: shell_command.automations_backup
+  mode: single
