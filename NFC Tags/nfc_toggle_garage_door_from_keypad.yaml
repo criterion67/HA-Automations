@@ -1,0 +1,22 @@
+- id: '1692825686150'
+  alias: NFC - Toggle Garage Door from Keypad
+  description: When NFC tag is scanned, open/close garage door. Located in keypad
+    on garage door frame.
+  triggers:
+  - tag_id: b5c0f90b-f58e-4952-95bb-9a3a281fb70e
+    trigger: tag
+  conditions: []
+  actions:
+  - device_id: a235607541ed6fc61e5c8d84cdc1859c
+    domain: cover
+    entity_id: 7147eec9a271d8064c360350e440406a
+    type: open
+  - data: {}
+    action: lock.unlock
+    target:
+      entity_id: lock.laundry_room_door_lock
+  - data:
+      message: Garage notification
+      title: Garage door open/Laundry room door unlocked
+    action: notify.mobile_app_pixel_9
+  mode: single

@@ -1,0 +1,13 @@
+- id: '1706309185106'
+  alias: NFC - Bedside Lamps Toggle
+  description: 'Toggles bedside lamps on/off. Located under C-table top. '
+  triggers:
+  - tag_id: aa413690-d152-42ca-b663-8776638160c7
+    trigger: tag
+  conditions: []
+  actions:
+  - data: {}
+    action: light.toggle
+    target:
+      entity_id: light.bedroom_bedside_lamps_group
+  mode: single

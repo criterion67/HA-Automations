@@ -4,6 +4,6 @@
 
 | Automation | Description |
 |---|---|
-| Dashboard - Reset Garage Door Dismissed When Garage Closes |  |
-| Dashboard - Reset Gate Dismissed When Gate Closes |  |
-| Lock Offline: Possible Dead Battery Alert | If any lock is unavailable for 2+ hours, send a notification with Snooze 24h and Replaced options. Uses the same snooze store as the low battery alert. Replaced sets a 7-day snooze. |
+| Attic Lights: Door Controlled | Attic light is switched on and off based on the open) closed state of either interior or garage attic doors. |
+| Front Door: Locked/Unlocked - Light Control | The foyer and hall lights will turn on or off based on the front door being unlocked or locked after sunset and before sunrise. |
+| Garage Lights: Off when Door is locked | The garage lights will turn off when the laundry room door lock is locked. |

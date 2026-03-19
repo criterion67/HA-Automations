@@ -1,0 +1,53 @@
+- id: '1773775580443'
+  alias: Zigbee Keypad - Lock/Unlock Front Door
+  description: Home button + PIN unlocks front door. Away button + PIN locks front
+    door. Wrong PIN sends rejection beep.
+  triggers:
+  - platform: mqtt
+    topic: zigbee2mqtt/Zigbee Keypad
+    value_template: '{{ value_json.action is defined and value_json.action_code is
+      defined }}'
+  conditions: []
+  actions:
+  - variables:
+      action: '{{ trigger.payload_json.action | default('''') }}'
+      code: '{{ trigger.payload_json.action_code | default('''') | string }}'
+      transaction: '{{ trigger.payload_json.action_transaction | default(0) | int(0)
+        }}'
+      valid_pin: '{{ states(''input_text.keypad_pin_code'') | string }}'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ code != valid_pin }}'
+      sequence:
+      - action: mqtt.publish
+        data:
+          topic: zigbee2mqtt/Zigbee Keypad/set
+          payload: '{{ {''arm_mode'': {''transaction'': transaction, ''mode'': ''invalid_code''}}
+            | tojson }}'
+    - conditions:
+      - condition: template
+        value_template: '{{ code == valid_pin and action == ''arm_day_zones'' }}'
+      sequence:
+      - action: mqtt.publish
+        data:
+          topic: zigbee2mqtt/Zigbee Keypad/set
+          payload: '{{ {''arm_mode'': {''transaction'': transaction, ''mode'': ''arm_day_zones''}}
+            | tojson }}'
+      - action: lock.unlock
+        target:
+          entity_id: lock.front_door_lock
+    - conditions:
+      - condition: template
+        value_template: '{{ code == valid_pin and action == ''arm_all_zones'' }}'
+      sequence:
+      - action: mqtt.publish
+        data:
+          topic: zigbee2mqtt/Zigbee Keypad/set
+          payload: '{{ {''arm_mode'': {''transaction'': transaction, ''mode'': ''arm_all_zones''}}
+            | tojson }}'
+      - action: lock.lock
+        target:
+          entity_id: lock.front_door_lock
+  mode: queued
+  max: 5

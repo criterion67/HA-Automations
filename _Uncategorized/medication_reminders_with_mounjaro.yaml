@@ -1,0 +1,88 @@
+- id: '1772668684102'
+  alias: Medication Reminders with Mounjaro
+  description: Provides audible reminders and visual alerts for taking medications
+    at designated times and days. Uses parallel actions for efficiency and restores
+    TV lights to their original state after reminders.
+  triggers:
+  - at: 07:00:00
+    id: morning_1
+    platform: time
+  - at: 08:00:00
+    id: morning_2
+    platform: time
+  - at: 09:00:00
+    id: mounjaro_reminder
+    platform: time
+  - at: '19:00:00'
+    id: evening_1
+    platform: time
+  - at: '20:00:00'
+    id: evening_2
+    enabled: false
+    platform: time
+  conditions:
+  - condition: or
+    conditions:
+    - condition: not
+      conditions:
+      - condition: trigger
+        id: mounjaro_reminder
+    - condition: and
+      conditions:
+      - condition: trigger
+        id: mounjaro_reminder
+      - condition: time
+        weekday: sun
+  actions:
+  - variables:
+      tv_lights_were_on: '{{ is_state(''light.tv_lights'', ''on'') }}'
+  - parallel:
+    - target:
+        entity_id: media_player.bedroom_group
+      data:
+        media_content_id: media-source://tts/tts.home_assistant_cloud?message= {%
+          if trigger.id == 'morning_1' %}Time+for+first+morning+medication+{% elif
+          trigger.id == 'morning_2' %}Time+for+second+morning+medications+{% elif
+          trigger.id == 'evening_1' %}Time+for+evening+medications+{% elif trigger.id
+          == 'evening_2' %}Time+for+second+evening+medications+{% elif trigger.id
+          == 'mounjaro_reminder' %}Time+for+Mounjaro+weekly+injection+{% endif %}
+          &language=en-US&voice=AndrewNeural
+        media_content_type: provider
+      action: media_player.play_media
+    - if:
+      - condition: template
+        value_template: '{{ not tv_lights_were_on }}'
+      then:
+      - target:
+          entity_id: light.tv_lights
+        data: {}
+        action: light.turn_on
+  - delay: 00:00:02
+  - target:
+      entity_id: scene.medication_rainbow_effect
+    action: scene.turn_on
+    data: {}
+  - delay: 00:00:20
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ not tv_lights_were_on }}'
+      sequence:
+      - target:
+          entity_id: light.tv_lights
+        action: light.turn_off
+        data: {}
+    - conditions:
+      - condition: template
+        value_template: '{{ tv_lights_were_on }}'
+      sequence:
+      - data:
+          lights:
+          - light.tv_lights
+          adapt_color: true
+          adapt_brightness: true
+          turn_on_lights: true
+          prefer_rgb_color: true
+          transition: '45'
+        action: adaptive_lighting.apply
+  mode: single

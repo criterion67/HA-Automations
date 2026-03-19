@@ -1,0 +1,85 @@
+- id: '1761861452794'
+  alias: 'Lutron Aurora: Living Room Floor Lamps v2.5 (Performance Edition)'
+  description: Ultra-responsive control with true off, daylight toggle, and stabilized
+    dimming.
+  triggers:
+  - topic: zigbee2mqtt/Lutron Aurora
+    value_template: '{{ value_json.action | default('''') }}'
+    trigger: mqtt
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.payload_json.action in ['off','brightness_stop']\n\
+          \   or (trigger.payload_json.action_level is defined and trigger.payload_json.action_level\
+          \ | int == 0) }}\n"
+      sequence:
+      - target:
+          entity_id: light.living_room_floor_lamps
+        data:
+          brightness_pct: 1
+          transition: 0.3
+        action: light.turn_on
+      - delay: '00:00:00.5'
+      - target:
+          entity_id: light.living_room_floor_lamps
+        action: light.turn_off
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.payload_json.action == 'brightness_move_to_level'\n\
+          \   and trigger.payload_json.action_level | int == 255\n   and (state_attr('light.living_room_floor_lamps','brightness')\
+          \ | int(0)) < 254 }}\n"
+      sequence:
+      - variables:
+          current_temp: '{{ state_attr(''light.living_room_floor_lamps'',''color_temp_kelvin'')|int(0)
+            }}'
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ current_temp < 4000 }}'
+          sequence:
+          - target:
+              entity_id: light.living_room_floor_lamps
+            data:
+              brightness_pct: 100
+              color_temp_kelvin: '{{ daylight_kelvin }}'
+              transition: '{{ quick_fade }}'
+            action: light.turn_on
+        - conditions:
+          - condition: template
+            value_template: '{{ current_temp >= 4000 }}'
+          sequence:
+          - target:
+              entity_id: light.living_room_floor_lamps
+            data:
+              brightness_pct: 70
+              color_temp_kelvin: '{{ warm_kelvin }}'
+              transition: '{{ quick_fade }}'
+            action: light.turn_on
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.payload_json.action == 'brightness_move_to_level'\n\
+          \   and trigger.payload_json.action_level is defined\n   and trigger.payload_json.action_level\
+          \ | int > 1 }}\n"
+      sequence:
+      - variables:
+          raw_level: '{{ trigger.payload_json.action_level | int }}'
+          scaled_level: '{% set pct = (raw_level / 255 * 100) | round(0) %} {% if
+            pct < min_brightness %}{{ min_brightness }} {% elif pct > max_brightness
+            %}{{ max_brightness }} {% else %}{{ pct }}{% endif %}
+
+            '
+      - target:
+          entity_id: light.living_room_floor_lamps
+        data:
+          brightness_pct: '{{ scaled_level }}'
+          transition: '{{ dim_transition }}'
+        action: light.turn_on
+  mode: restart
+  variables:
+    min_brightness: 5
+    max_brightness: 100
+    daylight_kelvin: 6500
+    warm_kelvin: 2700
+    quick_fade: 0.3
+    dim_transition: 0.15

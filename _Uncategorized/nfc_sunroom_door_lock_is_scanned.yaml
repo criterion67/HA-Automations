@@ -1,0 +1,28 @@
+- id: '1757535632301'
+  alias: NFC - Sunroom Door Lock is scanned
+  description: ''
+  triggers:
+  - trigger: tag
+    tag_id: 6937711c-28d9-44e2-8ce0-f8e5df120d78
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: lock.sunroom_door_lock
+        state: locked
+      sequence:
+      - data: {}
+        action: lock.unlock
+        target:
+          entity_id: lock.sunroom_door_lock
+    - conditions:
+      - condition: state
+        entity_id: lock.sunroom_door_lock
+        state: unlocked
+      sequence:
+      - data: {}
+        action: lock.lock
+        target:
+          entity_id: lock.sunroom_door_lock
+  mode: single

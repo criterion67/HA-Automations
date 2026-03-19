@@ -1,0 +1,16 @@
+- id: '1743275776382'
+  alias: New consumable added to to-do list
+  description: ''
+  triggers:
+  - entity_id: todo.consumables
+    trigger: state
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.to_state.attributes.items|length > trigger.from_state.attributes.items|length
+      }}'
+  actions:
+  - data:
+      title: Consumable Added
+      message: 'New item added to consumables: {{ trigger.to_state.attributes.items[-1]
+        }}'
+    action: notify.mobile_app_pixel_9

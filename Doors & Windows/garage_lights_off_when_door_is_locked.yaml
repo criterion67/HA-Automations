@@ -1,0 +1,20 @@
+- id: '1697312060941'
+  alias: 'Garage Lights: Off when Door is locked'
+  description: The garage lights will turn off when the laundry room door lock is
+    locked.
+  triggers:
+  - entity_id:
+    - lock.laundry_room_door_lock
+    from: unlocked
+    to: locked
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: switch.garage_lights
+    state: 'on'
+  actions:
+  - data: {}
+    target:
+      entity_id: switch.garage_lights
+    action: switch.turn_off
+  mode: single

@@ -1,0 +1,28 @@
+- id: '1757535172624'
+  alias: NFC - Front Door Lock is scanned
+  description: ''
+  triggers:
+  - trigger: tag
+    tag_id: eff1012d-ee57-4eec-838c-9edcd248eb05
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: lock.front_door_lock
+        state: locked
+      sequence:
+      - data: {}
+        action: lock.unlock
+        target:
+          entity_id: lock.front_door_lock
+    - conditions:
+      - condition: state
+        entity_id: lock.front_door_lock
+        state: unlocked
+      sequence:
+      - data: {}
+        action: lock.lock
+        target:
+          entity_id: lock.front_door_lock
+  mode: single

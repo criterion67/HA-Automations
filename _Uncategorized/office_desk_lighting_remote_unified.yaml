@@ -1,0 +1,224 @@
+- id: '1745982816417'
+  alias: Office- Desk Lighting Remote (Unified)
+  description: Unified automation to handle both remote control and wall switch control.
+  triggers:
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: 'on'
+      cluster_id: 6
+      endpoint_id: 1
+    id: press-on-zha
+  - trigger: mqtt
+    topic: zigbee2mqtt//action
+    payload: 'on'
+    id: press-on-z2m
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: 'off'
+      cluster_id: 6
+      endpoint_id: 1
+    id: press-off-zha
+  - trigger: mqtt
+    topic: zigbee2mqtt//action
+    payload: 'off'
+    id: press-off-z2m
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: move_with_on_off
+      cluster_id: 8
+      endpoint_id: 1
+      args:
+      - 0
+      - 83
+    id: hold-on-zha
+  - trigger: mqtt
+    topic: zigbee2mqtt//action
+    payload: brightness_move_up
+    id: hold-on-z2m
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      command: move
+      cluster_id: 8
+      endpoint_id: 1
+      args:
+      - 1
+      - 83
+      - 0
+      - 0
+    id: hold-off-zha
+  - trigger: mqtt
+    topic: zigbee2mqtt//action
+    payload: brightness_move_down
+    id: hold-off-z2m
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_id: 5d3ae8e2e2566334bef57eebaaea1280
+      endpoint_id: 1
+      cluster_id: 8
+      command: stop_with_on_off
+    id: release-zha
+  - trigger: mqtt
+    topic: zigbee2mqtt//action
+    payload: brightness_stop
+    id: release-z2m
+  - trigger: state
+    entity_id: switch.office_lamps
+    to: 'on'
+    id: switch-on
+  - trigger: state
+    entity_id: switch.office_lamps
+    to: 'off'
+    id: switch-off
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: switch-on
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.office_lamps
+    - conditions:
+      - condition: trigger
+        id: switch-off
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.office_lamps
+    - conditions:
+      - condition: trigger
+        id:
+        - press-on-zha
+        - press-on-z2m
+      sequence:
+      - wait_for_trigger:
+        - trigger: event
+          event_type: zha_event
+          event_data:
+            device_id: 5d3ae8e2e2566334bef57eebaaea1280
+            command: 'on'
+            cluster_id: 6
+            endpoint_id: 1
+        - trigger: mqtt
+          topic: zigbee2mqtt//action
+          payload: 'on'
+        timeout:
+          milliseconds: 250
+        continue_on_timeout: true
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is not none }}'
+          sequence:
+          - action: switch.toggle
+            target:
+              entity_id: switch.desk_lamp_mini
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is none }}'
+          sequence:
+          - action: light.toggle
+            target:
+              entity_id: light.office_lamps
+    - conditions:
+      - condition: trigger
+        id:
+        - press-off-zha
+        - press-off-z2m
+      sequence:
+      - wait_for_trigger:
+        - trigger: event
+          event_type: zha_event
+          event_data:
+            device_id: 5d3ae8e2e2566334bef57eebaaea1280
+            command: 'off'
+            cluster_id: 6
+            endpoint_id: 1
+        - trigger: mqtt
+          topic: zigbee2mqtt//action
+          payload: 'off'
+        timeout:
+          milliseconds: 250
+        continue_on_timeout: true
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is not none }}'
+          sequence:
+          - action: input_boolean.toggle
+            target:
+              entity_id: input_boolean.office_ceiling_presence_enabled
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is none }}'
+          sequence:
+          - action: switch.toggle
+            target:
+              entity_id: switch.office_ceiling_light
+    - conditions:
+      - condition: trigger
+        id:
+        - hold-on-zha
+        - hold-on-z2m
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - wait_for_trigger:
+            - trigger: event
+              event_type: zha_event
+              event_data:
+                device_id: 5d3ae8e2e2566334bef57eebaaea1280
+                command: stop_with_on_off
+                cluster_id: 8
+                endpoint_id: 1
+            - trigger: mqtt
+              topic: zigbee2mqtt//action
+              payload: brightness_stop
+            timeout:
+              milliseconds: 250
+            continue_on_timeout: true
+          - if:
+            - condition: template
+              value_template: '{{ wait.trigger is not none }}'
+            then:
+            - stop: button released
+    - conditions:
+      - condition: trigger
+        id:
+        - hold-off-zha
+        - hold-off-z2m
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - wait_for_trigger:
+            - trigger: event
+              event_type: zha_event
+              event_data:
+                device_id: 5d3ae8e2e2566334bef57eebaaea1280
+                command: stop_with_on_off
+                cluster_id: 8
+                endpoint_id: 1
+            - trigger: mqtt
+              topic: zigbee2mqtt//action
+              payload: brightness_stop
+            timeout:
+              milliseconds: 250
+            continue_on_timeout: true
+          - if:
+            - condition: template
+              value_template: '{{ wait.trigger is not none }}'
+            then:
+            - stop: button released
+  mode: restart

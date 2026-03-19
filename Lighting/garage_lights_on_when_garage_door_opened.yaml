@@ -1,0 +1,28 @@
+- id: '1703350668667'
+  alias: Garage Lights on when Garage door opened
+  description: Garage lights will turn on when garage door is opened between sunset
+    and sunrise for 10 minutes and then turn off. Automation will not run again for
+    1 hour after lights are turned off.
+  triggers:
+  - entity_id: binary_sensor.garage_door_position
+    from: 'off'
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: sun
+    after: sunset
+    before: sunrise
+  actions:
+  - type: turn_on
+    device_id: f8945c1e725c6f410df8f5fae24cdaca
+    entity_id: 13270152e75dd8c361d8071479b02484
+    domain: switch
+  - delay:
+      minutes: 10
+  - type: turn_off
+    device_id: f8945c1e725c6f410df8f5fae24cdaca
+    entity_id: 13270152e75dd8c361d8071479b02484
+    domain: switch
+  - delay:
+      hours: 1
+  mode: single

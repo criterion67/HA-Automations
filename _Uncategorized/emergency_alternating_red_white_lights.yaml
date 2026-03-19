@@ -1,0 +1,35 @@
+- id: '1753627401589'
+  alias: Emergency - Alternating Red/White Lights
+  description: This automation triggers the lights to flash alternately between red
+    and white for 2 minutes as an emergency alert, followed by a steady white light.
+    It involves 6 steps, alternating colors every 10 seconds.
+  triggers:
+  - entity_id:
+    - light.all_smart_bulbs
+    to: 'on'
+    trigger: state
+  actions:
+  - repeat:
+      count: 6
+      sequence:
+      - target:
+          entity_id: light.all_smart_bulbs
+        data:
+          color_name: red
+          brightness_pct: 100
+        action: light.turn_on
+      - delay: 00:00:10
+      - target:
+          entity_id: light.all_smart_bulbs
+        data:
+          color_name: white
+          brightness_pct: 100
+        action: light.turn_on
+      - delay: 00:00:10
+  - target:
+      entity_id: light.all_smart_bulbs
+    data:
+      color_name: white
+      brightness_pct: 100
+    action: light.turn_on
+  mode: single

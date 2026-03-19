@@ -1,0 +1,77 @@
+- id: '1726420403753'
+  alias: Dog Water Bowl Monitor & Reminder
+  description: Monitors dog water bowl level, sends alerts when empty, and notifies
+    when refilled. Active daily between 7 AM and 10 PM.
+  triggers:
+  - type: not_moist
+    device_id: 39b399dd66495f54ab741ba89cf05558
+    entity_id: 9a7db4dc47e1112cfba4e9c3186fe953
+    domain: binary_sensor
+    id: Empty
+    trigger: device
+  - type: moist
+    device_id: 39b399dd66495f54ab741ba89cf05558
+    entity_id: 9a7db4dc47e1112cfba4e9c3186fe953
+    domain: binary_sensor
+    id: Full
+    trigger: device
+  conditions:
+  - condition: time
+    after: 07:00:00
+    before: '22:00:00'
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Empty
+      - condition: state
+        entity_id: input_boolean.dog_bowl_notification
+        state: 'off'
+      sequence:
+      - target:
+          entity_id: input_boolean.dog_bowl_notification
+        action: input_boolean.turn_on
+      - data:
+          title: Dog's Water Bowl Alert!
+          message: Dog's water bowl is empty. Please refill as soon as possible.
+        action: notify.mobile_app_pixel_9
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+dogs+water+bowl+is+empty.+Please+refill+as+soon+as+possible.&language=en-US&voice=AndrewNeural
+          media_content_type: provider
+        metadata:
+          title: The dog's water bowl is empty. Please refill as soon as possible.
+          thumbnail: https://brands.home-assistant.io/_/tts/logo.png
+        action: media_player.play_media
+      - delay:
+          minutes: 15
+    - conditions:
+      - condition: trigger
+        id: Full
+      sequence:
+      - target:
+          entity_id: input_boolean.dog_bowl_notification
+        action: input_boolean.turn_off
+      - data:
+          title: Dog's Water Bowl Alert!
+          message: Dog's water bowl has been refilled.
+        action: notify.mobile_app_pixel_9
+      - target:
+          entity_id: media_player.googlehome4496
+        data:
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+dogs+water+bowl+has+been+refilled.&language=en-US&voice=AndrewNeural
+          media_content_type: provider
+        metadata:
+          title: The dog's water bowl has been refilled.
+          thumbnail: https://brands.home-assistant.io/_/tts/logo.png
+        action: media_player.play_media
+  mode: single
