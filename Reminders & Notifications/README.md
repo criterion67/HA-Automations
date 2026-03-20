@@ -1,6 +1,6 @@
 # Reminders & Notifications
 
-45 automation(s) in this category.
+51 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -19,10 +19,13 @@
 | Dishwasher Cycle Timer and Pod Tracker | Monitors dishwasher cycles, sends notifications, manages pod usage, and stores start time for cycle countdown. |
 | Dishwasher Pods Low Notification |  |
 | Dog Door Position Notification  | When the position of the dog door changes, provide a push notification for specific change. |
+| Ecovacs Mower: Battery Charge Alert | Notify when mower recharges to 80%+ after being used (battery < 50%) and when battery drops to 17%. This automation triggers notifications and audio alerts  to inform you of both low battery (17%) and successful charging (80%) events. |
+| Ego Battery Notification Actions (Combined) | Handles app notification actions for both plugs with a 3-snooze limit. |
 | Entity Unavailable Notification (Immediate) |  |
 | Garage AC Power Loss Notification |  |
 | Garbage/Recycling Pickup AI Notification | Detects when green garbage can or blue recycling bin have been emptied by city trucks on Thursday mornings. |
 | Health - Blood Pressure Morning Reminder | Send reminder notification between 7 AM and 10 AM if blood pressure hasn't been logged today |
+| HVAC UV Bulb Monitor | Notify if the HVAC UV purifier draws <5W for 24h; allow Snooze or Dismiss from the notification. |
 | Kitchen Fridge Alerts: Low Battery | Monitors battery level on both the refrigerator temp sensor (sensor.battery_sensor_main_fridge) and the freezer Inkbird sensor (sensor.inkbird_temperature_sensor_battery). Fires when either drops below 10%.
 
 The 10% threshold is intentional: these sensors run on small batteries and can drop quickly once they pass 20%. A dead sensor means temperature monitoring is completely blind. Alerting at 10% gives enough lead time to replace batteries before the sensor drops offline.
@@ -45,6 +48,7 @@ Thresholds based on 7-day historical data and FDA food safety guidelines:
 All alerts send high-priority push to notify.mobile_app_pixel_9 with current temperature included in the message. |
 | Laundry Finish Time Notification |  |
 | Levoit Air Purifier Filter Below 10% Notification | Sends a daily notification when the Levoit filter life drops below 10%, with snooze and dismiss actions. |
+| Lock Batteries: Alert below 15% with Snooze and Dismiss |  |
 | Lock Offline: Possible Dead Battery Alert | If any lock is unavailable for 2+ hours, send a notification with Snooze 24h and Replaced options. Uses the same snooze store as the low battery alert. Replaced sets a 7-day snooze. |
 | Mailbox delivery notification, 5 p.m. reminder & reset | Notifies when mail is delivered (only on first open of the day), resets the notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM only if the mailbox hasn't been opened a second time, and allows a manual reset using a dashboard button. Adds actionable notification buttons to reset or dismiss on Scott's phone only. |
 | Master Critical System Updates Notification |  |
@@ -56,6 +60,7 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | Network Cabinet Fan Smart Control | Controls the network cabinet fan based on temperature and office presence. Turns on at 85°F or higher, off 5 min after temp drops below 85°F. Disables fan while office is occupied. Honors override via input_boolean.network_cabinet_fan_automation_enabled. |
 | New consumable added to to-do list |  |
 | NFC - HVAC Filter Change Reminder |  |
+| Parcel box delivery notification | Plays chime and TTS when a package is delivered to the parcel box. Prevents repeat alerts using a dashboard indicator boolean. Allows manual reset and auto-reset at 6:00 AM. Adds actionable notification buttons to reset or dismiss on Scott's phone only. |
 | Plant Watering Reminder by Moisture Percentage | Notify when a plant drops below its moisture threshold, with Watered action and specific plant name. 24-hour cooldown to prevent duplicate notifications. |
 | Possible Mail Delivery AI Notification | Detects possible USPS mail delivery from driveway camera. DISABLED - replaced by Doorbell - Delivery Vehicle AI Notification. |
 | Rear Gate: Open Notification | Contact sensor to monitor whether rear yard gate is open or closed. |
@@ -63,6 +68,7 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | Toothbrush: Battery State Notification | Monitors the battery level for the Oral-B toothbrush and sends a notification when a recharge is necessary and also sends a follow-up notification once it has been recharged. |
 | Trash Day Reminder & Reset |  |
 | Update Forecast Low Temp Today | Calls weather.get_forecasts daily and on startup to store today's forecast low in input_number.forecast_low_temp_today for use in dashboard visibility conditions. |
+| V2: Doorbell - Button Pressed Notification Chime | Doorbell button pressed - streams cameras to TVs, plays chime and TTS announcement on Dining Room Speaker. |
 | Watch charging notifications |  |
 | Zigbee Keypad - Lock/Unlock Front Door | Home button + PIN unlocks front door. Away button + PIN locks front door. Wrong PIN sends rejection beep. |
 | Zone 2 Media Announcement Sample | Announces that the robot vacuum has completed cleaning and is returning to the dock. |
