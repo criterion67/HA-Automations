@@ -1,9 +1,7 @@
-- id: '1727476887134'
+- id: '1758650148017'
   alias: Office- Ceiling Light Presence Control V2
-  description: 'Turns ceiling light on with presence, turns it off after 5 min of
-    no presence, and resets manual override.
-
-    '
+  description: Turns ceiling light on with presence, turns it off after 5 min of no
+    presence, and resets manual override.
   triggers:
   - trigger: state
     entity_id: binary_sensor.office_presence_radar_target
@@ -27,12 +25,6 @@
       - action: switch.turn_on
         target:
           entity_id: switch.office_ceiling_light
-      - action: logbook.log
-        data:
-          name: Presence Control Debug
-          message: Office ceiling light forced ON, presence detected and presence
-            control enabled.
-          entity_id: switch.office_ceiling_light
     - conditions:
       - condition: trigger
         id: cleared
@@ -45,18 +37,7 @@
         - action: switch.turn_off
           target:
             entity_id: switch.office_ceiling_light
-        - action: logbook.log
-          data:
-            name: Presence Control Debug
-            message: Office ceiling light forced OFF, no presence for 5 min.
-            entity_id: switch.office_ceiling_light
       - action: input_boolean.turn_on
         target:
-          entity_id: input_boolean.office_ceiling_presence_enabled
-      - action: logbook.log
-        data:
-          name: Presence Control Debug
-          message: Office ceiling presence control reset enabled after 5 min of no
-            presence.
           entity_id: input_boolean.office_ceiling_presence_enabled
   mode: single
