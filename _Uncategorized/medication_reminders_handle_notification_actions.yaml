@@ -1,0 +1,197 @@
+- id: '1774223718313'
+  alias: Medication Reminders - Handle Notification Actions
+  description: 'Handles taps on medication reminder notifications. Taken: dismisses
+    the notification silently by clearing the tag. Snooze: turns on the corresponding
+    snooze input_boolean which triggers the main reminder automation to wait 30 minutes
+    and re-send.'
+  triggers:
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_TAKEN_7AM
+    id: taken_7am
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_SNOOZE_7AM
+    id: snooze_7am
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_TAKEN_8AM
+    id: taken_8am
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_SNOOZE_8AM
+    id: snooze_8am
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_TAKEN_10AM
+    id: taken_10am
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_SNOOZE_10AM
+    id: snooze_10am
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_TAKEN_5PM
+    id: taken_5pm
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_SNOOZE_5PM
+    id: snooze_5pm
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_TAKEN_7PM
+    id: taken_7pm
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_SNOOZE_7PM
+    id: snooze_7pm
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_TAKEN_BEDTIME
+    id: taken_bedtime
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: MED_SNOOZE_BEDTIME
+    id: snooze_bedtime
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: taken_7am
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_7am
+    - conditions:
+      - condition: trigger
+        id: snooze_7am
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_7am
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.med_reminder_7am_snoozed
+    - conditions:
+      - condition: trigger
+        id: taken_8am
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_8am
+    - conditions:
+      - condition: trigger
+        id: snooze_8am
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_8am
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.med_reminder_8am_snoozed
+    - conditions:
+      - condition: trigger
+        id: taken_10am
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_10am
+    - conditions:
+      - condition: trigger
+        id: snooze_10am
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_10am
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.med_reminder_10am_snoozed
+    - conditions:
+      - condition: trigger
+        id: taken_5pm
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_5pm
+    - conditions:
+      - condition: trigger
+        id: snooze_5pm
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_5pm
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.med_reminder_5pm_snoozed
+    - conditions:
+      - condition: trigger
+        id: taken_7pm
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_7pm
+    - conditions:
+      - condition: trigger
+        id: snooze_7pm
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_7pm
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.med_reminder_7pm_snoozed
+    - conditions:
+      - condition: trigger
+        id: taken_bedtime
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_bedtime
+    - conditions:
+      - condition: trigger
+        id: snooze_bedtime
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: clear_notification
+          data:
+            tag: med_reminder_bedtime
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.med_reminder_bedtime_snoozed
+  mode: parallel
+  max: 10
