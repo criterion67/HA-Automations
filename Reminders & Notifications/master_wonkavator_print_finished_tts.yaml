@@ -32,12 +32,12 @@
       - condition: not
         conditions:
         - condition: state
-          entity_id: media_player.bedroom_group_3
+          entity_id: media_player.bedroom_group_2
           state: unavailable
       sequence:
       - action: media_player.play_media
         target:
-          entity_id: media_player.bedroom_group_3
+          entity_id: media_player.bedroom_group_2
         data:
           media:
             media_content_id: "{{\n  \"media-source://tts/tts.home_assistant_cloud?message=Wonkavator\
@@ -50,7 +50,7 @@
               media_class: app
     - conditions:
       - condition: state
-        entity_id: media_player.bedroom_group_3
+        entity_id: media_player.bedroom_group_2
         state: unavailable
       sequence:
       - action: notify.mobile_app_pixel_9

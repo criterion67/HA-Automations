@@ -63,7 +63,7 @@
               seconds: 2
           - action: media_player.play_media
             target:
-              entity_id: media_player.bedroom_group_3
+              entity_id: media_player.bedroom_group_2
             data:
               media:
                 media_content_id: media-source://tts/tts.home_assistant_cloud?message={{
@@ -103,7 +103,7 @@
           seconds: 2
       - action: media_player.play_media
         target:
-          entity_id: media_player.bedroom_group_3
+          entity_id: media_player.bedroom_group_2
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message={{

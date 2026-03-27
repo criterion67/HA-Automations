@@ -1,33 +1,31 @@
 - id: '1752868210354'
   alias: Parcel box delivery notification
-  description: 'Plays chime and TTS when a package is delivered to the parcel box.
+  description: Plays chime and TTS when a package is delivered to the parcel box.
     Prevents repeat alerts using a dashboard indicator boolean. Allows manual reset
     and auto-reset at 6:00 AM. Adds actionable notification buttons to reset or dismiss
-    on Scott''s phone only.
-
-    '
+    on Scott's phone only.
   triggers:
   - id: parcel_box_open
     entity_id: binary_sensor.parcel_box_contact
     to: 'on'
-    trigger: state
+    platform: state
   - id: manual_reset
     entity_id: input_boolean.parcel_box_manual_reset
     to: 'on'
-    trigger: state
+    platform: state
   - id: daily_reset
     at: 06:00:00
-    trigger: time
+    platform: time
   - id: mobile_reset
     event_type: mobile_app_notification_action
     event_data:
       action: PARCEL_RESET
-    trigger: event
+    platform: event
   - id: mobile_dismiss
     event_type: mobile_app_notification_action
     event_data:
       action: PARCEL_DISMISS
-    trigger: event
+    platform: event
   conditions: []
   actions:
   - choose:
@@ -39,14 +37,14 @@
         state: 'off'
       sequence:
       - target:
-          entity_id: media_player.zone_2_2
+          entity_id: media_player.zone_2
         data:
           volume_level: 0.7
         action: media_player.volume_set
       - delay:
           seconds: 4
       - target:
-          entity_id: media_player.zone_2_2
+          entity_id: media_player.zone_2
         data:
           media:
             media_content_id: media-source://media_source/local/Nbc Chimes Fast.mp3
@@ -56,7 +54,7 @@
       - delay:
           seconds: 5
       - target:
-          entity_id: media_player.zone_2_2
+          entity_id: media_player.zone_2
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=AndrewNeural

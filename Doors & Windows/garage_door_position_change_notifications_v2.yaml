@@ -62,7 +62,7 @@
         enabled: false
       - target:
           entity_id:
-          - media_player.bedroom_group_3
+          - media_player.bedroom_group_2
         data:
           media:
             media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=AndrewNeural
@@ -102,7 +102,7 @@
         action: light.turn_off
       - target:
           entity_id:
-          - media_player.bedroom_group
+          - media_player.bedroom_group_2
         data:
           media:
             media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=AndrewNeural
