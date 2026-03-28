@@ -68,7 +68,7 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | Toothbrush: Battery State Notification | Monitors the battery level for the Oral-B toothbrush and sends a notification when a recharge is necessary and also sends a follow-up notification once it has been recharged. |
 | Trash Day Reminder & Reset |  |
 | Update Forecast Low Temp Today | Calls weather.get_forecasts daily and on startup to store today's forecast low in input_number.forecast_low_temp_today for use in dashboard visibility conditions. |
-| V2: Doorbell - Button Pressed Notification Chime | Doorbell button pressed - streams cameras to TVs, plays chime and TTS announcement on Dining Room Speaker. |
+| V2: Doorbell - Button Pressed Notification Chime | G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime and TTS announcement on Dining Room Speaker. |
 | Watch charging notifications |  |
 | Zigbee Keypad - Lock/Unlock Front Door | Home button + PIN unlocks front door. Away button + PIN locks front door. Wrong PIN sends rejection beep. |
 | Zone 2 Media Announcement Sample | Announces that the robot vacuum has completed cleaning and is returning to the dock. |

@@ -1,13 +1,13 @@
 - id: '1762182206207'
   alias: Doorbell Person or Visitor - Tablet Camera View v2.0
-  description: When a person is detected or someone presses the doorbell, wake all
-    tablets, show the doorbell camera in full screen for 30 seconds, then return to
-    the main dashboard.
+  description: When a person is detected or someone presses the G6 Pro Doorbell, wake
+    all tablets, show the doorbell camera in full screen for 30 seconds, then return
+    to the main dashboard.
   triggers:
-  - entity_id: binary_sensor.doorbell_person_2
+  - entity_id: binary_sensor.g6_pro_doorbell_person_detected
     to: 'on'
     trigger: state
-  - entity_id: binary_sensor.doorbell_visitor_2
+  - entity_id: binary_sensor.g6_pro_doorbell_doorbell
     to: 'on'
     trigger: state
   actions:

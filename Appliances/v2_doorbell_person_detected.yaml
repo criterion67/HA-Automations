@@ -1,9 +1,10 @@
 - id: '1746302122163'
   alias: V2- Doorbell - Person Detected
-  description: ''
+  description: G6 Pro Doorbell person detection triggers cooldown, bedroom alert light,
+    notification, and camera stream to bedroom TV.
   triggers:
   - entity_id:
-    - binary_sensor.doorbell_person_2
+    - binary_sensor.g6_pro_doorbell_person_detected
     from: 'off'
     to: 'on'
     trigger: state
@@ -49,6 +50,6 @@
       format: hls
     target:
       entity_id:
-      - camera.doorbell_fluent_2
+      - camera.g6_pro_entry_high_resolution_channel
     action: camera.play_stream
   mode: single

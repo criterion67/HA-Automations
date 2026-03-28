@@ -1,10 +1,10 @@
 - id: '1773096059524'
   alias: Doorbell - Delivery Vehicle AI Notification
   description: When a vehicle is detected by the Driveway 2 camera, OR when the mailbox
-    or parcel box sensors trip, captures snapshots from both Driveway 2 and the doorbell,
-    sends both to LLM Vision to identify delivery carriers (USPS, FedEx, UPS, Amazon)
-    and whether a package is being left. Suppresses notification if no delivery is
-    detected.
+    or parcel box sensors trip, captures snapshots from both Driveway 2 and the G6
+    Pro Doorbell, sends both to LLM Vision to identify delivery carriers (USPS, FedEx,
+    UPS, Amazon) and whether a package is being left. Suppresses notification if no
+    delivery is detected.
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     to: 'on'
@@ -26,7 +26,7 @@
       filename: /config/www/snapshots/delivery_driveway.png
   - action: camera.snapshot
     target:
-      entity_id: camera.doorbell_clear_2
+      entity_id: camera.g6_pro_entry_high_resolution_channel
     data:
       filename: /config/www/snapshots/delivery_doorbell.png
   - delay:
@@ -37,7 +37,7 @@
       provider: 01JBPN7YR0C9Y9CGVMJ8TCQEZ5
       image_entity:
       - camera.driveway_2_high_resolution_channel
-      - camera.doorbell_clear_2
+      - camera.g6_pro_entry_high_resolution_channel
       message: 'You are seeing two camera views of the same property. The first image
         is a wide driveway and street view. The second image is the front porch close-up.
         Is there a delivery vehicle or driver from USPS, FedEx, UPS, or Amazon visible
