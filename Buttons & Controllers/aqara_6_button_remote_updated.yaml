@@ -2,6 +2,8 @@
   alias: Aqara 6-button remote (updated)
   description: This automation configures actions for the Aqara 6-button remote. Camera
     streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast).
+    G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution
+    portrait stream (3024x4096) is not rendered correctly by Chromecast.
   triggers:
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
@@ -188,7 +190,7 @@
         id: 5th pressed 1x
       sequence:
       - target:
-          entity_id: camera.g6_pro_entry_high_resolution_channel
+          entity_id: camera.g6_pro_doorbell_medium_resolution_channel
         data:
           media_player: media_player.bedroom_tv_chromecast
           format: hls
