@@ -8,14 +8,14 @@ trigger:
   - platform: template
     value_template: >-
       {{ now() >= (as_datetime(states('sensor.librelink_expiration_timestamp'))
-      - timedelta(hours=24)) and now() 
+      - timedelta(hours=24)) and now() <
       (as_datetime(states('sensor.librelink_expiration_timestamp')) -
       timedelta(hours=23)) }}
     id: warning_24h
   - platform: template
     value_template: >-
       {{ now() >= (as_datetime(states('sensor.librelink_expiration_timestamp'))
-      - timedelta(hours=1)) and now() 
+      - timedelta(hours=1)) and now() <
       as_datetime(states('sensor.librelink_expiration_timestamp')) }}
     id: warning_1h
   - platform: time
