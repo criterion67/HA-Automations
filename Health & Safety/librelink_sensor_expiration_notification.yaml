@@ -1,0 +1,44 @@
+alias: LibreLink - Sensor Expiration Notification
+description: >-
+  Sends a mobile notification 24 hours before the Libre 3 sensor expires, and
+  again at the moment of expiration. No helpers required. Requires the
+  gillesvs/librelink HACS integration and the HA Companion app on your phone.
+mode: single
+trigger:
+  - platform: template
+    value_template: >-
+      {{ now() >= (as_datetime(states('sensor.librelink_expiration_timestamp'))
+      - timedelta(hours=24)) and now() 
+      as_datetime(states('sensor.librelink_expiration_timestamp')) }}
+    id: warning_24h
+  - platform: time
+    at: sensor.librelink_expiration_timestamp
+    id: expired
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: warning_24h
+        sequence:
+          - action: notify.mobile_app_YOUR_PHONE
+            data:
+              title: Libre 3 Sensor Expiring Soon
+              message: >-
+                Your Libre 3 sensor will expire in 24 hours. Make sure you have
+                a replacement sensor ready.
+              data:
+                importance: high
+                channel: Glucose Monitor
+      - conditions:
+          - condition: trigger
+            id: expired
+        sequence:
+          - action: notify.mobile_app_YOUR_PHONE
+            data:
+              title: Libre 3 Sensor Has Expired
+              message: >-
+                Your Libre 3 sensor has expired. Readings are no longer
+                accurate. Please apply a new sensor now.
+              data:
+                importance: high
+                channel: Glucose Monitor
