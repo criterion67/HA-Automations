@@ -1,0 +1,21 @@
+- id: '1774735989154'
+  alias: 'Unlock Front Door: UniFi Access Granted'
+  description: When UniFi Access grants entry at the front door via any authentication
+    method (PIN, NFC, face unlock, mobile app, or remote), unlock the front door Wyze
+    lock via Z2M. Triggered by the hass-unifi-access integration event entity via
+    local WebSocket — no cloud dependency.
+  triggers:
+  - event_type: state_changed
+    event_data:
+      entity_id: event.front_door_hub_door_event
+    id: unifi_access_unlock
+    trigger: event
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.event.data.new_state.attributes.result == ''ACCESS''
+      }}'
+  actions:
+  - target:
+      entity_id: lock.front_door_lock
+    action: lock.unlock
+  mode: single
