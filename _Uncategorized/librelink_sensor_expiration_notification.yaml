@@ -1,13 +1,18 @@
 - id: '1774893025511'
   alias: LibreLink - Sensor Expiration Notification
-  description: Sends a mobile notification to Scott's phone 24 hours before the Libre
-    3 sensor expires, and again at the moment of expiration.
+  description: Sends mobile notifications and TTS announcements at 24 hours, 1 hour,
+    and at the moment of Libre 3 sensor expiration.
   triggers:
   - platform: template
     value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
-      - timedelta(hours=24)) and now() < as_datetime(states(''sensor.librelink_expiration_timestamp''))
-      }}'
+      - timedelta(hours=24)) and now() < (as_datetime(states(''sensor.librelink_expiration_timestamp''))
+      - timedelta(hours=23)) }}'
     id: warning_24h
+  - platform: template
+    value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
+      - timedelta(hours=1)) and now() < as_datetime(states(''sensor.librelink_expiration_timestamp''))
+      }}'
+    id: warning_1h
   - platform: time
     at: sensor.librelink_expiration_timestamp
     id: expired
@@ -27,6 +32,24 @@
             channel: Glucose Monitor
     - conditions:
       - condition: trigger
+        id: warning_1h
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Libre 3 Sensor Expiring in 1 Hour
+          message: Your Libre 3 sensor expires in 1 hour. Prepare your replacement
+            sensor now.
+          data:
+            importance: high
+            channel: Glucose Monitor
+      - action: tts.cloud_say
+        target:
+          entity_id: media_player.living_room_chromecast
+        data:
+          message: Attention. Your Libre 3 glucose sensor will expire in one hour.
+            Please prepare a replacement sensor.
+    - conditions:
+      - condition: trigger
         id: expired
       sequence:
       - action: notify.mobile_app_pixel_9
@@ -37,4 +60,10 @@
           data:
             importance: high
             channel: Glucose Monitor
+      - action: tts.cloud_say
+        target:
+          entity_id: media_player.living_room_chromecast
+        data:
+          message: Alert. Your Libre 3 glucose sensor has expired. Readings are no
+            longer accurate. Please apply a new sensor now.
   mode: single
