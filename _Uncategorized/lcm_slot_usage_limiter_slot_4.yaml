@@ -1,0 +1,13 @@
+- id: '1775276148403'
+  alias: 'LCM: Slot Usage Limiter - Slot 4'
+  description: Decrements the usage counter each time Slot 4 PIN is used. Disables
+    slot when counter reaches 0.
+  use_blueprint:
+    path: raman325/slot_usage_limiter.yaml
+    input:
+      config_entry: 01KN5THPGYPXVH3VCBDWXSGT1P
+      slot_number: 4
+      pin_used_entity: event.house_locks_code_slot_4
+      enabled_switch: switch.house_locks_code_slot_4_enabled
+      uses_counter: input_number.code_slot_4_usage_limit
+      initial_uses: 0
