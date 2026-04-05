@@ -4,11 +4,11 @@
     being unlocked or locked after sunset and before sunrise.
   triggers:
   - platform: state
-    entity_id: lock.front_door_lock
+    entity_id: lock.front_door_deadbolt
     to: unlocked
     id: Unlocked
   - platform: state
-    entity_id: lock.front_door_lock
+    entity_id: lock.front_door_deadbolt
     to: locked
     id: Locked
   conditions:

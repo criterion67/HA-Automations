@@ -1,31 +1,31 @@
 - id: '1726283010076'
-  alias: NFC - Front Door Lock Toggle
-  description: 'NFC tag toggles front door lock. Located ? '
+  alias: NFC - Front Door Deadbolt Toggle
+  description: 'NFC tag toggles front door deadbolt. Located ? '
   triggers:
   - tag_id: eff1012d-ee57-4eec-838c-9edcd248eb05
-    trigger: tag
+    platform: tag
   - tag_id: 2b8bddee-c0a6-4841-87bf-7a4957daeda4
-    trigger: tag
     enabled: false
+    platform: tag
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: state
-        entity_id: lock.front_door_lock
+        entity_id: lock.front_door_deadbolt
         state: locked
       sequence:
       - data: {}
         action: lock.unlock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
     - conditions:
       - condition: state
-        entity_id: lock.front_door_lock
+        entity_id: lock.front_door_deadbolt
         state: unlocked
       sequence:
       - data: {}
         action: lock.lock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
   mode: single

@@ -1,19 +1,19 @@
 - id: '1771619044590'
-  alias: 'Front Door Lock: Aqara Button (B1)'
+  alias: 'Front Door Deadbolt: Aqara Button (B1)'
   description: Single press locks. Double press unlocks.
   triggers:
   - domain: mqtt
     device_id: 9f47190752b6ab62fbb551223b91b5dd
     type: action
     subtype: single
-    trigger: device
     id: single_press
+    platform: device
   - domain: mqtt
     device_id: 9f47190752b6ab62fbb551223b91b5dd
     type: action
     subtype: double
-    trigger: device
     id: double_press
+    platform: device
   conditions: []
   actions:
   - choose:
@@ -23,12 +23,12 @@
       sequence:
       - action: lock.lock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
     - conditions:
       - condition: trigger
         id: double_press
       sequence:
       - action: lock.unlock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
   mode: single

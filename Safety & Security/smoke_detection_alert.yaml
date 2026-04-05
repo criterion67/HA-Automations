@@ -5,12 +5,12 @@
   - entity_id:
     - binary_sensor.smoke_detectors_smoke_detectors
     to: 'on'
-    trigger: state
+    platform: state
   conditions: []
   actions:
   - action: lock.unlock
     target:
-      entity_id: lock.front_door_lock
+      entity_id: lock.front_door_deadbolt
     data: {}
   - repeat:
       count: 10

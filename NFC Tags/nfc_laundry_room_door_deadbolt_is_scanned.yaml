@@ -1,28 +1,28 @@
 - id: '1757536502329'
-  alias: NFC - Laundry Room Door Lock is scanned
+  alias: NFC - Laundry Room Door Deadbolt is scanned
   description: ''
   triggers:
-  - trigger: tag
-    tag_id: 4b16c7c6-8c65-441a-bbbf-a9238674ee37
+  - tag_id: 4b16c7c6-8c65-441a-bbbf-a9238674ee37
+    platform: tag
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: state
-        entity_id: lock.laundry_room_door_lock
+        entity_id: lock.laundry_room_door_deadbolt
         state: locked
       sequence:
       - data: {}
         action: lock.unlock
         target:
-          entity_id: lock.laundry_room_door_lock
+          entity_id: lock.laundry_room_door_deadbolt
     - conditions:
       - condition: state
-        entity_id: lock.laundry_room_door_lock
+        entity_id: lock.laundry_room_door_deadbolt
         state: unlocked
       sequence:
       - data: {}
         action: lock.lock
         target:
-          entity_id: lock.laundry_room_door_lock
+          entity_id: lock.laundry_room_door_deadbolt
   mode: single

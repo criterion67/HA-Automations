@@ -4,8 +4,7 @@
     room door with failsafe notification.
   triggers:
   - tag_id: b38fed34-ef7f-4575-a5ba-f28347be2b49
-    trigger: tag
-  conditions: []
+    platform: tag
   actions:
   - action: cover.toggle
     target:
@@ -26,11 +25,11 @@
         state: 'on'
       sequence:
       - condition: state
-        entity_id: lock.laundry_room_door_lock
+        entity_id: lock.laundry_room_door_deadbolt
         state: locked
       - action: lock.unlock
         target:
-          entity_id: lock.laundry_room_door_lock
+          entity_id: lock.laundry_room_door_deadbolt
       - action: notify.mobile_app_pixel_9
         data:
           title: Garage Door + Laundry Lock
@@ -41,11 +40,11 @@
         state: 'off'
       sequence:
       - condition: state
-        entity_id: lock.laundry_room_door_lock
+        entity_id: lock.laundry_room_door_deadbolt
         state: unlocked
       - action: lock.lock
         target:
-          entity_id: lock.laundry_room_door_lock
+          entity_id: lock.laundry_room_door_deadbolt
       - action: notify.mobile_app_pixel_9
         data:
           title: Garage Door + Laundry Lock

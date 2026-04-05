@@ -1,28 +1,28 @@
-- id: '1757536682508'
-  alias: NFC - Rear Door Lock is scanned
+- id: '1757535632301'
+  alias: NFC - Sunroom Door Deadbolt is scanned
   description: ''
   triggers:
-  - trigger: tag
-    tag_id: 8018f3c2-a3be-4347-ab37-7e384719b753
+  - tag_id: 6937711c-28d9-44e2-8ce0-f8e5df120d78
+    platform: tag
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: state
-        entity_id: lock.rear_door_lock
+        entity_id: lock.sunroom_door_deadbolt
         state: locked
       sequence:
       - data: {}
         action: lock.unlock
         target:
-          entity_id: lock.rear_door_lock
+          entity_id: lock.sunroom_door_deadbolt
     - conditions:
       - condition: state
-        entity_id: lock.rear_door_lock
+        entity_id: lock.sunroom_door_deadbolt
         state: unlocked
       sequence:
       - data: {}
         action: lock.lock
         target:
-          entity_id: lock.rear_door_lock
+          entity_id: lock.sunroom_door_deadbolt
   mode: single

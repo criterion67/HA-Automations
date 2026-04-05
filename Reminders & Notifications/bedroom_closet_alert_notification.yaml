@@ -1,13 +1,13 @@
 - id: '1718472036626'
   alias: 'Bedroom Closet Alert Notification '
   description: ''
-  trigger:
+  triggers:
   - platform: state
     entity_id:
-    - lock.bedroom_closet_door_lock
+    - lock.bedroom_closet_door_deadbolt
     to: unlocked
-  condition: []
-  action:
+  conditions: []
+  actions:
   - metadata: {}
     data:
       title: Bedroom Closet Alert

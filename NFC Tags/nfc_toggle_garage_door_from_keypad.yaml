@@ -4,7 +4,7 @@
     on garage door frame.
   triggers:
   - tag_id: b5c0f90b-f58e-4952-95bb-9a3a281fb70e
-    trigger: tag
+    platform: tag
   conditions: []
   actions:
   - device_id: a235607541ed6fc61e5c8d84cdc1859c
@@ -14,7 +14,7 @@
   - data: {}
     action: lock.unlock
     target:
-      entity_id: lock.laundry_room_door_lock
+      entity_id: lock.laundry_room_door_deadbolt
   - data:
       message: Garage notification
       title: Garage door open/Laundry room door unlocked

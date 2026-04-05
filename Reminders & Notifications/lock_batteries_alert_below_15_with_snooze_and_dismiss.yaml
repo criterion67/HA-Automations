@@ -3,11 +3,11 @@
   description: ''
   triggers:
   - entity_id:
-    - sensor.bedroom_closet_door_lock_battery
-    - sensor.front_door_lock_battery_level
-    - sensor.laundry_room_door_lock_battery
-    - sensor.rear_door_lock_battery
-    - sensor.sunroom_door_lock_battery
+    - sensor.bedroom_closet_door_deadbolt_battery
+    - sensor.front_door_deadbolt_battery_level
+    - sensor.laundry_room_door_deadbolt_battery_level
+    - sensor.rear_door_deadbolt_battery
+    - sensor.sunroom_door_deadbolt_battery
     below: 15
     for: 00:05:00
     platform: numeric_state

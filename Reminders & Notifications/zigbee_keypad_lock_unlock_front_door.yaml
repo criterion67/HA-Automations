@@ -36,7 +36,7 @@
             | tojson }}'
       - action: lock.unlock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
     - conditions:
       - condition: template
         value_template: '{{ code == valid_pin and action == ''arm_all_zones'' }}'
@@ -48,6 +48,6 @@
             | tojson }}'
       - action: lock.lock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
   mode: queued
   max: 5

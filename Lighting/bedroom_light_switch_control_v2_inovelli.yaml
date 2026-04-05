@@ -108,6 +108,6 @@
       - data: {}
         action: lock.unlock
         target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
       button_3_triple: []
       button_3_quadruple: []

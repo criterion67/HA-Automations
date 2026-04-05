@@ -4,16 +4,16 @@
     24h and Replaced options. Uses the same snooze store as the low battery alert.
     Replaced sets a 7-day snooze.
   triggers:
-  - trigger: state
-    entity_id:
-    - lock.front_door_lock
-    - lock.rear_door_lock
-    - lock.sunroom_door_lock
-    - lock.laundry_room_door_lock
-    - lock.bedroom_closet_door_lock
+  - entity_id:
+    - lock.front_door_deadbolt
+    - lock.rear_door_deadbolt
+    - lock.sunroom_door_deadbolt
+    - lock.laundry_room_door_deadbolt
+    - lock.bedroom_closet_door_deadbolt
     to: unavailable
     for:
       hours: 2
+    platform: state
   conditions:
   - condition: template
     value_template: "{% set key = trigger.entity_id %}\n{% set store = states('input_text.lock_battery_alert_snoozed_until')\

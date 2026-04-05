@@ -105,14 +105,14 @@
         id: 2nd pressed 1x
       sequence:
       - target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
         action: lock.lock
     - conditions:
       - condition: trigger
         id: 2nd pressed 2x
       sequence:
       - target:
-          entity_id: lock.front_door_lock
+          entity_id: lock.front_door_deadbolt
         action: lock.unlock
     - conditions:
       - condition: trigger
