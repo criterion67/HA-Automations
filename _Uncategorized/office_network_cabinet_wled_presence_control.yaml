@@ -1,0 +1,54 @@
+- id: '1775696159907'
+  alias: Office- Network Cabinet WLED Presence Control
+  description: Turns the network cabinet WLED strip on when office presence is detected,
+    off after 5 min of no presence. If internet is down, skips the turn-off so the
+    red warning from the Internet Connectivity Monitor stays active.
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.office_presence_radar_target
+    to: 'on'
+    id: detected
+  - platform: state
+    entity_id: binary_sensor.office_presence_radar_target
+    to: 'off'
+    for: 00:05:00
+    id: cleared
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: detected
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ ''UniFi Blue'' in (state_attr(''select.network_cabinet_ws2811_preset'',''options'')
+              or []) }}'
+          sequence:
+          - action: select.select_option
+            target:
+              entity_id: select.network_cabinet_ws2811_preset
+            data:
+              option: UniFi Blue
+        default:
+        - action: light.turn_on
+          target:
+            entity_id: light.network_cabinet_ws2811
+          data:
+            rgb_color:
+            - 0
+            - 102
+            - 255
+            brightness_pct: 100
+    - conditions:
+      - condition: trigger
+        id: cleared
+      - condition: state
+        entity_id: binary_sensor.8_8_8_8
+        state: 'on'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.network_cabinet_ws2811
+  mode: single
