@@ -7,10 +7,14 @@
     - sensor.front_door_deadbolt_battery_level
     - sensor.laundry_room_door_deadbolt_battery_level
     - sensor.rear_door_deadbolt_battery
-    - sensor.sunroom_door_deadbolt_battery
+    - sensor.sunroom_door_deadbolt_battery_level
     below: 15
-    for: 00:05:00
-    platform: numeric_state
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+      milliseconds: 0
+    trigger: numeric_state
   conditions:
   - condition: template
     value_template: '{% set key = trigger.entity_id %} {% set store = states(''input_text.lock_battery_alert_snoozed_until'')
