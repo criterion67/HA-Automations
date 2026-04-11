@@ -6,7 +6,7 @@
     - sensor.bedroom_closet_door_deadbolt_battery
     - sensor.front_door_deadbolt_battery_level
     - sensor.laundry_room_door_deadbolt_battery_level
-    - sensor.rear_door_deadbolt_battery
+    - sensor.rear_door_deadbolt_battery_level
     - sensor.sunroom_door_deadbolt_battery_level
     below: 15
     for:
