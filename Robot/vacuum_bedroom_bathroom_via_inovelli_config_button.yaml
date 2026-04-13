@@ -7,7 +7,7 @@
     domain: zha
     type: hold
     subtype: Config
-    platform: device
+    trigger: device
   conditions: []
   actions:
   - target:
@@ -17,4 +17,10 @@
       - 1
       - 2
     action: dreame_vacuum.vacuum_clean_segment
+    enabled: false
+  - action: button.press
+    metadata: {}
+    target:
+      entity_id: button.z60_ultra_roller_complete_shortcut_5
+    data: {}
   mode: single
