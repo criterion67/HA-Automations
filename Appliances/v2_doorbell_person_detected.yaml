@@ -1,56 +1,107 @@
 - id: '1746302122163'
   alias: V2- Doorbell - Person Detected
   description: G6 Pro Doorbell person detection triggers cooldown, bedroom alert light,
-    notification, and camera stream to bedroom TV. Uses medium resolution channel
-    (1440x1920) as high-res portrait stream is not rendered correctly by Chromecast.
+    notification, and camera stream to bedroom TV. Pauses active TV playback before
+    stream and resumes after 1 minute. Only runs when Scott is home. On HA restart,
+    resets any stuck cooldown boolean.
   triggers:
-  - entity_id:
+  - platform: state
+    entity_id:
     - binary_sensor.g6_pro_doorbell_person_detected
     from: 'off'
     to: 'on'
-    platform: state
-  conditions:
-  - condition: state
-    entity_id: binary_sensor.front_door
-    state: 'off'
-  - condition: state
-    entity_id: input_boolean.doorbell_cooldown
-    state: 'off'
+    id: person_detected
+  - platform: homeassistant
+    event: start
+    id: ha_start
   actions:
-  - target:
-      entity_id: input_boolean.doorbell_cooldown
-    action: input_boolean.turn_on
-    data: {}
-  - data:
-      scene_id: doorbell_cooldown_restore
-      snapshot_entities:
-      - light.bedroom_alert_light
-    action: scene.create
-  - target:
-      entity_id: light.bedroom_alert_light
-    data:
-      color_name: green
-      brightness: 200
-    action: light.turn_on
-  - delay: 00:05:00
-  - target:
-      entity_id: scene.doorbell_cooldown_restore
-    action: scene.turn_on
-    data: {}
-  - target:
-      entity_id: input_boolean.doorbell_cooldown
-    action: input_boolean.turn_off
-    data: {}
-  - data:
-      title: Person Detected!
-      message: There's a person at the front door!
-    action: notify.mobile_app_pixel_9
-  - metadata: {}
-    data:
-      media_player: media_player.bedroom_tv_1
-      format: hls
-    target:
-      entity_id:
-      - camera.g6_pro_doorbell_medium_resolution_channel
-    action: camera.play_stream
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: ha_start
+      sequence:
+      - alias: Reset stuck cooldown on HA restart
+        target:
+          entity_id: input_boolean.doorbell_cooldown
+        action: input_boolean.turn_off
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: person_detected
+      - condition: state
+        entity_id: person.scott_funk
+        state: home
+      - condition: state
+        entity_id: binary_sensor.front_door
+        state: 'off'
+      - condition: state
+        entity_id: input_boolean.doorbell_cooldown
+        state: 'off'
+      sequence:
+      - alias: Turn on cooldown
+        target:
+          entity_id: input_boolean.doorbell_cooldown
+        action: input_boolean.turn_on
+        data: {}
+      - alias: Snapshot bedroom alert light for restore
+        data:
+          scene_id: doorbell_cooldown_restore
+          snapshot_entities:
+          - light.bedroom_alert_light
+        action: scene.create
+      - alias: Pause TV if currently playing
+        if:
+        - condition: state
+          entity_id: media_player.bedroom_tv_1_2
+          state: playing
+        then:
+        - action: media_player.media_pause
+          target:
+            entity_id: media_player.bedroom_tv_1_2
+          data: {}
+      - alias: Play doorbell camera stream on Bedroom TV immediately
+        metadata: {}
+        data:
+          media_player: media_player.bedroom_tv_chromecast
+          format: hls
+        target:
+          entity_id:
+          - camera.g6_pro_doorbell_medium_resolution_channel
+        action: camera.play_stream
+      - alias: Flash bedroom alert light green
+        target:
+          entity_id: light.bedroom_alert_light
+        data:
+          color_name: green
+          brightness: 200
+        action: light.turn_on
+      - alias: Display camera for 1 minute
+        delay: 00:01:00
+      - alias: Stop the doorbell camera stream on Bedroom TV
+        action: media_player.media_stop
+        target:
+          entity_id: media_player.bedroom_tv_chromecast
+        data: {}
+      - alias: Resume previous TV playback
+        action: media_player.media_play
+        target:
+          entity_id: media_player.bedroom_tv_1_2
+        data: {}
+      - alias: Restore bedroom alert light
+        target:
+          entity_id: scene.doorbell_cooldown_restore
+        action: scene.turn_on
+        data: {}
+      - alias: Wait remaining 4 minutes of cooldown (5 min total)
+        delay: 00:04:00
+      - alias: Turn off cooldown
+        target:
+          entity_id: input_boolean.doorbell_cooldown
+        action: input_boolean.turn_off
+        data: {}
+      - alias: Send person detected notification
+        data:
+          title: Person Detected!
+          message: There's a person at the front door!
+        action: notify.mobile_app_pixel_9
   mode: single

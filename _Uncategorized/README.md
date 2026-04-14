@@ -1,6 +1,6 @@
 # _Uncategorized
 
-11 automation(s) in this category.
+12 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -13,5 +13,6 @@
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
 | Medication Reminders - Mobile Notifications | Sends mobile notifications to Pixel 9 at each scheduled medication time with Snooze (30 min) and Taken action buttons. Six time slots: 7am (Levothyroxine), 8am (morning meds + antibiotics), 10am (supplements), 5pm (Levofloxacin), 7pm (evening meds), bedtime (Magnesium). Snooze fires a second notification after 30 minutes by turning on the corresponding input_boolean snooze flag, which re-triggers via state change. Taken dismisses without re-alerting. |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
+| Office- Presence Lighting Control V3 | Turns office lamps on with presence, turns them off after 5 min of no presence, and resets manual override. Replaces V2 which controlled the ceiling light. |
 | TEST - Doorbell Button Press Triggers Chime | Test automation: triggered by an incoming webhook HTTP POST to /api/webhook/doorbell_chime_trigger. Intended to be called by the Reolink doorbell's built-in HTTP alarm action when the button is pressed. Plays tone ring_doorbell.mp3 (6 sec) on the Zooz ZSE50 chime via siren.chime_play_tone. Uses restart mode so rapid presses reset the sequence. |
 | Unlock Front Door: UniFi Access Granted | When UniFi Access grants entry at the front door via any authentication method (PIN, NFC, face unlock, mobile app, or remote), unlock the front door deadbolt via Z-Wave. Triggered by the hass-unifi-access integration event entity via local WebSocket — no cloud dependency. |
