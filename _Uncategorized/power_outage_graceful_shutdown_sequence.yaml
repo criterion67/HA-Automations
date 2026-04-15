@@ -1,0 +1,34 @@
+- id: '1776226412089'
+  alias: Power Outage - Graceful Shutdown Sequence
+  description: When EcoFlow River 3 (EFR3P-1) detects AC power loss for 2 minutes,
+    gracefully shuts down SCOTT-DESKTOP, UNAS Pro, UDM Pro Max, then Home Assistant
+    itself.
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.ef_r30118_ac_plugged_in
+    to: 'off'
+    for: 00:02:00
+  conditions: []
+  actions:
+  - alias: 'Notify: shutdown starting'
+    action: notify.persistent_notification
+    data:
+      title: ⚡ Power Outage — Shutdown Sequence Started
+      message: AC power has been out 2+ minutes. Shutting down all devices gracefully.
+  - alias: Step 1 — Shut down SCOTT-DESKTOP
+    action: button.press
+    target:
+      entity_id: button.scott_desktop_shutdown
+  - alias: Wait 45s for desktop to power off
+    delay: 00:00:45
+  - alias: Step 2 — Shut down UNAS Pro via SSH
+    action: shell_command.shutdown_unas_pro
+  - alias: Wait 60s for UNAS Pro to shut down
+    delay: 00:01:00
+  - alias: Step 3 — Shut down UDM Pro Max via SSH
+    action: shell_command.shutdown_udm_pro_max
+  - alias: Wait 10s then stop Home Assistant
+    delay: 00:00:10
+  - alias: Step 4 — Stop Home Assistant
+    action: homeassistant.stop
+  mode: single
