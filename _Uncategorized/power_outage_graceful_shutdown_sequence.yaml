@@ -1,20 +1,31 @@
 - id: '1776226412089'
   alias: Power Outage - Graceful Shutdown Sequence
-  description: When EcoFlow River 3 (EFR3P-1) detects AC power loss for 2 minutes,
-    gracefully shuts down SCOTT-DESKTOP, UNAS Pro, UDM Pro Max, then Home Assistant
-    itself.
+  description: When EFR3P-1 battery drops to 20% while AC is offline, sets outage
+    flag, sends mobile alert, then gracefully shuts down SCOTT-DESKTOP, UNAS Pro,
+    UDM Pro Max, and the HA host.
   triggers:
-  - platform: state
+  - platform: numeric_state
+    entity_id: sensor.ef_r30118_battery_level
+    below: 20
+  conditions:
+  - condition: state
     entity_id: binary_sensor.ef_r30118_ac_plugged_in
-    to: 'off'
-    for: 00:02:00
-  conditions: []
+    state: 'off'
   actions:
-  - alias: 'Notify: shutdown starting'
+  - alias: 'Flag: mark power outage shutdown triggered'
+    action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.power_outage_shutdown_triggered
+  - alias: 'Notify: dashboard alert'
     action: notify.persistent_notification
     data:
       title: ⚡ Power Outage — Shutdown Sequence Started
-      message: AC power has been out 2+ minutes. Shutting down all devices gracefully.
+      message: EFR3P-1 battery at 20%. Shutting down all devices gracefully.
+  - alias: 'Notify: mobile push to Pixel 9'
+    action: notify.mobile_app_pixel_9
+    data:
+      title: ⚡ Power Outage
+      message: EFR3P-1 battery at 20%. Graceful shutdown sequence started.
   - alias: Step 1 — Shut down SCOTT-DESKTOP
     action: button.press
     target:
@@ -27,8 +38,8 @@
     delay: 00:01:00
   - alias: Step 3 — Shut down UDM Pro Max via SSH
     action: shell_command.shutdown_udm_pro_max
-  - alias: Wait 10s then stop Home Assistant
+  - alias: Wait 10s then shut down HA host
     delay: 00:00:10
-  - alias: Step 4 — Stop Home Assistant
-    action: homeassistant.stop
+  - alias: Step 4 — Full OS poweroff via Supervisor
+    action: hassio.host_shutdown
   mode: single
