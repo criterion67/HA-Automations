@@ -1,0 +1,40 @@
+- id: '1776378808727'
+  alias: Power Outage - EFR3P-2 Network & HA Shutdown
+  description: When EFR3P-2 battery drops to 20% while AC is offline, sets outage
+    flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and
+    the HA host (Wyse 5070). HA will auto-restart when grid power is restored.
+  triggers:
+  - platform: numeric_state
+    entity_id: sensor.ef_r34398_battery_level
+    below: 20
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.ef_r34398_ac_plugged_in
+    state: 'off'
+  actions:
+  - alias: 'Flag: mark power outage shutdown triggered'
+    action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.power_outage_shutdown_triggered
+  - alias: 'Notify: dashboard alert'
+    action: notify.persistent_notification
+    data:
+      title: ⚡ Power Outage — EFR3P-2 Low Battery
+      message: EFR3P-2 battery at 20%. Shutting down UNAS Pro, UDM Pro Max, and Home
+        Assistant host.
+  - alias: 'Notify: mobile push to Pixel 9'
+    action: notify.mobile_app_pixel_9
+    data:
+      title: ⚡ Power Outage (EFR3P-2)
+      message: EFR3P-2 battery at 20%. Shutting down network gear and HA host.
+  - alias: Step 1 — Shut down UNAS Pro via SSH
+    action: shell_command.shutdown_unas_pro
+  - alias: Wait 60s for UNAS Pro to shut down
+    delay: 00:01:00
+  - alias: Step 2 — Shut down UDM Pro Max via SSH
+    action: shell_command.shutdown_udm_pro_max
+  - alias: Wait 10s then shut down HA host
+    delay: 00:00:10
+  - alias: Step 3 — Full OS poweroff via Supervisor
+    action: hassio.host_shutdown
+  mode: single

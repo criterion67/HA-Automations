@@ -1,0 +1,31 @@
+- id: '1776226412089'
+  alias: Power Outage - Desktop Shutdown
+  description: When EFR3P-1 AC power has been offline for 10 minutes, sends mobile
+    alert and gracefully shuts down SCOTT-DESKTOP via HASS.Agent. The 10-minute delay
+    rules out brief blips and gives the user time to save work, while still leaving
+    ~40 minutes of Goldenmate battery headroom. Network gear and HA host are handled
+    separately by the EFR3P-2 automation.
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.ef_r30118_ac_plugged_in
+    to: 'off'
+    for: 00:10:00
+  conditions: []
+  actions:
+  - alias: 'Notify: dashboard alert'
+    action: notify.persistent_notification
+    data:
+      title: ⚡ Power Outage — Shutting Down Desktop
+      message: Grid power has been out for 10 minutes. Shutting down SCOTT-DESKTOP.
+  - alias: 'Notify: mobile push to Pixel 9'
+    action: notify.mobile_app_pixel_9
+    data:
+      title: ⚡ Power Outage
+      message: Grid power out for 10 minutes. Shutting down desktop PC now.
+  - alias: Shut down SCOTT-DESKTOP
+    action: button.press
+    target:
+      entity_id: button.scott_desktop_shutdown
+  - alias: Wait 60s for desktop to shut down
+    delay: 00:01:00
+  mode: single
