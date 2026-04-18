@@ -1,11 +1,10 @@
 # _Uncategorized
 
-15 automation(s) in this category.
+14 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
-| Hue Button - Desk Lamp Control | Blueprint-based automation for the Philips Hue Smart Button (RDM005) controlling light.desk_lamp_short. Short press toggles the lamp. Long press loops brightness up 15% per repeat while held, stops on release. Uses fixed EPMatt awesome-ha-blueprints controller blueprint - Z2M action mapping corrected from ROM001 strings (press/hold/release) to RDM005 strings (on/brightness_move_up/brightness_stop). |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
 | LCM: Calendar Slot Enable/Disable - Slot 4 | Enables Slot 4 when a Gmail calendar event starts, disables it when the event ends. Works alongside Calendar PIN Setter. |
 | LCM: Slot Usage Limiter - Slot 4 | Decrements the usage counter each time Slot 4 PIN is used. Disables slot when counter reaches 0. |
@@ -14,7 +13,7 @@
 | Medication Reminders - Mobile Notifications | Sends mobile notifications to Pixel 9 at each scheduled medication time with Snooze (30 min) and Taken action buttons. Six time slots: 7am (Levothyroxine), 8am (morning meds + antibiotics), 10am (supplements), 5pm (Levofloxacin), 7pm (evening meds), bedtime (Magnesium). Snooze fires a second notification after 30 minutes by turning on the corresponding input_boolean snooze flag, which re-triggers via state change. Taken dismisses without re-alerting. |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps on with presence, turns them off after 5 min of no presence, and resets manual override. Replaces V2 which controlled the ceiling light. |
-| Power Outage - Desktop Shutdown | When EFR3P-1 AC power has been offline for 10 minutes, sends mobile alert and gracefully shuts down SCOTT-DESKTOP via HASS.Agent. The 10-minute delay rules out brief blips and gives the user time to save work, while still leaving ~40 minutes of Goldenmate battery headroom. Network gear and HA host are handled separately by the EFR3P-2 automation. |
+| Power Outage - Desktop Shutdown | Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host are handled separately by the EFR3P-2 automation. |
 | Power Outage - EFR3P-2 Network & HA Shutdown | When EFR3P-2 battery drops to 20% while AC is offline, sets outage flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and the HA host (Wyse 5070). HA will auto-restart when grid power is restored. |
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts. |
 | TEST - Doorbell Button Press Triggers Chime | Test automation: triggered by an incoming webhook HTTP POST to /api/webhook/doorbell_chime_trigger. Intended to be called by the Reolink doorbell's built-in HTTP alarm action when the button is pressed. Plays tone ring_doorbell.mp3 (6 sec) on the Zooz ZSE50 chime via siren.chime_play_tone. Uses restart mode so rapid presses reset the sequence. |

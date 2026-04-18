@@ -1,15 +1,17 @@
 - id: '1776226412089'
   alias: Power Outage - Desktop Shutdown
-  description: When EFR3P-1 AC power has been offline for 10 minutes, sends mobile
-    alert and gracefully shuts down SCOTT-DESKTOP via HASS.Agent. The 10-minute delay
-    rules out brief blips and gives the user time to save work, while still leaving
-    ~40 minutes of Goldenmate battery headroom. Network gear and HA host are handled
-    separately by the EFR3P-2 automation.
+  description: 'Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline
+    for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure
+    a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host
+    are handled separately by the EFR3P-2 automation.'
   triggers:
   - platform: state
     entity_id: binary_sensor.ef_r30118_ac_plugged_in
     to: 'off'
     for: 00:10:00
+  - platform: numeric_state
+    entity_id: sensor.scott_desktop_goldenmatebatterylevel
+    below: 25
   conditions: []
   actions:
   - alias: 'Notify: dashboard alert'
