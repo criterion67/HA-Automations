@@ -1,6 +1,6 @@
 # _Uncategorized
 
-14 automation(s) in this category.
+16 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -11,6 +11,7 @@
 | LibreLink - Sensor Expiration Notification | Sends mobile notifications and TTS announcements at 24 hours, 1 hour, and at the moment of Libre 3 sensor expiration. |
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
 | Medication Reminders - Mobile Notifications | Sends mobile notifications to Pixel 9 at each scheduled medication time with Snooze (30 min) and Taken action buttons. Six time slots: 7am (Levothyroxine), 8am (morning meds + antibiotics), 10am (supplements), 5pm (Levofloxacin), 7pm (evening meds), bedtime (Magnesium). Snooze fires a second notification after 30 minutes by turning on the corresponding input_boolean snooze flag, which re-triggers via state change. Taken dismisses without re-alerting. |
+| Monthly Valve Test | On the 1st of each month, cycles both water valves closed then open to verify they are operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps on with presence, turns them off after 5 min of no presence, and resets manual override. Replaces V2 which controlled the ceiling light. |
 | Power Outage - Desktop Shutdown | Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host are handled separately by the EFR3P-2 automation. |
@@ -18,3 +19,4 @@
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts. |
 | TEST - Doorbell Button Press Triggers Chime | Test automation: triggered by an incoming webhook HTTP POST to /api/webhook/doorbell_chime_trigger. Intended to be called by the Reolink doorbell's built-in HTTP alarm action when the button is pressed. Plays tone ring_doorbell.mp3 (6 sec) on the Zooz ZSE50 chime via siren.chime_play_tone. Uses restart mode so rapid presses reset the sequence. |
 | Unlock Front Door: UniFi Access Granted | When UniFi Access grants entry at the front door via any authentication method (PIN, NFC, face unlock, mobile app, or remote), unlock the front door deadbolt via Z-Wave. Triggered by the hass-unifi-access integration event entity via local WebSocket — no cloud dependency. |
+| Water Valve Battery Low Alert | Fires when either water valve battery sensor drops below 15%. Sends a critical mobile notification with battery type and quantity, creates a Google Calendar purchase reminder, and posts a persistent dashboard notification. |

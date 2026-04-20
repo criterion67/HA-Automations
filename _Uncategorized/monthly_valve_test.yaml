@@ -1,0 +1,120 @@
+- id: '1776626168259'
+  alias: Monthly Valve Test
+  description: On the 1st of each month, cycles both water valves closed then open
+    to verify they are operational. Sends a mobile notification with results. On failure,
+    sends a critical alert and creates a persistent dashboard notification.
+  triggers:
+  - platform: time
+    at: '10:00:00'
+  conditions:
+  - condition: template
+    value_template: '{{ now().day == 1 }}'
+  actions:
+  - alias: Close Main Water Valve
+    action: valve.close_valve
+    target:
+      entity_id: valve.main_water_valve
+    continue_on_error: true
+  - alias: Wait for Main Valve to Close
+    wait_template: '{{ is_state(''valve.main_water_valve'', ''closed'') or state_attr(''valve.main_water_valve'',
+      ''is_closed'') == true }}'
+    timeout:
+      seconds: 20
+    continue_on_timeout: true
+  - variables:
+      main_closed_ok: '{{ wait.completed }}'
+  - alias: Reopen Main Water Valve
+    action: valve.open_valve
+    target:
+      entity_id: valve.main_water_valve
+    continue_on_error: true
+  - alias: Wait for Main Valve to Reopen
+    wait_template: '{{ is_state(''valve.main_water_valve'', ''open'') and state_attr(''valve.main_water_valve'',
+      ''is_closed'') == false }}'
+    timeout:
+      seconds: 20
+    continue_on_timeout: true
+  - variables:
+      main_valve_ok: '{{ main_closed_ok and wait.completed }}'
+  - delay:
+      seconds: 5
+  - alias: Close Robot Vac Water Valve
+    action: valve.close_valve
+    target:
+      entity_id: valve.robot_vac_water_line_valve_state
+    continue_on_error: true
+  - alias: Wait for Robot Vac Valve to Close
+    wait_template: '{{ is_state(''valve.robot_vac_water_line_valve_state'', ''closed'')
+      or state_attr(''valve.robot_vac_water_line_valve_state'', ''is_closed'') ==
+      true }}'
+    timeout:
+      seconds: 20
+    continue_on_timeout: true
+  - variables:
+      robot_closed_ok: '{{ wait.completed }}'
+  - alias: Reopen Robot Vac Water Valve
+    action: valve.open_valve
+    target:
+      entity_id: valve.robot_vac_water_line_valve_state
+    continue_on_error: true
+  - alias: Wait for Robot Vac Valve to Reopen
+    wait_template: '{{ is_state(''valve.robot_vac_water_line_valve_state'', ''open'')
+      and state_attr(''valve.robot_vac_water_line_valve_state'', ''is_closed'') ==
+      false }}'
+    timeout:
+      seconds: 20
+    continue_on_timeout: true
+  - variables:
+      robot_valve_ok: '{{ robot_closed_ok and wait.completed }}'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ main_valve_ok and robot_valve_ok }}'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: ✅ Monthly Valve Test — All Clear
+          message: 'Both valves passed their monthly test on {{ now().strftime(''%B
+            %d, %Y'') }}.
+
+            • Main Water Valve: PASS
+
+            • Robot Vac Water Line Valve: PASS'
+    default:
+    - action: notify.mobile_app_pixel_9
+      data:
+        title: 🚨 Valve Test FAILURE — Action Required
+        message: 'One or more valves failed the monthly test on {{ now().strftime(''%B
+          %d, %Y'') }}.
+
+          • Main Water Valve: {{ ''✅ PASS'' if main_valve_ok else ''❌ FAIL'' }}
+
+          • Robot Vac Water Line Valve: {{ ''✅ PASS'' if robot_valve_ok else ''❌ FAIL''
+          }}'
+        data:
+          push:
+            sound:
+              name: default
+              critical: 1
+              volume: 1.0
+            interruption-level: critical
+          channel: alarm_stream
+          importance: high
+          ttl: 0
+          priority: high
+    - action: persistent_notification.create
+      data:
+        title: 🚨 VALVE TEST FAILURE — Action Required
+        message: 'Monthly valve test failed on {{ now().strftime(''%B %d, %Y'') }}.
+
+
+          • Main Water Valve: {{ ''✅ PASS'' if main_valve_ok else ''❌ FAIL — valve
+          did not respond correctly'' }}
+
+          • Robot Vac Water Line Valve: {{ ''✅ PASS'' if robot_valve_ok else ''❌ FAIL
+          — valve did not respond correctly'' }}
+
+
+          Please inspect the affected valve(s) immediately.'
+        notification_id: valve_test_failure
+  mode: single

@@ -12,8 +12,10 @@
     - binary_sensor.bathroom_2_leak_sensor_7_moisture
     - binary_sensor.bathroom_2_leak_sensor_8_moisture
     - binary_sensor.hvac_condensate_pan_sensor_9
-    to: 'on'
-    trigger: state
+    - binary_sensor.robot_vac_water_valve_moisture
+    to:
+    - 'on'
+    platform: state
   actions:
   - variables:
       triggered_sensor: '{{ trigger.to_state.name }}'
@@ -55,9 +57,11 @@
           state: 'on'
       sequence:
       - data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Attention%2C+a+water+leak+has+been+detected+at+the+{{
-            triggered_sensor | replace(' ', '+') }}.+Please+check+the+area+and+turn+off+the+water.&language=en-US&voice=AndrewNeural
-          media_content_type: provider
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Attention%2C+a+water+leak+has+been+detected+at+the+{{
+              triggered_sensor | replace(' ', '+') }}.+Please+check+the+area+and+turn+off+the+water.&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            metadata: {}
         target:
           entity_id: media_player.whole_house
         action: media_player.play_media
@@ -70,6 +74,16 @@
               title: Snooze
             - action: DISMISS_LEAK
               title: Dismiss
+            push:
+              sound:
+                name: default
+                critical: 1
+                volume: 1.0
+              interruption-level: critical
+            channel: alarm_stream
+            importance: high
+            ttl: 0
+            priority: high
         action: notify.mobile_app_pixel_9
       - delay: 00:00:10
       - repeat:

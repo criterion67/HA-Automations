@@ -1,0 +1,119 @@
+- id: '1776626196171'
+  alias: Water Valve Battery Low Alert
+  description: Fires when either water valve battery sensor drops below 15%. Sends
+    a critical mobile notification with battery type and quantity, creates a Google
+    Calendar purchase reminder, and posts a persistent dashboard notification.
+  triggers:
+  - platform: numeric_state
+    entity_id: sensor.main_water_valve_battery
+    below: 15
+    id: main_valve_battery
+  - platform: numeric_state
+    entity_id: sensor.robot_vac_water_valve_battery
+    below: 15
+    id: robot_valve_battery
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: main_valve_battery
+      sequence:
+      - data:
+          title: 🔋 Main Water Valve Battery Low
+          message: "Main Water Valve battery is at {{ states('sensor.main_water_valve_battery')\
+            \ | int }}% — below the 15% threshold.\n\nBattery needed:\n  1× ER26500\
+            \ 3.6V 9000mAh C Size\n  Li-SOCl₂ Lithium (Non-Rechargeable)\n\nA purchase\
+            \ reminder has been added to your calendar."
+          data:
+            push:
+              sound:
+                name: default
+                critical: 1
+                volume: 1.0
+              interruption-level: critical
+            channel: alarm_stream
+            importance: high
+            ttl: 0
+            priority: high
+        action: notify.mobile_app_pixel_9
+      - target:
+          entity_id: calendar.wscottfunk_gmail_com
+        data:
+          summary: 🔋 Buy Battery — Main Water Valve
+          description: 'The Main Water Valve battery dropped below 15% and needs replacement.
+
+
+            Battery required: 1× ER26500 3.6V 9000mAh C Size Lithium Battery
+
+            Type: Li-SOCl₂ (High Capacity, Non-Rechargeable)
+
+
+            Level at time of alert: {{ states(''sensor.main_water_valve_battery'')
+            | int }}%'
+          start_date_time: '{{ now().strftime(''%Y-%m-%d'') }}T09:00:00'
+          end_date_time: '{{ now().strftime(''%Y-%m-%d'') }}T10:00:00'
+        action: calendar.create_event
+      - data:
+          title: 🔋 Main Water Valve Battery Critical
+          message: 'Battery is at {{ states(''sensor.main_water_valve_battery'') |
+            int }}%.
+
+
+            Replace with: 1× ER26500 3.6V 9000mAh C Size Li-SOCl₂ Lithium Battery
+            (Non-Rechargeable).
+
+
+            A purchase reminder has been added to your Google Calendar.'
+          notification_id: main_valve_battery_low
+        action: persistent_notification.create
+    - conditions:
+      - condition: trigger
+        id: robot_valve_battery
+      sequence:
+      - data:
+          title: 🔋 Robot Vac Water Valve Battery Low
+          message: "Robot Vac Water Line Valve battery is at {{ states('sensor.robot_vac_water_valve_battery')\
+            \ | int }}% — below the 15% threshold.\n\nBatteries needed:\n  2× AA Alkaline\
+            \ Batteries\n\nA purchase reminder has been added to your calendar."
+          data:
+            push:
+              sound:
+                name: default
+                critical: 1
+                volume: 1.0
+              interruption-level: critical
+            channel: alarm_stream
+            importance: high
+            ttl: 0
+            priority: high
+        action: notify.mobile_app_pixel_9
+      - target:
+          entity_id: calendar.wscottfunk_gmail_com
+        data:
+          summary: 🔋 Buy Batteries — Robot Vac Water Line Valve
+          description: 'The Robot Vac Water Line Valve battery dropped below 15% and
+            needs replacement.
+
+
+            Batteries required: 2× AA Alkaline Batteries
+
+
+            Level at time of alert: {{ states(''sensor.robot_vac_water_valve_battery'')
+            | int }}%'
+          start_date_time: '{{ now().strftime(''%Y-%m-%d'') }}T09:00:00'
+          end_date_time: '{{ now().strftime(''%Y-%m-%d'') }}T10:00:00'
+        action: calendar.create_event
+      - data:
+          title: 🔋 Robot Vac Water Valve Battery Critical
+          message: 'Battery is at {{ states(''sensor.robot_vac_water_valve_battery'')
+            | int }}%.
+
+
+            Replace with: 2× AA Alkaline Batteries.
+
+
+            A purchase reminder has been added to your Google Calendar.'
+          notification_id: robot_valve_battery_low
+        action: persistent_notification.create
+  mode: parallel
+  max: 2

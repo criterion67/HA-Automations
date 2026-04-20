@@ -5,7 +5,7 @@
 | Automation | Description |
 |---|---|
 | Alert Light: Migraine Green Therapy Toggle (Aqara B1 Hold) | Hold the Front Door Aqara B1 button to activate 520nm migraine therapy green (RGB 0,255,0) at 100%. Uses input_boolean.migraine_therapy_mode_active as a clean flag. Snapshots previous light state into input_text.migraine_light_restore_state before activating, and restores it on deactivation. |
-| Charge monitor for curtain motors |  |
+| Charge monitor for curtain motors | Announces via TTS when curtain motors are fully charged and reminds every 5 minutes while still plugged in |
 | Energy Monitoring Plug Failsafe | Keeps all energy monitoring plugs ON. If any are turned off, they are restored and a notification is sent. |
 | GitHub Backup - Daily | Automatically backup Home Assistant configuration and automations to GitHub daily at 3 AM |
 | Govee2MQTT restart |  |

@@ -1,21 +1,22 @@
 - id: '1748708440470'
   alias: Charge monitor for curtain motors
-  description: ''
+  description: Announces via TTS when curtain motors are fully charged and reminds
+    every 5 minutes while still plugged in
   triggers:
   - type: battery_level
-    device_id: 90ac90a668b62c3bdb96bf405391c556
-    entity_id: 20999ff2d8ec0d0970a824fc136db4e9
+    device_id: e52d41387f8a76c09b209acb2a5f78d5
+    entity_id: sensor.bedroom_curtain_right_battery
     domain: sensor
     above: 99
     id: Right
-    trigger: device
+    platform: device
   - type: battery_level
-    device_id: 3d6d3358e393edf689de58d6045982df
-    entity_id: 52832f72523e38bf667a4d9a6ce89a1e
+    device_id: fe96d827386ede7d97d55d77abb12ac1
+    entity_id: sensor.bedroom_curtain_left_battery
     domain: sensor
     above: 99
     id: Left
-    trigger: device
+    platform: device
   conditions: []
   actions:
   - choose:
