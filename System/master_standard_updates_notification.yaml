@@ -3,7 +3,7 @@
   description: ''
   triggers:
   - event_type: state_changed
-    trigger: event
+    platform: event
   conditions:
   - condition: template
     value_template: "{% set uptime = states('sensor.uptime') %}\n{% if uptime not\
@@ -34,7 +34,7 @@
   - variables:
       ent: '{{ trigger.event.data.entity_id }}'
       new: '{{ trigger.event.data.new_state }}'
-      last_change: "{% if new is not none %}\n  {{ as_timestamp(new.last_changed)\
+      last_change: "{% if trigger.event.data.new_state is not none %}\n  {{ as_timestamp(trigger.event.data.new_state.last_changed)\
         \ }}\n{% else %}\n  0\n{% endif %}\n"
       now_ts: '{{ as_timestamp(now()) }}'
       cooldown_secs: 300

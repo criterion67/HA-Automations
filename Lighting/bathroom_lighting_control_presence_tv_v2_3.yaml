@@ -5,26 +5,29 @@
 
     '
   triggers:
-  - trigger: state
-    entity_id: binary_sensor.bathroom_presence_radar_target
+  - entity_id: binary_sensor.bathroom_presence_radar_target
     to: 'on'
     id: Presence_On
-  - trigger: state
-    entity_id: binary_sensor.bathroom_presence_radar_target
+    platform: state
+  - entity_id: binary_sensor.bathroom_presence_radar_target
     to: 'off'
     id: Presence_Off
-  - trigger: state
-    entity_id: media_player.bedroom_tv_chromecast
+    platform: state
+  - entity_id: media_player.bedroom_tv_chromecast
     to: paused
     for:
       seconds: 5
     id: TV_Paused
-  - trigger: state
-    entity_id: media_player.bedroom_tv_chromecast
+    platform: state
+  - entity_id: media_player.bedroom_tv_chromecast
     to: playing
     for:
       seconds: 5
     id: TV_Playing
+    platform: state
+  - platform: time
+    at: '23:00:00'
+    id: Vanity_Cutover
   conditions:
   - condition: template
     value_template: "{% if trigger.id in ['Presence_On', 'Presence_Off'] %}\n  {{\
@@ -84,6 +87,9 @@
     - conditions:
       - condition: trigger
         id: TV_Paused
+      - condition: time
+        after: 06:00:00
+        before: '23:00:00'
       - condition: sun
         after: sunset
         before: sunrise
@@ -119,6 +125,21 @@
           - switch.bathroom_mirror
           - switch.fire_tablet_screen
         action: homeassistant.turn_off
+    - conditions:
+      - condition: trigger
+        id: Vanity_Cutover
+      sequence:
+      - target:
+          entity_id: light.bathroom_vanity_light_group
+        action: light.turn_off
+      - if:
+        - condition: state
+          entity_id: binary_sensor.bathroom_presence_radar_target
+          state: 'on'
+        then:
+        - target:
+            entity_id: switch.bathroom_mirror
+          action: switch.turn_on
   variables:
     cooldown_time: 30
     presence_cd: '{{ as_timestamp(states(''input_datetime.bathroom_presence_cooldown''))

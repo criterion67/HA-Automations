@@ -5,7 +5,7 @@
   triggers:
   - type: battery_level
     device_id: e52d41387f8a76c09b209acb2a5f78d5
-    entity_id: sensor.bedroom_curtain_right_battery
+    entity_id: sensor.0x54ef441000678b37_battery
     domain: sensor
     above: 99
     id: Right
@@ -46,7 +46,7 @@
       - repeat:
           while:
           - condition: state
-            entity_id: sensor.bedroom_curtain_right_power_source
+            entity_id: sensor.0x54ef441000678b37_power_source
             state: dc
           sequence:
           - delay: 00:05:00
