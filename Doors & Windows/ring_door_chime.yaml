@@ -6,30 +6,30 @@
     device_id: 293a2657a0aa39ed83826cb74b7ee41d
     entity_id: 8925acf397b30558611056917f7e741f
     domain: binary_sensor
-    trigger: device
     id: 'Front Door '
+    platform: device
   - type: opened
     device_id: 69a709621f777a7d7008c6303823018e
     entity_id: 6594f53df84b4f85c40e8adf7e46f4a9
     domain: binary_sensor
-    trigger: device
+    platform: device
   - type: opened
     device_id: 6c464adcb024b43d978bf16b30f72f9e
     entity_id: 856b77a09002d834a1bffa0012cf984e
     domain: binary_sensor
-    trigger: device
     id: Sunroom Door
+    platform: device
   - type: opened
     device_id: 2ce2a8dce5e2f2d76adba1a3eee72c62
     entity_id: f1ef472d13339ff9c9aaad0ab80758f1
     domain: binary_sensor
-    trigger: device
     id: Rear Door
+    platform: device
   actions:
   - variables:
       volume_level: "{% if now().hour >= 22 or now().hour < 8 %}\n  0.4\n{% else %}\n\
         \  0.6\n{% endif %}\n"
-    enabled: false
+    enabled: true
   - metadata: {}
     data:
       volume: '{{ volume_level }}'
@@ -47,11 +47,12 @@
           - media_content_type: app
             media_content_id: media-source://media_source
     action: script.cast_media_with_no_chime
-    enabled: false
+    enabled: true
   - action: siren.turn_on
     metadata: {}
     data:
       volume_level: 0.8
+      tone: 11
     target:
       entity_id: siren.chime_play_tone
   mode: single
