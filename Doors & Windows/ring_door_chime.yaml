@@ -7,24 +7,24 @@
     entity_id: 8925acf397b30558611056917f7e741f
     domain: binary_sensor
     id: 'Front Door '
-    platform: device
+    trigger: device
   - type: opened
     device_id: 69a709621f777a7d7008c6303823018e
     entity_id: 6594f53df84b4f85c40e8adf7e46f4a9
     domain: binary_sensor
-    platform: device
+    trigger: device
   - type: opened
     device_id: 6c464adcb024b43d978bf16b30f72f9e
     entity_id: 856b77a09002d834a1bffa0012cf984e
     domain: binary_sensor
     id: Sunroom Door
-    platform: device
+    trigger: device
   - type: opened
     device_id: 2ce2a8dce5e2f2d76adba1a3eee72c62
     entity_id: f1ef472d13339ff9c9aaad0ab80758f1
     domain: binary_sensor
     id: Rear Door
-    platform: device
+    trigger: device
   actions:
   - variables:
       volume_level: "{% if now().hour >= 22 or now().hour < 8 %}\n  0.4\n{% else %}\n\
@@ -50,9 +50,8 @@
     enabled: true
   - action: siren.turn_on
     metadata: {}
-    data:
-      volume_level: 0.8
-      tone: 11
     target:
       entity_id: siren.chime_play_tone
+    data:
+      volume_level: 0.85
   mode: single
