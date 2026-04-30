@@ -1,9 +1,10 @@
 # _Uncategorized
 
-16 automation(s) in this category.
+17 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
+| Aqara 4 button remote | This automation configures actions for the Aqara 6-button remote. Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
 | LCM: Calendar Slot Enable/Disable - Slot 4 | Enables Slot 4 when a Gmail calendar event starts, disables it when the event ends. Works alongside Calendar PIN Setter. |

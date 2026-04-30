@@ -1,0 +1,167 @@
+- id: '1777519968143'
+  alias: Aqara 4 button remote
+  description: This automation configures actions for the Aqara 6-button remote. Camera
+    streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast).
+    G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution
+    portrait stream (3024x4096) is not rendered correctly by Chromecast.
+  triggers:
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_1
+    trigger: device
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_1
+    trigger: device
+    id: 1st pressed 2x
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_2
+    trigger: device
+    id: 2nd pressed 1x
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_2
+    trigger: device
+    id: 2nd pressed 2x
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_short_press
+    subtype: button_3
+    trigger: device
+    id: 3rd pressed 1x
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_3
+    trigger: device
+    id: 3rd pressed 2x
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_short_press
+    subtype: button_4
+    trigger: device
+    id: 4th pressed 1x
+  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
+    domain: zha
+    type: remote_button_alt_double_press
+    subtype: button_4
+    trigger: device
+    id: 4th pressed 2x
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: 1st pressed 1x
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.desk_lamp_short
+        data: {}
+      - action: light.turn_on
+        metadata: {}
+        data: {}
+        target:
+          device_id: 745a1199bafbac793894d4b9855eb1cf
+    - conditions:
+      - condition: trigger
+        id: 1st pressed 2x
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          area_id: office
+          device_id: 745a1199bafbac793894d4b9855eb1cf
+        data: {}
+    - conditions:
+      - condition: trigger
+        id: 2nd pressed 1x
+      sequence:
+      - target:
+          entity_id: lock.front_door_deadbolt
+        action: lock.lock
+    - conditions:
+      - condition: trigger
+        id: 2nd pressed 2x
+      sequence:
+      - target:
+          entity_id: lock.front_door_deadbolt
+        action: lock.unlock
+    - conditions:
+      - condition: trigger
+        id: 3rd pressed 1x
+      sequence: []
+    - conditions:
+      - condition: trigger
+        id: 3rd pressed 2x
+      sequence:
+      - action: script.reset_chromecast_power
+    - conditions:
+      - condition: trigger
+        id: 4th pressed 1x
+      sequence:
+      - target:
+          entity_id: cover.athom_garage_door
+        action: cover.close_cover
+      - parallel:
+        - sequence:
+          - type: issue_all_led_effect
+            domain: zha
+            device_id: cf2b54ede5b6725a721039bc1f9bb552
+            effect_type: Medium_Falling
+            color: 125
+            level: 79
+            duration: 15
+          - target:
+              entity_id: light.bedroom_alert_light
+            action: light.turn_off
+        - sequence:
+          - target:
+              entity_id: media_player.whole_house
+            data:
+              cache: true
+              message: The garage door has been closed
+              language: en-US
+              voice: AndrewNeural
+            action: tts.speak
+    - conditions:
+      - condition: trigger
+        id: 4th pressed 2x
+      sequence:
+      - target:
+          entity_id: cover.athom_garage_door
+        action: cover.open_cover
+      - parallel:
+        - sequence:
+          - type: issue_all_led_effect
+            domain: zha
+            device_id: cf2b54ede5b6725a721039bc1f9bb552
+            effect_type: Medium_Rising
+            color: 221
+            level: 79
+            duration: 15
+          - target:
+              entity_id: light.bedroom_alert_light
+            data:
+              rgb_color:
+              - 255
+              - 0
+              - 0
+              flash: short
+            action: light.turn_on
+        - sequence:
+          - target:
+              entity_id: media_player.whole_house
+            data:
+              cache: true
+              message: The garage door has been opened
+              language: en-US
+              voice: AndrewNeural
+            action: tts.speak
+  mode: single
