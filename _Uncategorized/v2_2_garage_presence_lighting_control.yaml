@@ -1,0 +1,103 @@
+- id: '1777613776997'
+  alias: V2.2 Garage Presence Lighting Control
+  description: Controls garage ceiling lights and workbench light based on presence
+    and PIR motion detection. Replaces V2.1 (disabled, preserved for rollback). Ceiling
+    lights turn on when garage_presence_target_count > 0, and turn off after 60 seconds
+    of no presence UNLESS input_boolean.workbench_occupied is on (meaning the workbench
+    PIR sensor still detects activity). Workbench light (switch.workbench_light) turns
+    on when binary_sensor.pir_ms_1_occupancy detects motion and turns off 5 minutes
+    after motion clears; it also sets/clears input_boolean.workbench_occupied to prevent
+    the ceiling lights from shutting off while someone is at the workbench. Night-time
+    block (11:00pm-6:00am) applies to ceiling lights only, bypassed by input_boolean.garage_light_time_override.
+    Time override resets at 6:00am daily. Manual override (input_boolean.garage_presence_override)
+    bypasses the entire automation.
+  triggers:
+  - entity_id: sensor.garage_presence_target_count
+    above: 0
+    id: presence_detected
+    platform: numeric_state
+  - entity_id: sensor.garage_presence_target_count
+    below: 1
+    for:
+      seconds: 60
+    id: no_presence
+    platform: numeric_state
+  - entity_id: binary_sensor.pir_ms_1_occupancy
+    to: 'on'
+    id: workbench_motion_on
+    platform: state
+  - entity_id: binary_sensor.pir_ms_1_occupancy
+    to: 'off'
+    for:
+      minutes: 5
+    id: workbench_motion_off
+    platform: state
+  - at: 06:00:00
+    id: reset_override
+    platform: time
+  conditions:
+  - condition: state
+    entity_id: input_boolean.garage_presence_override
+    state: 'off'
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: presence_detected
+      - condition: state
+        entity_id: switch.garage_lights
+        state: 'off'
+      - condition: or
+        conditions:
+        - condition: not
+          conditions:
+          - condition: time
+            after: '23:00:00'
+          - condition: time
+            before: 06:00:00
+        - condition: state
+          entity_id: input_boolean.garage_light_time_override
+          state: 'on'
+      sequence:
+      - target:
+          entity_id: switch.garage_lights
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id: no_presence
+      - condition: state
+        entity_id: input_boolean.workbench_occupied
+        state: 'off'
+      sequence:
+      - target:
+          entity_id: switch.garage_lights
+        action: switch.turn_off
+    - conditions:
+      - condition: trigger
+        id: workbench_motion_on
+      sequence:
+      - target:
+          entity_id: input_boolean.workbench_occupied
+        action: input_boolean.turn_on
+      - target:
+          entity_id: switch.workbench_light
+        action: switch.turn_on
+    - conditions:
+      - condition: trigger
+        id: workbench_motion_off
+      sequence:
+      - target:
+          entity_id: input_boolean.workbench_occupied
+        action: input_boolean.turn_off
+      - target:
+          entity_id: switch.workbench_light
+        action: switch.turn_off
+    - conditions:
+      - condition: trigger
+        id: reset_override
+      sequence:
+      - target:
+          entity_id: input_boolean.garage_light_time_override
+        action: input_boolean.turn_off
+  mode: parallel
+  max: 10

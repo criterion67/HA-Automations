@@ -1,6 +1,6 @@
 # _Uncategorized
 
-17 automation(s) in this category.
+18 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -20,4 +20,5 @@
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts. |
 | TEST - Doorbell Button Press Triggers Chime | Test automation: triggered by an incoming webhook HTTP POST to /api/webhook/doorbell_chime_trigger. Intended to be called by the Reolink doorbell's built-in HTTP alarm action when the button is pressed. Plays tone ring_doorbell.mp3 (6 sec) on the Zooz ZSE50 chime via siren.chime_play_tone. Uses restart mode so rapid presses reset the sequence. |
 | Unlock Front Door: UniFi Access Granted | When UniFi Access grants entry at the front door via any authentication method (PIN, NFC, face unlock, mobile app, or remote), unlock the front door deadbolt via Z-Wave. Triggered by the hass-unifi-access integration event entity via local WebSocket — no cloud dependency. |
+| V2.2 Garage Presence Lighting Control | Controls garage ceiling lights and workbench light based on presence and PIR motion detection. Replaces V2.1 (disabled, preserved for rollback). Ceiling lights turn on when garage_presence_target_count > 0, and turn off after 60 seconds of no presence UNLESS input_boolean.workbench_occupied is on (meaning the workbench PIR sensor still detects activity). Workbench light (switch.workbench_light) turns on when binary_sensor.pir_ms_1_occupancy detects motion and turns off 5 minutes after motion clears; it also sets/clears input_boolean.workbench_occupied to prevent the ceiling lights from shutting off while someone is at the workbench. Night-time block (11:00pm-6:00am) applies to ceiling lights only, bypassed by input_boolean.garage_light_time_override. Time override resets at 6:00am daily. Manual override (input_boolean.garage_presence_override) bypasses the entire automation. |
 | Water Valve Battery Low Alert | Fires when either water valve battery sensor drops below 15%. Sends a critical mobile notification with battery type and quantity, creates a Google Calendar purchase reminder, and posts a persistent dashboard notification. |

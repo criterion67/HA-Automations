@@ -1,7 +1,8 @@
 - id: '1697312060941'
   alias: 'Garage Lights: Off when Door is locked'
-  description: The garage lights will turn off when the laundry room door deadbolt
-    is locked.
+  description: Turns off garage ceiling lights and workbench light (switch.workbench_light)
+    when the laundry room door deadbolt is locked. Also clears input_boolean.workbench_occupied
+    to reset workbench presence state.
   triggers:
   - entity_id:
     - lock.laundry_room_door_deadbolt
@@ -17,4 +18,10 @@
     target:
       entity_id: switch.garage_lights
     action: switch.turn_off
+  - action: switch.turn_off
+    target:
+      entity_id: switch.workbench_light
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.workbench_occupied
   mode: single

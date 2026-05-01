@@ -1,25 +1,28 @@
 - id: '1730065792277'
   alias: Garage Light Override Control
-  description: Manages override mode and direct light control
+  description: 'Manages override mode and direct light control. Single press: enables
+    input_boolean.garage_presence_override and turns on ceiling lights. Double press
+    or physical switch off: disables override, turns off ceiling lights, turns off
+    workbench light (switch.workbench_light), and clears input_boolean.workbench_occupied.'
   triggers:
   - device_id: 41e5bb495faeb6ce45e9780f0167270a
     domain: zha
     type: remote_button_short_press
     subtype: remote_button_short_press
     id: single_press
-    trigger: device
+    platform: device
   - device_id: 41e5bb495faeb6ce45e9780f0167270a
     domain: zha
     type: remote_button_double_press
     subtype: remote_button_double_press
     id: double_press
-    trigger: device
+    platform: device
   - type: turned_off
     device_id: f8945c1e725c6f410df8f5fae24cdaca
     entity_id: 13270152e75dd8c361d8071479b02484
     domain: switch
     id: switch_off
-    trigger: device
+    platform: device
   conditions: []
   actions:
   - choose:
@@ -51,4 +54,10 @@
           entity_id: switch.garage_lights
         action: switch.turn_off
         data: {}
+      - action: switch.turn_off
+        target:
+          entity_id: switch.workbench_light
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.workbench_occupied
   mode: single

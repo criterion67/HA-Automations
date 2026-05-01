@@ -13,7 +13,7 @@
 | Bedroom Light Switch Control - V2 Inovelli | Controlling bedroom lights via the Innovelli Smart switch mode. |
 | Bedroom TV: Control TV Backlighting | TV back lights turn on or off based on power state. |
 | Evening Routine (Fully Dynamic Scenes + Verification + Retry Actions) | Executes 10 PM, 11 PM, and 12 AM scenes with dynamic entity verification for locks and lights, retry logic, actionable notifications, and safeguards for jammed/unavailable devices. |
-| Garage Light Override Control | Manages override mode and direct light control |
+| Garage Light Override Control | Manages override mode and direct light control. Single press: enables input_boolean.garage_presence_override and turns on ceiling lights. Double press or physical switch off: disables override, turns off ceiling lights, turns off workbench light (switch.workbench_light), and clears input_boolean.workbench_occupied. |
 | Garage Lights on when Garage door opened | Garage lights will turn on when garage door is opened between sunset and sunrise for 10 minutes and then turn off. Automation will not run again for 1 hour after lights are turned off. |
 | Hall Bath Presence Lighting Control v2 | Lighting control based on presence with day and night split. |
 | Light Control: Bedroom Inovelli switch | Controls bedroom ceiling lights and bedside lamps via Inovelli switch — single tap up/down for ceiling, double tap for bedside lamps. |
