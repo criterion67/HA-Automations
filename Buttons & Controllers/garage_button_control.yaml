@@ -1,27 +1,26 @@
 - id: '1761971748381'
   alias: Garage Button Control
-  description: 'Controls garage lighting and door using the Aqara Mini Button via
-    Zigbee2MQTT. • Single press → Toggles garage lights • Double press → Toggles garage
-    night light • Hold for ≥ 4 seconds → Toggles garage door
-
-    '
+  description: 'Controls garage lighting and door using the Aqara Mini Button (Garage
+    Lights Remote) via Zigbee2MQTT. Single press: sets input_boolean.garage_presence_override
+    on (forces V2.3 presence automation to keep lights on). Double press: toggles
+    garage night light. Hold 4+ seconds: toggles garage door.'
   triggers:
-  - trigger: mqtt
-    topic: zigbee2mqtt/Garage Lights Remote/action
+  - topic: zigbee2mqtt/Garage Lights Remote/action
     payload: single
     id: single_press
-  - trigger: mqtt
-    topic: zigbee2mqtt/Garage Lights Remote/action
+    platform: mqtt
+  - topic: zigbee2mqtt/Garage Lights Remote/action
     payload: double
     id: double_press
-  - trigger: mqtt
-    topic: zigbee2mqtt/Garage Lights Remote/action
+    platform: mqtt
+  - topic: zigbee2mqtt/Garage Lights Remote/action
     payload: hold
     id: hold_start
-  - trigger: mqtt
-    topic: zigbee2mqtt/Garage Lights Remote/action
+    platform: mqtt
+  - topic: zigbee2mqtt/Garage Lights Remote/action
     payload: release
     id: hold_release
+    platform: mqtt
   conditions: []
   actions:
   - choose:
@@ -29,9 +28,9 @@
       - condition: trigger
         id: single_press
       sequence:
-      - action: switch.toggle
+      - action: input_boolean.turn_on
         target:
-          entity_id: switch.garage_lights
+          entity_id: input_boolean.garage_presence_override
     - conditions:
       - condition: trigger
         id: double_press

@@ -1,0 +1,77 @@
+- id: '1777644946284'
+  alias: Living Room TV - Turn Off When Bill Leaves
+  description: When Bill has been away from home for 10 minutes, turn off the Living
+    Room Chromecast. If Scott is home, send an actionable notification first asking
+    whether to keep it on. If no response within 2 minutes, turn it off automatically.
+  triggers:
+  - platform: state
+    entity_id: person.bill_funk
+    to: not_home
+    for:
+      minutes: 10
+    id: bill_left
+  conditions:
+  - condition: state
+    entity_id: media_player.onn_streaming_device_4k_pro
+    state:
+    - playing
+    - paused
+    - idle
+    - 'on'
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: person.scott_funk
+        state: home
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Living Room TV On
+          message: Bill has left home. Should the Living Room TV stay on?
+          data:
+            actions:
+            - action: LIVING_ROOM_TV_KEEP_ON
+              title: Keep On
+            - action: LIVING_ROOM_TV_TURN_OFF
+              title: Turn Off
+            tag: living_room_tv_bill_away
+            persistent: true
+            sticky: true
+      - wait_for_trigger:
+        - platform: event
+          event_type: mobile_app_notification_action
+          event_data:
+            action: LIVING_ROOM_TV_KEEP_ON
+        - platform: event
+          event_type: mobile_app_notification_action
+          event_data:
+            action: LIVING_ROOM_TV_TURN_OFF
+        timeout:
+          minutes: 2
+        continue_on_timeout: true
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ wait.trigger is not none and wait.trigger.event.data.action
+              == ''LIVING_ROOM_TV_KEEP_ON'' }}'
+          sequence:
+          - action: notify.mobile_app_pixel_9
+            data:
+              message: clear_notification
+              data:
+                tag: living_room_tv_bill_away
+        default:
+        - action: media_player.turn_off
+          target:
+            entity_id: media_player.onn_streaming_device_4k_pro
+        - action: notify.mobile_app_pixel_9
+          data:
+            message: clear_notification
+            data:
+              tag: living_room_tv_bill_away
+    default:
+    - action: media_player.turn_off
+      target:
+        entity_id: media_player.onn_streaming_device_4k_pro
+  mode: single
