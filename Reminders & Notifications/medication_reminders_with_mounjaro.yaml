@@ -6,20 +6,20 @@
   triggers:
   - at: 07:00:00
     id: morning_1
-    platform: time
+    trigger: time
   - at: 08:00:00
     id: morning_2
-    platform: time
+    trigger: time
   - at: 09:00:00
     id: mounjaro_reminder
-    platform: time
+    trigger: time
   - at: '19:00:00'
     id: evening_1
-    platform: time
+    trigger: time
   - at: '20:00:00'
     id: evening_2
     enabled: false
-    platform: time
+    trigger: time
   conditions:
   - condition: or
     conditions:
@@ -40,14 +40,16 @@
     - target:
         entity_id: media_player.bedroom_group
       data:
-        media_content_id: media-source://tts/tts.home_assistant_cloud?message= {%
-          if trigger.id == 'morning_1' %}Time+for+first+morning+medication+{% elif
-          trigger.id == 'morning_2' %}Time+for+second+morning+medications+{% elif
-          trigger.id == 'evening_1' %}Time+for+evening+medications+{% elif trigger.id
-          == 'evening_2' %}Time+for+second+evening+medications+{% elif trigger.id
-          == 'mounjaro_reminder' %}Time+for+Mounjaro+weekly+injection+{% endif %}
-          &language=en-US&voice=AndrewNeural
-        media_content_type: provider
+        media:
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message= {%
+            if trigger.id == 'morning_1' %}Time+for+first+morning+medication+{% elif
+            trigger.id == 'morning_2' %}Time+for+second+morning+medications+{% elif
+            trigger.id == 'evening_1' %}Time+for+evening+medications+{% elif trigger.id
+            == 'evening_2' %}Time+for+second+evening+medications+{% elif trigger.id
+            == 'mounjaro_reminder' %}Time+for+Mounjaro+weekly+injection+{% endif %}
+            &language=en-US&voice=AndrewNeural
+          media_content_type: provider
+          metadata: {}
       action: media_player.play_media
     - if:
       - condition: template

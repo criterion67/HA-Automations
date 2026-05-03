@@ -24,8 +24,7 @@
   actions:
   - variables:
       tv_lights_were_on: '{{ is_state(''light.tv_lights'', ''on'') }}'
-      bedroom_media: media_player.bedroom_group
-      living_room_media: media_player.living_room_display
+      bedroom_media: media_player.all_speakers
   - choose:
     - conditions:
       - condition: trigger

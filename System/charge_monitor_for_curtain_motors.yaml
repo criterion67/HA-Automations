@@ -25,7 +25,7 @@
         id: Right
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://media_source/local/Best Chime Tone.mp3
           media_content_type: audio/mpeg
@@ -34,7 +34,7 @@
         action: media_player.play_media
       - delay: 00:00:02
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://tts/tts.home_assistant_cloud?message=Right+curtain+motor+now+fully+charged&language=en-US&voice=AriaNeural%7C%7Cnarration-professional
           media_content_type: provider
@@ -51,7 +51,7 @@
           sequence:
           - delay: 00:05:00
           - target:
-              entity_id: media_player.googlehome4496
+              entity_id: media_player.bedroom_group
             data:
               media_content_id: media-source://tts/tts.home_assistant_cloud?message=Right+curtain+motor+is+still+plugged+in+and+charging&language=en-US&voice=AriaNeural%7C%7Cnarration-professional
               media_content_type: provider
@@ -62,7 +62,7 @@
         id: Left
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://media_source/local/Best Chime Tone.mp3
           media_content_type: audio/mpeg
@@ -71,7 +71,7 @@
         action: media_player.play_media
       - delay: 00:00:02
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://tts/tts.home_assistant_cloud?message=Left+curtain+motor+now+fully+charged&language=en-US&voice=AriaNeural%7C%7Cnarration-professional
           media_content_type: provider
@@ -88,7 +88,7 @@
           sequence:
           - delay: 00:05:00
           - target:
-              entity_id: media_player.googlehome4496
+              entity_id: media_player.bedroom_group
             data:
               media_content_id: media-source://tts/tts.home_assistant_cloud?message=Left+curtain+motor+is+still+plugged+in+and+charging&language=en-US&voice=AriaNeural%7C%7Cnarration-professional
               media_content_type: provider

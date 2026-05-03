@@ -23,7 +23,7 @@
         target:
           entity_id: light.living_room_lights
   - target:
-      entity_id: media_player.whole_house
+      entity_id: media_player.all_speakers
     data:
       media:
         media_content_id: media-source://media_source/local/emergency-alarm-with-reverb-29431.mp3
@@ -39,7 +39,7 @@
             media_content_id: media-source://media_source
     action: media_player.play_media
   - target:
-      entity_id: media_player.whole_house
+      entity_id: media_player.all_speakers
     data:
       media:
         media_content_id: media-source://tts/tts.home_assistant_cloud?message=Alert%2C+Alert%2C+Smoke+has+been+detected+in+the+house%21+Please+exit+immediately%21+&language=en-US&voice=JennyNeural

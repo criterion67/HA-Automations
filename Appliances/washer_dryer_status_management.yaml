@@ -9,48 +9,48 @@
   - entity_id: sensor.sv346034n_laundry_machine_state
     to: Run
     id: 'On'
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Load Size Detection
     id: Load Size Detection
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Fill
     id: Fill
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Wash
     id: Wash
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Rinse
     id: Rinse
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Drain
     id: Drain
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Spin
     id: Spin
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Drying
     id: Drying
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_sub_cycle
     to: Cool Down
     id: Cool Down
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_machine_state
     to: Finished
     id: Finished
-    trigger: state
+    platform: state
   - entity_id: sensor.sv346034n_laundry_machine_state
     to: 'Off'
     id: 'Off'
     enabled: false
-    trigger: state
+    platform: state
   conditions: []
   actions:
   - choose:
@@ -65,7 +65,9 @@
           color_name: magenta
         action: light.turn_on
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+on&language=en-US&voice=AndrewNeural
@@ -88,7 +90,9 @@
         id: Load Size Detection
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+detecting+load+size&language=en-US&voice=AndrewNeural
@@ -100,7 +104,9 @@
         id: Fill
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+filling&language=en-US&voice=AndrewNeural
@@ -112,7 +118,9 @@
         id: Wash
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+wash+mode&language=en-US&voice=AndrewNeural
@@ -124,7 +132,9 @@
         id: Rinse
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+rinse+mode&language=en-US&voice=AndrewNeural
@@ -136,7 +146,9 @@
         id: Drain
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+draining&language=en-US&voice=AndrewNeural
@@ -148,7 +160,9 @@
         id: Spin
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+spin+mode&language=en-US&voice=AndrewNeural
@@ -160,7 +174,9 @@
         id: Drying
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Laundry+load+is+now+drying&language=en-US&voice=AndrewNeural
@@ -172,7 +188,9 @@
         id: Cool Down
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+in+cool+down+mode&language=en-US&voice=AndrewNeural
@@ -194,7 +212,9 @@
         id: Finished
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+has+finished.&language=en-US&voice=AndrewNeural
@@ -223,7 +243,9 @@
         id: 'Off'
       sequence:
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+now+off&language=en-US&voice=AndrewNeural

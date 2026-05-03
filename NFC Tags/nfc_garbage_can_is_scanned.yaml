@@ -3,12 +3,12 @@
   description: ''
   triggers:
   - tag_id: c5100db2-1d33-4338-8c3a-7d0ce419f7c2
-    trigger: tag
+    platform: tag
   conditions: []
   actions:
   - action: media_player.play_media
     target:
-      entity_id: media_player.googlehome4496
+      entity_id: media_player.bedroom_group
     data:
       media:
         media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+garbage+can+has+been+set+on+the+street+for+pickup&language=en-US&voice=JennyNeural

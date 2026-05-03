@@ -8,13 +8,13 @@
     entity_id: 9a7db4dc47e1112cfba4e9c3186fe953
     domain: binary_sensor
     id: Empty
-    trigger: device
+    platform: device
   - type: moist
     device_id: 39b399dd66495f54ab741ba89cf05558
     entity_id: 9a7db4dc47e1112cfba4e9c3186fe953
     domain: binary_sensor
     id: Full
-    trigger: device
+    platform: device
   conditions:
   - condition: time
     after: 07:00:00
@@ -44,7 +44,7 @@
           message: Dog's water bowl is empty. Please refill as soon as possible.
         action: notify.mobile_app_pixel_9
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+dogs+water+bowl+is+empty.+Please+refill+as+soon+as+possible.&language=en-US&voice=AndrewNeural
           media_content_type: provider
@@ -66,7 +66,7 @@
           message: Dog's water bowl has been refilled.
         action: notify.mobile_app_pixel_9
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+dogs+water+bowl+has+been+refilled.&language=en-US&voice=AndrewNeural
           media_content_type: provider

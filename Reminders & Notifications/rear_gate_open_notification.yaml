@@ -6,12 +6,12 @@
     device_id: a26866a0ef5d5d6014712334728e60db
     entity_id: 2cce734b56b42d97154aa17bcc88d1b0
     domain: binary_sensor
-    trigger: device
+    platform: device
   conditions: []
   actions:
   - action: media_player.play_media
     target:
-      entity_id: media_player.googlehome4496
+      entity_id: media_player.bedroom_group
     data:
       media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+gate+has+been+opened&language=en-US&voice=AndrewNeural
       media_content_type: provider

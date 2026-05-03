@@ -144,7 +144,7 @@
             action: light.turn_off
         - sequence:
           - target:
-              entity_id: media_player.whole_house
+              entity_id: media_player.all_speakers
             data:
               cache: true
               message: The garage door has been closed
@@ -178,7 +178,7 @@
             action: light.turn_on
         - sequence:
           - target:
-              entity_id: media_player.whole_house
+              entity_id: media_player.all_speakers
             data:
               cache: true
               message: The garage door has been opened

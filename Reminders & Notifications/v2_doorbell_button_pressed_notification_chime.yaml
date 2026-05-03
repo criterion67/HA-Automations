@@ -40,7 +40,7 @@
                   - media_content_type: app
                     media_content_id: media-source://media_source
             target:
-              entity_id: media_player.googlehome3309
+              entity_id: media_player.dining_room_speaker_cast
             action: media_player.play_media
           - delay:
               seconds: 3
@@ -62,7 +62,7 @@
               - media_content_type: provider
                 media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=AndrewNeural
         target:
-          entity_id: media_player.googlehome3309
+          entity_id: media_player.dining_room_speaker_cast
         action: media_player.play_media
     - data:
         media_player: media_player.living_room_tv_2
@@ -70,4 +70,27 @@
       target:
         entity_id: camera.g6_pro_doorbell_medium_resolution_channel
       action: camera.play_stream
+    - sequence:
+      - alias: Pause living room TV if currently playing
+        if:
+        - condition: state
+          entity_id: media_player.living_room_tv
+          state: playing
+        then:
+        - action: media_player.media_pause
+          target:
+            entity_id: media_player.living_room_tv
+          data: {}
+      - alias: Display camera for 1 minute
+        delay: 00:01:00
+      - alias: Stop doorbell camera stream on Living Room TV
+        action: media_player.media_stop
+        target:
+          entity_id: media_player.onn_streaming_device_4k_pro
+        data: {}
+      - alias: Resume previous Living Room TV playback
+        action: media_player.media_play
+        target:
+          entity_id: media_player.living_room_tv
+        data: {}
   mode: single

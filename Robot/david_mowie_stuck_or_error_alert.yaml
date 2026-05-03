@@ -3,10 +3,10 @@
   description: Notify phone and announce via Cloud TTS when mower goes from mowing
     to error, 15 minute cooldown.
   triggers:
-  - trigger: state
-    entity_id: lawn_mower.david_mowie
+  - entity_id: lawn_mower.david_mowie
     from: mowing
     to: error
+    platform: state
   conditions:
   - condition: template
     value_template: '{% set last = state_attr(''automation.david_mowie_stuck_or_error_alert'',
@@ -27,7 +27,7 @@
         ttl: 0
   - action: media_player.play_media
     target:
-      entity_id: media_player.googlehome4496
+      entity_id: media_player.bedroom_group
     data:
       metadata: {}
       media:

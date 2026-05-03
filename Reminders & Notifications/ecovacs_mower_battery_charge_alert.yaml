@@ -8,16 +8,16 @@
   - entity_id: sensor.david_mowie_battery
     below: 50
     id: battery_low
-    trigger: numeric_state
+    platform: numeric_state
   - entity_id: sensor.david_mowie_battery
     above: 79
     id: battery_high
-    trigger: numeric_state
+    platform: numeric_state
   - entity_id:
     - sensor.david_mowie_battery
     below: 20
     id: battery_recharge
-    trigger: numeric_state
+    platform: numeric_state
   conditions: []
   actions:
   - choose:
@@ -53,7 +53,9 @@
             now().strftime('%I:%M %p on %b %-d') }}
         action: notify.mobile_app_pixel_9
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+recharged+to+80%25+and+will+now+finish+mowing.&language=en-US&voice=AndrewNeural
           media_content_type: audio/mp3
@@ -84,7 +86,9 @@
           message: David Mowie's battery has discharged to 20% and will now return
             to the dock to charge. {{ now().strftime('%I:%M %p on %b %-d') }}
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media_content_id: media-source://media_source/local/Best Chime Tone.mp3
           media_content_type: audio/mpeg
@@ -97,7 +101,9 @@
           seconds: 2
           milliseconds: 0
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id:
+          - media_player.bedroom_group
+          - media_player.dining_room_speaker_cast
         data:
           media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie%27s+battery+has+discharged+to+17%25+and+will+now+return+to+the+dock+to+charge.&language=en-US&voice=AndrewNeural
           media_content_type: audio/mp3

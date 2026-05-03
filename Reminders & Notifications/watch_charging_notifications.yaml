@@ -2,17 +2,17 @@
   alias: Watch charging notifications
   description: ''
   triggers:
-  - trigger: state
-    entity_id:
+  - entity_id:
     - sensor.galaxy_watch7_904t_battery_state
     to:
     - charging
     id: Charging
+    platform: state
   - entity_id:
     - sensor.galaxy_watch7_904t_battery_state
     to: full
-    trigger: state
     id: Full
+    platform: state
   conditions: []
   actions:
   - choose:
@@ -27,7 +27,7 @@
           seconds: 1
           milliseconds: 0
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media:
             media_content_id: media-source://media_source/local/Best Chime Tone.mp3
@@ -42,7 +42,7 @@
           milliseconds: 0
       - action: media_player.play_media
         target:
-          entity_id: media_player.bedroom_group_2
+          entity_id: media_player.bedroom_group
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+charging&language=en-US&voice=AndrewNeural
@@ -69,7 +69,7 @@
           seconds: 1
           milliseconds: 0
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media:
             media_content_id: media-source://media_source/local/Best Chime Tone.mp3
@@ -83,7 +83,7 @@
           seconds: 2
           milliseconds: 0
       - target:
-          entity_id: media_player.bedroom_group_2
+          entity_id: media_player.bedroom_group
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+now+fully+charged&language=en-US&voice=AndrewNeural

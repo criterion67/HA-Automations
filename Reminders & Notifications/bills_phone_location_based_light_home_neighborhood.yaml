@@ -8,11 +8,11 @@
   - entity_id: device_tracker.bill_s_phone
     to: Neighborhood
     id: Neighborhood
-    trigger: state
+    platform: state
   - entity_id: device_tracker.bill_s_phone
     to: home
     id: Home
-    trigger: state
+    platform: state
   - entity_id: device_tracker.bill_s_phone
     to:
     - Casey's
@@ -23,10 +23,10 @@
     - Away
     for: 00:02:30
     id: Away
-    trigger: state
+    platform: state
   - event: start
     id: Startup
-    trigger: homeassistant
+    platform: homeassistant
   conditions: []
   actions:
   - choose:
@@ -54,7 +54,7 @@
           seconds: 1
           milliseconds: 0
       - target:
-          entity_id: media_player.googlehome4496
+          entity_id: media_player.bedroom_group
         data:
           media_content_id: media-source://media_source/local/Best Chime Tone.mp3
           media_content_type: audio/mpeg

@@ -1,6 +1,6 @@
 # Reminders & Notifications
 
-51 automation(s) in this category.
+50 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -71,4 +71,3 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | V2: Doorbell - Button Pressed Notification Chime | G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime and TTS announcement on Dining Room Speaker. Uses medium resolution channel (1440x1920) as high-res portrait stream is not rendered correctly by Chromecast. |
 | Watch charging notifications |  |
 | Zigbee Keypad - Lock/Unlock Front Door | Home button + PIN unlocks front door. Away button + PIN locks front door. Wrong PIN sends rejection beep. |
-| Zone 2 Media Announcement Sample | Announces that the robot vacuum has completed cleaning and is returning to the dock. |
