@@ -5,16 +5,16 @@
   - entity_id: input_boolean.david_mowie_start_mowing
     to: 'on'
     id: start
-    trigger: state
+    platform: state
   - event_type: mobile_app_notification_action
     event_data:
       action: RESUME_MOWIE
     id: resume_action
-    trigger: event
-  - entity_id: binary_sensor.athom_garage_door_contact
+    platform: event
+  - entity_id: binary_sensor.garage_door_contact
     to: open
     id: door_opened
-    trigger: state
+    platform: state
   conditions: []
   actions:
   - choose:
@@ -27,12 +27,12 @@
         above: 15
       - if:
         - condition: state
-          entity_id: binary_sensor.athom_garage_door_contact
+          entity_id: binary_sensor.garage_door_contact
           state: 'off'
         then:
         - action: cover.open_cover
           target:
-            entity_id: cover.athom_garage_door
+            entity_id: cover.garage_door
       - delay:
           seconds: 5
       - action: lawn_mower.start_mowing
@@ -64,12 +64,12 @@
           seconds: 10
       - if:
         - condition: state
-          entity_id: binary_sensor.athom_garage_door_contact
+          entity_id: binary_sensor.garage_door_contact
           state: 'on'
         then:
         - action: cover.close_cover
           target:
-            entity_id: cover.athom_garage_door
+            entity_id: cover.garage_door
       - wait_for_trigger:
         - entity_id: sensor.david_mowie_battery
           above: 85
@@ -78,7 +78,7 @@
         continue_on_timeout: true
       - if:
         - condition: state
-          entity_id: binary_sensor.athom_garage_door_contact
+          entity_id: binary_sensor.garage_door_contact
           state: 'off'
         then:
         - action: lawn_mower.pause

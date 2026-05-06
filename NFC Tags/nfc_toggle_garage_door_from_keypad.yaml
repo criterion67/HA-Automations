@@ -7,10 +7,10 @@
     platform: tag
   conditions: []
   actions:
-  - device_id: a235607541ed6fc61e5c8d84cdc1859c
-    domain: cover
-    entity_id: 7147eec9a271d8064c360350e440406a
-    type: open
+  - action: cover.open_cover
+    target:
+      entity_id: cover.garage_door
+    data: {}
   - data: {}
     action: lock.unlock
     target:

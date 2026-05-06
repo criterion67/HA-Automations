@@ -128,7 +128,7 @@
         id: 4th pressed 1x
       sequence:
       - target:
-          entity_id: cover.athom_garage_door
+          entity_id: cover.garage_door
         action: cover.close_cover
       - parallel:
         - sequence:
@@ -156,7 +156,7 @@
         id: 4th pressed 2x
       sequence:
       - target:
-          entity_id: cover.athom_garage_door
+          entity_id: cover.garage_door
         action: cover.open_cover
       - parallel:
         - sequence:

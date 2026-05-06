@@ -5,29 +5,29 @@
 
     '
   triggers:
-  - entity_id: cover.athom_garage_door
+  - entity_id: cover.garage_door
     to: open
     for: 00:02:00
-    trigger: state
     id: door_open
+    platform: state
   - entity_id: binary_sensor.rear_door
     to: 'on'
     for: 00:02:00
-    trigger: state
     id: door_open
+    platform: state
   - entity_id:
-    - cover.athom_garage_door
+    - cover.garage_door
     - binary_sensor.rear_door
     to:
     - closed
     - 'off'
-    trigger: state
     id: doors_closed
+    platform: state
   - event_type: mobile_app_notification_action
     event_data:
       action: GARAGE_DOOR_STOP_CLIMATE
-    trigger: event
     id: stop_climate
+    platform: event
   conditions: []
   actions:
   - variables:

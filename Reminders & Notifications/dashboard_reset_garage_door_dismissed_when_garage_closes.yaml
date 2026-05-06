@@ -1,9 +1,9 @@
 - id: '1773105140330'
   alias: Dashboard - Reset Garage Door Dismissed When Garage Closes
   triggers:
-  - trigger: state
-    entity_id: cover.athom_garage_door
+  - entity_id: cover.garage_door
     to: closed
+    platform: state
   actions:
   - action: input_boolean.turn_off
     target:

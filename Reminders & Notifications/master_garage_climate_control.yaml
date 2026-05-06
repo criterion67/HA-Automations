@@ -9,27 +9,27 @@
     domain: zha
     type: remote_button_short_press
     subtype: remote_button_short_press
-    trigger: device
     id: button
+    platform: device
   - entity_id:
     - sensor.temp_sensor_garage
     - sensor.temp_sensor_rudys_crate
     above: 89
     for:
       minutes: 5
-    trigger: numeric_state
     id: high_temp_cool
+    platform: numeric_state
   - entity_id: climate.garage_ac
     attribute: current_temperature
     below: 72.1
-    trigger: numeric_state
     id: dry_to_cool
+    platform: numeric_state
   - entity_id: sensor.temp_sensor_garage
     below: 42
     for:
       minutes: 5
-    trigger: numeric_state
     id: freeze_protect
+    platform: numeric_state
   conditions: []
   actions:
   - variables:
@@ -91,7 +91,7 @@
       sequence:
       - condition: template
         value_template: "{{ mode_boolean == 'off' and vacation == 'off' and bill_home\
-          \ and\n   is_state('climate.garage_ac', 'off') and\n   is_state('cover.athom_garage_door',\
+          \ and\n   is_state('climate.garage_ac', 'off') and\n   is_state('cover.garage_door',\
           \ 'closed') and\n   is_state('binary_sensor.rear_door', 'off') }}\n"
       - target:
           entity_id: climate.garage_ac

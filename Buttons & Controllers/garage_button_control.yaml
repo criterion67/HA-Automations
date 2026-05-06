@@ -52,5 +52,5 @@
         value_template: '{{ wait.trigger is none }}'
       - action: cover.toggle
         target:
-          entity_id: cover.athom_garage_door
+          entity_id: cover.garage_door
   mode: single

@@ -8,12 +8,12 @@
   actions:
   - action: cover.toggle
     target:
-      entity_id: cover.athom_garage_door
+      entity_id: cover.garage_door
   - wait_for_trigger:
-    - entity_id: binary_sensor.athom_garage_door_contact
+    - entity_id: binary_sensor.garage_door_contact
       to: 'on'
       trigger: state
-    - entity_id: binary_sensor.athom_garage_door_contact
+    - entity_id: binary_sensor.garage_door_contact
       to: 'off'
       trigger: state
     timeout: 00:00:30
@@ -21,7 +21,7 @@
   - choose:
     - conditions:
       - condition: state
-        entity_id: binary_sensor.athom_garage_door_contact
+        entity_id: binary_sensor.garage_door_contact
         state: 'on'
       sequence:
       - condition: state
@@ -36,7 +36,7 @@
           message: Garage door is open and laundry door unlocked.
     - conditions:
       - condition: state
-        entity_id: binary_sensor.athom_garage_door_contact
+        entity_id: binary_sensor.garage_door_contact
         state: 'off'
       sequence:
       - condition: state

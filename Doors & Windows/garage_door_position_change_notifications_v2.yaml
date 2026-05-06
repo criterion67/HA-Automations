@@ -2,36 +2,22 @@
   alias: Garage Door position change notifications v2
   description: ''
   triggers:
-  - device_id: a235607541ed6fc61e5c8d84cdc1859c
-    domain: cover
-    entity_id: 7147eec9a271d8064c360350e440406a
-    type: opened
-    id: Opening
-    trigger: device
-    enabled: false
-  - device_id: a235607541ed6fc61e5c8d84cdc1859c
-    domain: cover
-    entity_id: 7147eec9a271d8064c360350e440406a
-    type: closed
-    id: Closing
-    trigger: device
-    enabled: false
-  - trigger: state
-    entity_id:
+  - entity_id:
     - binary_sensor.garage_door_position
     id: Opening
     from:
     - 'off'
     to:
     - 'on'
-  - trigger: state
-    entity_id:
+    platform: state
+  - entity_id:
     - binary_sensor.garage_door_position
     id: Closing
     from:
     - 'on'
     to:
     - 'off'
+    platform: state
   conditions: []
   actions:
   - choose:
