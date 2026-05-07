@@ -1,57 +1,51 @@
 - id: '1777519968143'
   alias: Aqara 4 button remote
-  description: This automation configures actions for the Aqara 6-button remote. Camera
-    streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast).
-    G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution
-    portrait stream (3024x4096) is not rendered correctly by Chromecast.
+  description: This automation configures actions for the Aqara 4-button remote (Opple
+    wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer
+    4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium
+    resolution channel (1440x1920) as the high resolution portrait stream (3024x4096)
+    is not rendered correctly by Chromecast.
   triggers:
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_short_press
-    subtype: button_1
-    trigger: device
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_double_press
-    subtype: button_1
-    trigger: device
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 1_single
+    id: 1st pressed 1x
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 1_double
     id: 1st pressed 2x
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_short_press
-    subtype: button_2
-    trigger: device
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 2_single
     id: 2nd pressed 1x
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_double_press
-    subtype: button_2
-    trigger: device
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 2_double
     id: 2nd pressed 2x
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_short_press
-    subtype: button_3
-    trigger: device
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 3_single
     id: 3rd pressed 1x
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_double_press
-    subtype: button_3
-    trigger: device
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 3_double
     id: 3rd pressed 2x
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_short_press
-    subtype: button_4
-    trigger: device
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 4_single
     id: 4th pressed 1x
-  - device_id: 2f827e87f8b7a7691b85dbcb051c446f
-    domain: zha
-    type: remote_button_alt_double_press
-    subtype: button_4
-    trigger: device
+    trigger: mqtt
+  - topic: zigbee2mqtt/Aqara 4 button remote
+    value_template: '{{ value_json.action }}'
+    payload: 4_double
     id: 4th pressed 2x
+    trigger: mqtt
   conditions: []
   actions:
   - choose:
@@ -107,7 +101,7 @@
         id: 4th pressed 1x
       sequence:
       - target:
-          entity_id: cover.athom_garage_door
+          entity_id: cover.garage_door
         action: cover.close_cover
       - parallel:
         - sequence:
@@ -135,7 +129,7 @@
         id: 4th pressed 2x
       sequence:
       - target:
-          entity_id: cover.athom_garage_door
+          entity_id: cover.garage_door
         action: cover.open_cover
       - parallel:
         - sequence:
