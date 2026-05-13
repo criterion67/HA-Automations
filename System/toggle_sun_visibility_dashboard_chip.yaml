@@ -1,39 +1,39 @@
 - id: '1743727229575'
   alias: Toggle Sun Visibility Dashboard Chip
-  description: Toggle sunrise and sunset badges based on sun events
+  description: Toggle dawn and dusk badges based on sun events
   triggers:
-  - trigger: sun
-    event: sunset
-    id: sunset
-  - trigger: sun
-    event: sunrise
-    id: sunrise
+  - trigger: time
+    at: sensor.sun_next_dawn_time
+    id: dawn
+  - trigger: time
+    at: sensor.sun_next_dusk_time
+    id: dusk
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: trigger
-        id: sunset
+        id: dusk
       sequence:
       - action: input_boolean.turn_on
         target:
-          entity_id: input_boolean.show_sunrise
+          entity_id: input_boolean.show_dawn
         data: {}
       - action: input_boolean.turn_off
         target:
-          entity_id: input_boolean.show_sunset
+          entity_id: input_boolean.show_dusk
         data: {}
     - conditions:
       - condition: trigger
-        id: sunrise
+        id: dawn
       sequence:
       - action: input_boolean.turn_on
         target:
-          entity_id: input_boolean.show_sunset
+          entity_id: input_boolean.show_dusk
         data: {}
       - action: input_boolean.turn_off
         target:
-          entity_id: input_boolean.show_sunrise
+          entity_id: input_boolean.show_dawn
         data: {}
     default: []
   mode: single

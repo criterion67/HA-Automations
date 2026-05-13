@@ -14,4 +14,4 @@
 | Master Zigbee2MQTT Watchdog | State-based watchdog: if the Z2M bridge connection sensor goes offline for 10 minutes (giving the built-in Z2M watchdog time to self-recover), automatically restart the Z2M addon and send a mobile notification. |
 | Pi-hole VIP Down Alert | Sends a mobile notification when the Pi-hole VIP (192.168.10.49) stops responding to pings for 2 minutes, indicating DNS filtering may be offline. |
 | System - Deprecation Warning Alert | Notifies when a deprecation warning appears in the HA logs. |
-| Toggle Sun Visibility Dashboard Chip | Toggle sunrise and sunset badges based on sun events |
+| Toggle Sun Visibility Dashboard Chip | Toggle dawn and dusk badges based on sun events |
