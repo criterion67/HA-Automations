@@ -1,0 +1,58 @@
+- id: '1778807624307'
+  alias: 'Pico 2 - Bedroom: ON Button'
+  description: Handles single, double, and hold for the Pico 2 ON button. Single=turn
+    on, Hold=50% warm white, Double=100% warm white.
+  triggers:
+  - trigger: event
+    event_type: lutron_caseta_button_event
+    event_data:
+      device_id: 3f75b498f61be17ef9a463a3775b8628
+      button_type: 'on'
+      action: press
+  actions:
+  - wait_for_trigger:
+    - trigger: event
+      event_type: lutron_caseta_button_event
+      event_data:
+        device_id: 3f75b498f61be17ef9a463a3775b8628
+        button_type: 'on'
+        action: release
+    timeout: '00:00:00.800'
+    continue_on_timeout: true
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ not wait.completed }}'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_pct: 50
+          color_temp_kelvin: 2700
+    default:
+    - wait_for_trigger:
+      - trigger: event
+        event_type: lutron_caseta_button_event
+        event_data:
+          device_id: 3f75b498f61be17ef9a463a3775b8628
+          button_type: 'on'
+          action: press
+      timeout: '00:00:00.400'
+      continue_on_timeout: true
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ wait.completed }}'
+        sequence:
+        - action: light.turn_on
+          target:
+            entity_id: light.bedroom_ceiling_lights
+          data:
+            brightness_pct: 100
+            color_temp_kelvin: 2700
+      default:
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_ceiling_lights
+  mode: single

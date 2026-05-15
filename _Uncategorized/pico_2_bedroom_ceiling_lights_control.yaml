@@ -1,0 +1,61 @@
+- id: '1778804564995'
+  alias: Pico 2 - Bedroom Ceiling Lights Control
+  description: 'Controls bedroom ceiling lights using the Lutron Pico 2 remote: on,
+    off, raise brightness, lower brightness.'
+  triggers:
+  - event_type: lutron_caseta_button_event
+    event_data:
+      device_id: 3f75b498f61be17ef9a463a3775b8628
+      button_type: 'off'
+      action: press
+    id: 'off'
+    platform: event
+  - event_type: lutron_caseta_button_event
+    event_data:
+      device_id: 3f75b498f61be17ef9a463a3775b8628
+      button_type: raise
+      action: press
+    id: raise
+    platform: event
+  - event_type: lutron_caseta_button_event
+    event_data:
+      device_id: 3f75b498f61be17ef9a463a3775b8628
+      button_type: lower
+      action: press
+    id: lower
+    platform: event
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: 'on'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_ceiling_lights
+    - conditions:
+      - condition: trigger
+        id: 'off'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.bedroom_ceiling_lights
+    - conditions:
+      - condition: trigger
+        id: raise
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: 10
+    - conditions:
+      - condition: trigger
+        id: lower
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bedroom_ceiling_lights
+        data:
+          brightness_step_pct: -10
+  mode: restart

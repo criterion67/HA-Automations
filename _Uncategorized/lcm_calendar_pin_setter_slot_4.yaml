@@ -10,4 +10,4 @@
       calendar_entity: calendar.wscottfunk_gmail_com
       pin_template: '{{ description | regex_findall(''\d{4}'') | first | default('''')
         }}'
-      clear_on_end: true
+      clear_on_end: false

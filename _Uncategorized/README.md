@@ -1,6 +1,6 @@
 # _Uncategorized
 
-20 automation(s) in this category.
+22 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -17,6 +17,8 @@
 | Monthly Valve Test | On the 1st of each month, cycles both water valves closed then open to verify they are operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps on with presence, turns them off after 5 min of no presence, and resets manual override. Replaces V2 which controlled the ceiling light. |
+| Pico 2 - Bedroom Ceiling Lights Control | Controls bedroom ceiling lights using the Lutron Pico 2 remote: on, off, raise brightness, lower brightness. |
+| Pico 2 - Bedroom: ON Button | Handles single, double, and hold for the Pico 2 ON button. Single=turn on, Hold=50% warm white, Double=100% warm white. |
 | Power Outage - Desktop Shutdown | Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host are handled separately by the EFR3P-2 automation. |
 | Power Outage - EFR3P-2 Network & HA Shutdown | When EFR3P-2 battery drops to 20% while AC is offline, sets outage flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and the HA host (Wyse 5070). HA will auto-restart when grid power is restored. |
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts. |
