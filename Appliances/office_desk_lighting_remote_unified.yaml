@@ -2,82 +2,63 @@
   alias: Office- Desk Lighting Remote (Unified)
   description: Unified automation to handle both remote control and wall switch control.
   triggers:
-  - event_type: zha_event
-    event_data:
-      device_id: 5d3ae8e2e2566334bef57eebaaea1280
-      command: 'on'
-      cluster_id: 6
-      endpoint_id: 1
-    id: press-on-zha
-    platform: event
-  - topic: zigbee2mqtt//action
-    payload: 'on'
-    id: press-on-z2m
-    platform: mqtt
-  - event_type: zha_event
-    event_data:
-      device_id: 5d3ae8e2e2566334bef57eebaaea1280
-      command: 'off'
-      cluster_id: 6
-      endpoint_id: 1
-    id: press-off-zha
-    platform: event
-  - topic: zigbee2mqtt//action
-    payload: 'off'
-    id: press-off-z2m
-    platform: mqtt
-  - event_type: zha_event
-    event_data:
-      device_id: 5d3ae8e2e2566334bef57eebaaea1280
-      command: move_with_on_off
-      cluster_id: 8
-      endpoint_id: 1
-      args:
-      - 0
-      - 83
-    id: hold-on-zha
-    platform: event
-  - topic: zigbee2mqtt//action
-    payload: brightness_move_up
-    id: hold-on-z2m
-    platform: mqtt
-  - event_type: zha_event
-    event_data:
-      device_id: 5d3ae8e2e2566334bef57eebaaea1280
-      command: move
-      cluster_id: 8
-      endpoint_id: 1
-      args:
-      - 1
-      - 83
-      - 0
-      - 0
-    id: hold-off-zha
-    platform: event
-  - topic: zigbee2mqtt//action
-    payload: brightness_move_down
-    id: hold-off-z2m
-    platform: mqtt
-  - event_type: zha_event
-    event_data:
-      device_id: 5d3ae8e2e2566334bef57eebaaea1280
-      endpoint_id: 1
-      cluster_id: 8
-      command: stop_with_on_off
-    id: release-zha
-    platform: event
-  - topic: zigbee2mqtt//action
-    payload: brightness_stop
-    id: release-z2m
-    platform: mqtt
-  - entity_id: switch.office_lamps
+  - platform: state
+    entity_id: switch.office_lamps
     to: 'on'
     id: switch-on
-    platform: state
-  - entity_id: switch.office_lamps
+  - platform: state
+    entity_id: switch.office_lamps
     to: 'off'
     id: switch-off
-    platform: state
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 001
+      value: KeyPressed
+    id: zen37_scene001_single
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 001
+      value: KeyPressed2x
+    id: zen37_scene001_double
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 001
+      value: KeyHeldDown
+    id: zen37_scene001_hold
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 002
+      value: KeyPressed
+    id: zen37_scene002_single
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 002
+      value: KeyPressed2x
+    id: zen37_scene002_double
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 003
+      value: KeyPressed
+    id: zen37_scene003_single
+  - platform: event
+    event_type: zwave_js_value_notification
+    event_data:
+      node_id: 6
+      label: Scene 004
+      value: KeyPressed
+    id: zen37_scene004_single
   conditions: []
   actions:
   - choose:
@@ -97,130 +78,47 @@
           entity_id: light.office_lamps
     - conditions:
       - condition: trigger
-        id:
-        - press-on-zha
-        - press-on-z2m
+        id: zen37_scene001_single
       sequence:
-      - wait_for_trigger:
-        - trigger: event
-          event_type: zha_event
-          event_data:
-            device_id: 5d3ae8e2e2566334bef57eebaaea1280
-            command: 'on'
-            cluster_id: 6
-            endpoint_id: 1
-        - trigger: mqtt
-          topic: zigbee2mqtt//action
-          payload: 'on'
-        timeout:
-          milliseconds: 250
-        continue_on_timeout: true
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: '{{ wait.trigger is not none }}'
-          sequence:
-          - action: light.toggle
-            target:
-              entity_id:
-              - light.desk_lamp_short
-              - light.desk_lamp_tall
-        - conditions:
-          - condition: template
-            value_template: '{{ wait.trigger is none }}'
-          sequence:
-          - action: light.toggle
-            target:
-              entity_id: light.office_lamps
+      - action: light.toggle
+        target:
+          entity_id:
+          - light.desk_lamp_short
+          - light.desk_lamp_tall
     - conditions:
       - condition: trigger
-        id:
-        - press-off-zha
-        - press-off-z2m
+        id: zen37_scene001_double
       sequence:
-      - wait_for_trigger:
-        - trigger: event
-          event_type: zha_event
-          event_data:
-            device_id: 5d3ae8e2e2566334bef57eebaaea1280
-            command: 'off'
-            cluster_id: 6
-            endpoint_id: 1
-        - trigger: mqtt
-          topic: zigbee2mqtt//action
-          payload: 'off'
-        timeout:
-          milliseconds: 250
-        continue_on_timeout: true
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: '{{ wait.trigger is not none }}'
-          sequence:
-          - action: input_boolean.toggle
-            target:
-              entity_id: input_boolean.office_ceiling_presence_enabled
-        - conditions:
-          - condition: template
-            value_template: '{{ wait.trigger is none }}'
-          sequence:
-          - action: switch.toggle
-            target:
-              entity_id: switch.office_ceiling_light
+      - action: light.toggle
+        target:
+          entity_id: light.office_lamps
     - conditions:
       - condition: trigger
-        id:
-        - hold-on-zha
-        - hold-on-z2m
-      sequence:
-      - repeat:
-          count: 20
-          sequence:
-          - wait_for_trigger:
-            - trigger: event
-              event_type: zha_event
-              event_data:
-                device_id: 5d3ae8e2e2566334bef57eebaaea1280
-                command: stop_with_on_off
-                cluster_id: 8
-                endpoint_id: 1
-            - trigger: mqtt
-              topic: zigbee2mqtt//action
-              payload: brightness_stop
-            timeout:
-              milliseconds: 250
-            continue_on_timeout: true
-          - if:
-            - condition: template
-              value_template: '{{ wait.trigger is not none }}'
-            then:
-            - stop: button released
+        id: zen37_scene001_hold
+      sequence: []
     - conditions:
       - condition: trigger
-        id:
-        - hold-off-zha
-        - hold-off-z2m
+        id: zen37_scene002_single
       sequence:
-      - repeat:
-          count: 20
-          sequence:
-          - wait_for_trigger:
-            - trigger: event
-              event_type: zha_event
-              event_data:
-                device_id: 5d3ae8e2e2566334bef57eebaaea1280
-                command: stop_with_on_off
-                cluster_id: 8
-                endpoint_id: 1
-            - trigger: mqtt
-              topic: zigbee2mqtt//action
-              payload: brightness_stop
-            timeout:
-              milliseconds: 250
-            continue_on_timeout: true
-          - if:
-            - condition: template
-              value_template: '{{ wait.trigger is not none }}'
-            then:
-            - stop: button released
+      - action: input_boolean.toggle
+        target:
+          entity_id: input_boolean.office_ceiling_presence_enabled
+    - conditions:
+      - condition: trigger
+        id: zen37_scene002_double
+      sequence:
+      - action: switch.toggle
+        target:
+          entity_id: switch.office_ceiling_light
+    - conditions:
+      - condition: trigger
+        id: zen37_scene003_single
+      sequence:
+      - action: switch.toggle
+        target:
+          entity_id: switch.office_fan
+    - conditions:
+      - condition: trigger
+        id: zen37_scene004_single
+      sequence: []
   mode: single
