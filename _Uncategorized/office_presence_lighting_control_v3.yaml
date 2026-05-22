@@ -26,10 +26,30 @@
       - action: light.turn_on
         target:
           entity_id: light.office_lamps
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: light.office_lamps
+            state: 'off'
+            for:
+              hours: 1
+              minutes: 0
+              seconds: 0
+          sequence: []
+        default:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.office_fan_temp_scene
+          data: {}
     - conditions:
       - condition: trigger
         id: cleared
       sequence:
+      - action: scene.create
+        data:
+          scene_id: office_fan_temp_scene
+          snapshot_entities:
+          - switch.office_fan
       - if:
         - condition: state
           entity_id: light.office_lamps

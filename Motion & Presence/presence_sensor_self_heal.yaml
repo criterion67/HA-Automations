@@ -75,4 +75,4 @@
       - action: homeassistant.reload_config_entry
         target:
           device_id: 036d4758ee399b05fb485f27ac5d206a
-  mode: restart
+  mode: parallel

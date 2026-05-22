@@ -1,12 +1,13 @@
 # _Uncategorized
 
-22 automation(s) in this category.
+23 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Health - Auto-Dismiss BP Reminder on Reading | Automatically turns off the BP dashboard reminder when either BP sensor is updated within 30 minutes of the morning reminder window (7–10 AM) or the evening reminder reset (7 PM). |
+| Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 - 2 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2: Reserved for future Music Assistant playlist. Button 3: Previous Track. Button 4: Next Track. |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
 | LCM: Calendar Slot Enable/Disable - Slot 4 | Enables Slot 4 when a Gmail calendar event starts, disables it when the event ends. Works alongside Calendar PIN Setter. |
 | LCM: Slot Usage Limiter - Slot 4 | Decrements the usage counter each time Slot 4 PIN is used. Disables slot when counter reaches 0. |

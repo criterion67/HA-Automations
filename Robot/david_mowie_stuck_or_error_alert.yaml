@@ -22,7 +22,7 @@
       data:
         tag: david_mowie_stuck
         notification_icon: mdi:robot-mower
-        channel: Lawn Mower Alerts
+        channel: alarm_stream
         priority: high
         ttl: 0
   - action: media_player.play_media
