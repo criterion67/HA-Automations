@@ -31,9 +31,9 @@
         id: BG High
       - condition: template
         value_template: "{% set last = states('input_datetime.last_bg_high_triggered')\
-          \ %} {% if last not in ['unknown', '', None] %}\n  {% set last_dt = strptime(last,\
-          \ \"%Y-%m-%d %H:%M:%S\") %}\n  {{ (now() - last_dt).total_seconds() > 3600\
-          \ }}\n{% else %}\n  true\n{% endif %}"
+          \ %}\n{% if last not in ['unknown', '', none] %}\n  {% set last_dt = as_datetime(last)\
+          \ %}\n  {{ (now() - last_dt).total_seconds() > 3600 }}\n{% else %}\n  true\n\
+          {% endif %}"
       sequence:
       - action: input_datetime.set_datetime
         data:

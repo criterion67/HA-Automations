@@ -1,6 +1,7 @@
 - id: '1763347794930'
-  alias: Presence Sensor Self Heal
-  description: ''
+  alias: Apollo Sensor Self Heal
+  description: Monitors all Apollo devices and reloads their config entry if offline
+    for 5 minutes.
   triggers:
   - entity_id: binary_sensor.apollo_msr_2_f58a4c_online
     to:
@@ -36,6 +37,13 @@
     - 'off'
     for: 00:05:00
     id: Office
+    platform: state
+  - entity_id: binary_sensor.apollo_air_1_3e9fe4_online
+    to:
+    - unavailable
+    - 'off'
+    for: 00:05:00
+    id: AIR1
     platform: state
   conditions: []
   actions:
@@ -75,4 +83,11 @@
       - action: homeassistant.reload_config_entry
         target:
           device_id: 036d4758ee399b05fb485f27ac5d206a
+    - conditions:
+      - condition: trigger
+        id: AIR1
+      sequence:
+      - action: homeassistant.reload_config_entry
+        target:
+          device_id: af5c9a77df9911a612f37fadd0f42586
   mode: parallel

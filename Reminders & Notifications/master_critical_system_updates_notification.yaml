@@ -2,13 +2,12 @@
   alias: Master Critical System Updates Notification
   triggers:
   - event_type: state_changed
-    trigger: event
+    platform: event
   conditions:
   - condition: template
-    value_template: '{{ (now() - states.homeassistant.last_changed).total_seconds()
-      > 30 }}
-
-      '
+    value_template: '{% set ha_start = namespace(ts=0) %}{% for s in states if s.domain
+      == ''homeassistant'' %}{% set ha_start.ts = as_timestamp(s.last_changed) %}{%
+      endfor %}{{ ha_start.ts == 0 or (as_timestamp(now()) - ha_start.ts) > 30 }}'
   - condition: template
     value_template: '{{ trigger.event.data.entity_id.startswith(''update.'') }}
 
