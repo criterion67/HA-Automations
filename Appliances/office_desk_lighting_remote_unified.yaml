@@ -2,63 +2,63 @@
   alias: Office- Desk Lighting Remote (Unified)
   description: Unified automation to handle both remote control and wall switch control.
   triggers:
-  - platform: state
-    entity_id: switch.office_lamps
+  - entity_id: switch.office_lamps
     to: 'on'
     id: switch-on
-  - platform: state
-    entity_id: switch.office_lamps
+    trigger: state
+  - entity_id: switch.office_lamps
     to: 'off'
     id: switch-off
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: state
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 001
       value: KeyPressed
     id: zen37_scene001_single
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: event
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 001
       value: KeyPressed2x
     id: zen37_scene001_double
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: event
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 001
       value: KeyHeldDown
     id: zen37_scene001_hold
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: event
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 002
       value: KeyPressed
     id: zen37_scene002_single
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: event
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 002
       value: KeyPressed2x
     id: zen37_scene002_double
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: event
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 003
       value: KeyPressed
     id: zen37_scene003_single
-  - platform: event
-    event_type: zwave_js_value_notification
+    trigger: event
+  - event_type: zwave_js_value_notification
     event_data:
       node_id: 6
       label: Scene 004
       value: KeyPressed
     id: zen37_scene004_single
+    trigger: event
   conditions: []
   actions:
   - choose:
@@ -114,9 +114,10 @@
       - condition: trigger
         id: zen37_scene003_single
       sequence:
-      - action: switch.toggle
+      - action: fan.toggle
         target:
-          entity_id: switch.office_fan
+          entity_id: fan.office_fan
+        data: {}
     - conditions:
       - condition: trigger
         id: zen37_scene004_single
