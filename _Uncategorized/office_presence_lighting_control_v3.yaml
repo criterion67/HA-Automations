@@ -1,8 +1,8 @@
 - id: '1776135598837'
   alias: Office- Presence Lighting Control V3
-  description: Turns office lamps on with presence, turns them off after 5 min of
-    no presence, and resets manual override. Replaces V2 which controlled the ceiling
-    light.
+  description: Turns office lamps, ceiling light, and fan on with presence, turns
+    them off after 5 min of no presence, restores prior fan and ceiling light state
+    on re-entry, and resets manual override.
   triggers:
   - platform: state
     entity_id: binary_sensor.office_presence_radar_target
@@ -50,6 +50,13 @@
           scene_id: office_fan_temp_scene
           snapshot_entities:
           - switch.office_fan
+          - switch.office_ceiling_light
+      - action: switch.turn_off
+        target:
+          entity_id: switch.office_fan
+      - action: switch.turn_off
+        target:
+          entity_id: switch.office_ceiling_light
       - if:
         - condition: state
           entity_id: light.office_lamps
