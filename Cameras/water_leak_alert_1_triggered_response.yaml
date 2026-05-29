@@ -12,7 +12,6 @@
     - binary_sensor.bathroom_2_leak_sensor_7_moisture
     - binary_sensor.bathroom_2_leak_sensor_8_moisture
     - binary_sensor.hvac_condensate_pan_sensor_9
-    - binary_sensor.robot_vac_water_valve_moisture
     to:
     - 'on'
     platform: state
