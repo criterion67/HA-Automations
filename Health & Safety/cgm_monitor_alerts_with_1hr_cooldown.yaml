@@ -1,15 +1,9 @@
 - id: '1744477733264'
   alias: CGM Monitor & Alerts (with 1hr cooldown)
   description: Monitors blood glucose levels from sensor.librelink_glucose_measurement.
-    Triggers alerts for readings above 180 (limited to once per hour) or below 50.
-    Plays alerts, sends notifications, controls lights, and optionally restores TV
-    lights.
+    Triggers critical alerts for readings below 40. Plays TTS alert, sends notification,
+    and flashes TV lights red.
   triggers:
-  - platform: numeric_state
-    entity_id: sensor.librelink_glucose_measurement
-    above: 180
-    for: 00:00:10
-    id: BG High
   - platform: numeric_state
     entity_id:
     - sensor.librelink_glucose_measurement
@@ -22,117 +16,37 @@
     id: BG Low
   conditions: []
   actions:
-  - variables:
-      tv_lights_were_on: '{{ is_state(''light.tv_lights'', ''on'') }}'
-      bedroom_media: media_player.all_speakers
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: BG High
-      - condition: template
-        value_template: "{% set last = states('input_datetime.last_bg_high_triggered')\
-          \ %}\n{% if last not in ['unknown', '', none] %}\n  {% set last_dt = as_datetime(last)\
-          \ %}\n  {{ (now() - last_dt).total_seconds() > 3600 }}\n{% else %}\n  true\n\
-          {% endif %}"
-      sequence:
-      - action: input_datetime.set_datetime
-        data:
-          entity_id: input_datetime.last_bg_high_triggered
-          datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
-      - action: scene.turn_on
-        target:
-          entity_id: scene.tv_alert
-        data: {}
-      - action: media_player.play_media
-        target:
-          entity_id: '{{ bedroom_media }}'
-        data:
-          media_content_id: media-source://media_source/local/Electraalert74.mp3
-          media_content_type: audio/mpeg
-      - delay: 00:00:03
-      - action: media_player.play_media
-        target:
-          entity_id: '{{ bedroom_media }}'
-        data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Warning%2C+blood+glucose+level+is+elevated&language=en-US&voice=JennyNeural
-          media_content_type: provider
-      - action: notify.mobile_app_pixel_9
-        data:
-          title: High Blood Glucose
-          message: Glucose level is {{ states('sensor.librelink_glucose_measurement')
-            }} mg/dL (above 180)
-          data:
-            push:
-              sound:
-                name: default
-                critical: 1
-                volume: 1.0
-              interruption-level: critical
-            channel: alarm_stream
-            importance: high
-            ttl: 0
-            priority: high
-      - action: logbook.log
-        data:
-          name: CGM Automation
-          message: 'High BG alert triggered at {{ now().strftime(''%I:%M %p'') }}:
-            {{ states(''sensor.librelink_glucose_measurement'') }} mg/dL'
-          entity_id: sensor.librelink_glucose_measurement
-      - delay: 00:00:30
-      - action: light.turn_off
-        target:
-          entity_id: light.tv_lights
-        data: {}
-      - delay: 00:00:03
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: '{{ tv_lights_were_on }}'
-          sequence:
-          - action: adaptive_lighting.apply
-            data:
-              lights:
-              - light.tv_lights
-              adapt_color: true
-              adapt_brightness: true
-              turn_on_lights: true
-              prefer_rgb_color: true
-              transition: 45
-    - conditions:
-      - condition: trigger
-        id: BG Low
-      sequence:
-      - action: media_player.play_media
-        target:
-          entity_id: '{{ bedroom_media }}'
-        data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Alert%2C+blood+glucose+level+is+critically+low&language=en-US&voice=JennyNeural
-          media_content_type: provider
-      - action: notify.mobile_app_pixel_9
-        data:
-          title: Critical Blood Glucose Alert
-          message: Glucose level is {{ states('sensor.librelink_glucose_measurement')
-            }} mg/dL (below 50)
-          data:
-            push:
-              sound:
-                name: default
-                critical: 1
-                volume: 1.0
-              interruption-level: critical
-            channel: alarm_stream
-            importance: high
-            ttl: 0
-            priority: high
-      - action: light.turn_on
-        target:
-          entity_id: light.tv_lights
-        data:
-          color_name: red
-          brightness_pct: 100
-      - delay: 00:00:10
-      - action: light.turn_off
-        target:
-          entity_id: light.tv_lights
-        data: {}
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.all_speakers
+    data:
+      media_content_id: media-source://tts/tts.home_assistant_cloud?message=Alert%2C+blood+glucose+level+is+critically+low&language=en-US&voice=JennyNeural
+      media_content_type: provider
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: Critical Blood Glucose Alert
+      message: Glucose level is {{ states('sensor.librelink_glucose_measurement')
+        }} mg/dL (below 40)
+      data:
+        push:
+          sound:
+            name: default
+            critical: 1
+            volume: 1
+          interruption-level: critical
+        channel: alarm_stream
+        importance: high
+        ttl: 0
+        priority: high
+  - action: light.turn_on
+    target:
+      entity_id: light.tv_lights
+    data:
+      color_name: red
+      brightness_pct: 100
+  - delay: 00:00:10
+  - action: light.turn_off
+    target:
+      entity_id: light.tv_lights
+    data: {}
   mode: single
