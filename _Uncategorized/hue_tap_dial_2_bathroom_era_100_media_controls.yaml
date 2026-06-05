@@ -7,8 +7,8 @@
     path: gtunes-dev/zha-philips-hue-tap-dial-media-controls.yaml
     input:
       remote: 16ca9fd804841b78ea804052b698c5f4
-      volume_player: media_player.era_100_2
-      transport_player: media_player.era_100_2
+      volume_player: media_player.era_100_bathroom
+      transport_player: media_player.era_100_bathroom
       logbook_enabled: false
       small_rotation_increment: 3
       medium_rotation_increment: 6
