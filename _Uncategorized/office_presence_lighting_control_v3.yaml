@@ -50,13 +50,9 @@
           scene_id: office_fan_temp_scene
           snapshot_entities:
           - switch.office_fan
-          - switch.office_ceiling_light
       - action: switch.turn_off
         target:
           entity_id: switch.office_fan
-      - action: switch.turn_off
-        target:
-          entity_id: switch.office_ceiling_light
       - if:
         - condition: state
           entity_id: light.office_lamps
