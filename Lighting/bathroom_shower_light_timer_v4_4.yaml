@@ -10,18 +10,18 @@
     '
   triggers:
   - id: door_opened
-    trigger: state
     entity_id: binary_sensor.bathroom_shower_door_sensor_contact
     to: 'on'
+    platform: state
   - id: door_closed
-    trigger: state
     entity_id: binary_sensor.bathroom_shower_door_sensor_contact
     to: 'off'
+    platform: state
   - id: timer_finished
-    trigger: event
     event_type: timer.finished
     event_data:
       entity_id: timer.shower_in_shower_timer
+    platform: event
   conditions: []
   actions:
   - choose:
@@ -71,19 +71,23 @@
             brightness_pct: 100
         - action: media_player.play_media
           target:
-            entity_id: media_player.bathroom_speaker
+            entity_id: media_player.era_100_bathroom
           data:
-            media:
-              media_content_id: media-source://media_source/local/Best Chime Tone.mp3
-              media_content_type: audio/mpeg
+            media_content_id: media-source://media_source/local/Best Chime Tone.mp3
+            media_content_type: audio/mpeg
+            announce: true
+            extra:
+              volume: 45
         - delay: 00:00:02
         - action: media_player.play_media
           target:
-            entity_id: media_player.bathroom_speaker
+            entity_id: media_player.era_100_bathroom
           data:
-            media:
-              media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+shower+is+ready&language=en-US&voice=AndrewNeural
-              media_content_type: provider
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+shower+is+ready&language=en-US&voice=AndrewNeural
+            media_content_type: provider
+            announce: true
+            extra:
+              volume: 45
         - delay: 00:00:02
         - action: light.turn_on
           target:
@@ -120,11 +124,13 @@
               entity_id: timer.shower_in_shower_timer
           - action: media_player.play_media
             target:
-              entity_id: media_player.bathroom_speaker
+              entity_id: media_player.era_100_bathroom
             data:
-              media:
-                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Shower+timer+has+started&language=en-US&voice=AndrewNeural
-                media_content_type: provider
+              media_content_id: media-source://tts/tts.home_assistant_cloud?message=Shower+timer+has+started&language=en-US&voice=AndrewNeural
+              media_content_type: provider
+              announce: true
+              extra:
+                volume: 45
           - action: input_boolean.turn_off
             target:
               entity_id: input_boolean.shower_ready_announced

@@ -24,7 +24,7 @@
         target:
           entity_id: media_player.era_100_bathroom
         data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Hey+Scott%2C+welcome+to+the+bathroom.&voice=en-US-AndrewNeural
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Hey+Scott%2C+welcome+to+the+bathroom.&language=en-US&voice=AndrewNeural
           media_content_type: music
           announce: true
     - conditions:
@@ -35,7 +35,7 @@
         target:
           entity_id: media_player.era_100_bathroom
         data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Bathroom+lights+are+off.&voice=en-US-AndrewNeural
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message=Bathroom+lights+are+off.&language=en-US&voice=AndrewNeural
           media_content_type: music
           announce: true
   mode: single
