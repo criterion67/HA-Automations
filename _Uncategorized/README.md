@@ -1,13 +1,15 @@
 # _Uncategorized
 
-25 automation(s) in this category.
+27 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
 | Bathroom- TTS Announcement Test | Plays a welcome TTS on entry and a lights-off TTS on departure. Single mode prevents repeat announcements while presence is active. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
+| Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |
 | Health - Auto-Dismiss BP Reminder on Reading | Automatically turns off the BP dashboard reminder when either BP sensor is updated within 30 minutes of the morning reminder window (7–10 AM) or the evening reminder reset (7 PM). |
+| Health - Stamp Last BP Reading on New Systolic | Updates last_bp_reading datetime and last_known_systolic only when a genuinely new (different) systolic value arrives, ignoring unknown/value flapping from Health Connect sync gaps. |
 | Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 - 2 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2: Reserved for future Music Assistant playlist. Button 3: Previous Track. Button 4: Next Track. |
 | Humidity Override – Venstar Cool Setpoint | Monitors foyer humidity (sensor.temp_sensor_foyer_humidity, fallback: sensor.indoor_thermostat_humidity). When above 50%, saves the current cool setpoint and drops it 3°F (floor 70°F). Restores the original setpoint when humidity reaches 43% or below. Tracks manual setpoint changes during an active override so user adjustments are not overwritten on restore. Falls back to the thermostat built-in sensor if the Aqara sensor goes offline. |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |

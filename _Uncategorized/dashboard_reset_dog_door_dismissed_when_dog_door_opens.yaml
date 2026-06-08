@@ -1,0 +1,11 @@
+- id: '1780875859729'
+  alias: Dashboard - Reset Dog Door Dismissed When Dog Door Opens
+  triggers:
+  - platform: state
+    entity_id: binary_sensor.dog_door
+    to: 'on'
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.dog_door_closed_dismissed
+  mode: single

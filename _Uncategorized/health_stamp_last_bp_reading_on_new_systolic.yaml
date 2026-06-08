@@ -1,0 +1,25 @@
+- id: '1780876785751'
+  alias: Health - Stamp Last BP Reading on New Systolic
+  description: Updates last_bp_reading datetime and last_known_systolic only when
+    a genuinely new (different) systolic value arrives, ignoring unknown/value flapping
+    from Health Connect sync gaps.
+  triggers:
+  - platform: state
+    entity_id: sensor.pixel_9_systolic_bp
+    not_to: unknown
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.to_state.state | float(0) != states(''input_number.last_known_systolic'')
+      | float(0) }}'
+  actions:
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.last_bp_reading
+    data:
+      datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.last_known_systolic
+    data:
+      value: '{{ trigger.to_state.state | float }}'
+  mode: single

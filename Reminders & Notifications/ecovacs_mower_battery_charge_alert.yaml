@@ -8,16 +8,17 @@
   - entity_id: sensor.david_mowie_battery
     below: 50
     id: battery_low
-    platform: numeric_state
-  - entity_id: sensor.david_mowie_battery
-    above: 79
-    id: battery_high
-    platform: numeric_state
+    trigger: numeric_state
   - entity_id:
     - sensor.david_mowie_battery
-    below: 20
+    above: 83
+    id: battery_high
+    trigger: numeric_state
+  - entity_id:
+    - sensor.david_mowie_battery
+    below: 17
     id: battery_recharge
-    platform: numeric_state
+    trigger: numeric_state
   conditions: []
   actions:
   - choose:
@@ -57,8 +58,10 @@
           - media_player.bedroom_group
           - media_player.dining_room_speaker_cast
         data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+recharged+to+80%25+and+will+now+finish+mowing.&language=en-US&voice=AndrewNeural
-          media_content_type: audio/mp3
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+recharged+to+80%25+and+will+now+finish+mowing.&language=en-US&voice=AndrewNeural
+            media_content_type: audio/mp3
+            metadata: {}
         action: media_player.play_media
       - target:
           entity_id: input_boolean.mower_80_notified
@@ -90,10 +93,11 @@
           - media_player.bedroom_group
           - media_player.dining_room_speaker_cast
         data:
-          media_content_id: media-source://media_source/local/Best Chime Tone.mp3
-          media_content_type: audio/mpeg
-        metadata:
-          title: Best Chime Tone.mp3
+          media:
+            media_content_id: media-source://media_source/local/Best Chime Tone.mp3
+            media_content_type: audio/mpeg
+            metadata:
+              title: Best Chime Tone.mp3
         action: media_player.play_media
       - delay:
           hours: 0
@@ -105,8 +109,10 @@
           - media_player.bedroom_group
           - media_player.dining_room_speaker_cast
         data:
-          media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie%27s+battery+has+discharged+to+17%25+and+will+now+return+to+the+dock+to+charge.&language=en-US&voice=AndrewNeural
-          media_content_type: audio/mp3
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie%27s+battery+has+discharged+to+17%25+and+will+now+return+to+the+dock+to+charge.&language=en-US&voice=AndrewNeural
+            media_content_type: audio/mp3
+            metadata: {}
         action: media_player.play_media
       - target:
           entity_id:
