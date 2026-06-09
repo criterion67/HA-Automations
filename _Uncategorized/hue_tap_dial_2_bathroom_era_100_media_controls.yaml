@@ -1,8 +1,8 @@
 - id: '1779399127025'
   alias: 'Hue Tap Dial 2: Bathroom Era 100 Media Controls'
   description: 'Controls the Sonos Era 100 - 2 in the bathroom using Hue Tap Dial
-    2. Dial adjusts volume. Button 1: Play/Pause. Button 2: Reserved for future Music
-    Assistant playlist. Button 3: Previous Track. Button 4: Next Track.'
+    2. Dial adjusts volume. Button 1: Play/Pause. Button 2 short: 80s Super Hits Radio.
+    Button 2 hold: Smooth Jazz Chill. Button 3: Previous Track. Button 4: Next Track.'
   use_blueprint:
     path: gtunes-dev/zha-philips-hue-tap-dial-media-controls.yaml
     input:
@@ -13,3 +13,29 @@
       small_rotation_increment: 3
       medium_rotation_increment: 6
       large_rotation_increment: 10
+      button_2_short:
+      - action: media_player.shuffle_set
+        target:
+          entity_id: media_player.era_100_2_2
+        data:
+          shuffle: true
+      - action: music_assistant.play_media
+        target:
+          entity_id: media_player.era_100_2_2
+        data:
+          media_id: spotify://playlist/5a0hCP85Ai4Wrtgm1UVGgU
+          media_type: playlist
+          enqueue: replace
+      button_2_long:
+      - action: media_player.shuffle_set
+        target:
+          entity_id: media_player.era_100_2_2
+        data:
+          shuffle: true
+      - action: music_assistant.play_media
+        target:
+          entity_id: media_player.era_100_2_2
+        data:
+          media_id: spotify://playlist/37i9dQZF1DX6lttj7ulLd6
+          media_type: playlist
+          enqueue: replace
