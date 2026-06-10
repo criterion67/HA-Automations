@@ -1,0 +1,48 @@
+- id: '1781069765827'
+  alias: Tablet Nightly Maintenance
+  description: Every evening at 19:00, clears the browser cache on both Galaxy Tab
+    A9+ tablets, then performs a full device restart. After the restart delay, loads
+    the start URL on both tablets. The bedroom tablet (A9+ 1) and office tablet (A9+
+    2) run in parallel.
+  triggers:
+  - at: '19:00:00'
+    platform: time
+  actions:
+  - parallel:
+    - sequence:
+      - action: button.press
+        alias: Bedroom tablet - clear cache
+        target:
+          entity_id: button.galaxy_tab_a9_1_clear_browser_cache
+      - alias: Bedroom tablet - wait after cache clear
+        delay:
+          seconds: 5
+      - action: button.press
+        alias: Bedroom tablet - restart device
+        target:
+          entity_id: button.galaxy_tab_a9_restart_device
+    - sequence:
+      - action: button.press
+        alias: Office tablet - clear cache
+        target:
+          entity_id: button.galaxy_tab_a9_2_clear_browser_cache
+      - alias: Office tablet - wait after cache clear
+        delay:
+          seconds: 5
+      - action: button.press
+        alias: Office tablet - restart device
+        target:
+          entity_id: button.galaxy_tab_a9_2_restart_device
+  - alias: Wait for tablets to reboot
+    delay:
+      seconds: 60
+  - parallel:
+    - action: button.press
+      alias: Bedroom tablet - load start URL
+      target:
+        entity_id: button.galaxy_tab_a9_load_start_url
+    - action: button.press
+      alias: Office tablet - load start URL
+      target:
+        entity_id: button.galaxy_tab_a9_2_load_start_url
+  mode: single
