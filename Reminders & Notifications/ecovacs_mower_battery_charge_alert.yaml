@@ -50,13 +50,12 @@
       sequence:
       - data:
           title: Ecovacs Battery Level
-          message: David Mowie has recharged to 80% and will now finish mowing. {{
+          message: David Mowie has recharged to 83% and will now finish mowing. {{
             now().strftime('%I:%M %p on %b %-d') }}
         action: notify.mobile_app_pixel_9
       - target:
           entity_id:
           - media_player.bedroom_group
-          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+recharged+to+80%25+and+will+now+finish+mowing.&language=en-US&voice=AndrewNeural
@@ -86,7 +85,7 @@
       - action: notify.mobile_app_galaxy_watch7_904t
         data:
           title: Mower Battery Recharge Alert
-          message: David Mowie's battery has discharged to 20% and will now return
+          message: David Mowie's battery has discharged to 17% and will now return
             to the dock to charge. {{ now().strftime('%I:%M %p on %b %-d') }}
       - target:
           entity_id:
