@@ -2,11 +2,10 @@
   alias: Dog call tone
   description: 12 khz tone to call the dogs
   triggers:
-  - device_id: 386e180e5c5a6e650e907299105adf5c
-    domain: zha
-    type: remote_button_short_press
-    subtype: remote_button_short_press
-    trigger: device
+  - trigger: mqtt
+    topic: zigbee2mqtt/lumi_remote_b1
+    value_template: '{{ value_json.action }}'
+    payload: single
     id: Bedside Button
   - trigger: state
     entity_id:
