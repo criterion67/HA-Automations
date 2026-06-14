@@ -10,7 +10,7 @@
     type: remote_button_short_press
     subtype: remote_button_short_press
     id: button
-    platform: device
+    trigger: device
   - entity_id:
     - sensor.temp_sensor_garage
     - sensor.temp_sensor_rudys_crate
@@ -18,18 +18,18 @@
     for:
       minutes: 5
     id: high_temp_cool
-    platform: numeric_state
+    trigger: numeric_state
   - entity_id: climate.garage_ac
     attribute: current_temperature
     below: 72.1
     id: dry_to_cool
-    platform: numeric_state
+    trigger: numeric_state
   - entity_id: sensor.temp_sensor_garage
     below: 42
     for:
       minutes: 5
     id: freeze_protect
-    platform: numeric_state
+    trigger: numeric_state
   conditions: []
   actions:
   - variables:
@@ -96,8 +96,8 @@
       - target:
           entity_id: climate.garage_ac
         data:
-          temperature: 80
           hvac_mode: dry
+          temperature: 78
         action: climate.set_temperature
       - data:
           title: Garage AC
@@ -113,8 +113,8 @@
       - target:
           entity_id: climate.garage_ac
         data:
-          temperature: 80
           hvac_mode: cool
+          temperature: 78
         action: climate.set_temperature
       - data:
           title: Garage AC
