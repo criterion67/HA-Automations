@@ -17,20 +17,14 @@
     below: 62
     id: hall_below
     trigger: device
-  - type: humidity
-    device_id: 578ff03676a3e7b5f77f51c41e2defb1
-    entity_id: 25d2b552de67b8b13cf6104cd62a80a4
-    domain: sensor
+  - trigger: numeric_state
+    entity_id: sensor.temp_sensor_primary_bath_humidity
     above: 78
     id: master_above
-    trigger: device
-  - type: humidity
-    device_id: 578ff03676a3e7b5f77f51c41e2defb1
-    entity_id: 25d2b552de67b8b13cf6104cd62a80a4
-    domain: sensor
+  - trigger: numeric_state
+    entity_id: sensor.temp_sensor_primary_bath_humidity
     below: 62
     id: master_below
-    trigger: device
   conditions: []
   actions:
   - choose:

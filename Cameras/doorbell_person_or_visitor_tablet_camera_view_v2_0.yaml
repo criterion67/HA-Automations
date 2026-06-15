@@ -6,10 +6,10 @@
   triggers:
   - entity_id: binary_sensor.g6_pro_doorbell_person_detected
     to: 'on'
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.g6_pro_doorbell_doorbell
     to: 'on'
-    platform: state
+    trigger: state
   actions:
   - alias: Turn on all tablet screens
     action: switch.turn_on
@@ -39,7 +39,7 @@
       - 9b6f1d82aeb414da86e3d7afd9156e83
       - a9214fb40d85cc451175d4ccb7262585
       - a6ead26dd26d0b43b3059d9ef2554da3
-      url: http://192.168.10.168:8123/dashboard-tablet/0
+      url: http://192.168.10.168:8123/scotts-dashboard-tablet/0
     continue_on_error: true
   - alias: Turn off Fire Tablet screen after viewing
     action: switch.turn_off
