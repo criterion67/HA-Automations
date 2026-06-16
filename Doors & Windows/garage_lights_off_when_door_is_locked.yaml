@@ -8,16 +8,17 @@
     - lock.laundry_room_door_deadbolt
     from: unlocked
     to: locked
-    platform: state
-  conditions:
-  - condition: state
-    entity_id: switch.garage_lights
-    state: 'on'
+    trigger: state
+  conditions: []
   actions:
-  - data: {}
-    target:
+  - if:
+    - condition: state
       entity_id: switch.garage_lights
-    action: switch.turn_off
+      state: 'on'
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.garage_lights
   - action: switch.turn_off
     target:
       entity_id: switch.workbench_light
