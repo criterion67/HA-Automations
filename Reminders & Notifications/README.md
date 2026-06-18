@@ -66,7 +66,7 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | Rear Gate: Open Notification | Contact sensor to monitor whether rear yard gate is open or closed. |
 | Rudy's Heater Offline Alert (New) |  |
 | Toothbrush: Battery State Notification | Monitors the battery level for the Oral-B toothbrush and sends a notification when a recharge is necessary and also sends a follow-up notification once it has been recharged. |
-| Trash Day Reminder & Reset |  |
+| Trash Day Reminder & Reset | Trash day is Thursday. Tomorrow chip shows Wed, Today chip shows Thu. Safety reset runs Fri midnight. |
 | Update Forecast Low Temp Today | Calls weather.get_forecasts daily and on startup to store today's forecast low in input_number.forecast_low_temp_today for use in dashboard visibility conditions. |
 | V2: Doorbell - Button Pressed Notification Chime | G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime and TTS announcement on Dining Room Speaker. Uses medium resolution channel (1440x1920) as high-res portrait stream is not rendered correctly by Chromecast. |
 | Watch charging notifications |  |
