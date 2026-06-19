@@ -1,30 +1,40 @@
 - id: '1743955895298'
   alias: Bathroom Humidity Fan Control
-  description: Automate hall and primary bath exhaust fans based on respective humidity
-    sensors.
+  description: 'Controls hall bath and primary bath exhaust fans based on humidity
+    sensors. Triggers: fan turns ON when humidity rises above 78% and stays there
+    for 2 minutes (prevents false triggers from brief spikes). Fan turns OFF when
+    humidity drops below 62% and stays there for 5 minutes (ensures room fully dries).
+    A homeassistant_start trigger checks current humidity at startup so fans reflect
+    correct state after a restart. Sensors: hall= sensor.temp_sensor_hall_bath_humidity,
+    primary= sensor.temp_sensor_primary_bath_humidity.'
   triggers:
-  - type: humidity
-    device_id: ff5e038fa99b3c03048f4e0ee732111e
-    entity_id: 43418036b732426b450d489c5399fd65
-    domain: sensor
+  - trigger: numeric_state
+    entity_id: sensor.temp_sensor_hall_bath_humidity
     above: 78
+    for:
+      minutes: 2
     id: hall_above
-    trigger: device
-  - type: humidity
-    device_id: ff5e038fa99b3c03048f4e0ee732111e
-    entity_id: 43418036b732426b450d489c5399fd65
-    domain: sensor
+  - trigger: numeric_state
+    entity_id: sensor.temp_sensor_hall_bath_humidity
     below: 62
+    for:
+      minutes: 5
     id: hall_below
-    trigger: device
   - trigger: numeric_state
     entity_id: sensor.temp_sensor_primary_bath_humidity
     above: 78
+    for:
+      minutes: 2
     id: master_above
   - trigger: numeric_state
     entity_id: sensor.temp_sensor_primary_bath_humidity
     below: 62
+    for:
+      minutes: 5
     id: master_below
+  - trigger: homeassistant
+    event: start
+    id: ha_start
   conditions: []
   actions:
   - choose:
@@ -60,4 +70,46 @@
           entity_id: fan.bathroom_1_bathroom_exhaust_fan
         action: fan.turn_off
         data: {}
+    - conditions:
+      - condition: trigger
+        id: ha_start
+      sequence:
+      - choose:
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.temp_sensor_hall_bath_humidity
+            above: 78
+          sequence:
+          - target:
+              entity_id: fan.hall_bath_exhaust_fan
+            action: fan.turn_on
+            data: {}
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.temp_sensor_hall_bath_humidity
+            below: 62
+          sequence:
+          - target:
+              entity_id: fan.hall_bath_exhaust_fan
+            action: fan.turn_off
+            data: {}
+      - choose:
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.temp_sensor_primary_bath_humidity
+            above: 78
+          sequence:
+          - target:
+              entity_id: fan.bathroom_1_bathroom_exhaust_fan
+            action: fan.turn_on
+            data: {}
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.temp_sensor_primary_bath_humidity
+            below: 62
+          sequence:
+          - target:
+              entity_id: fan.bathroom_1_bathroom_exhaust_fan
+            action: fan.turn_off
+            data: {}
   mode: single
