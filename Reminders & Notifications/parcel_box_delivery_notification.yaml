@@ -8,24 +8,24 @@
   - id: parcel_box_open
     entity_id: binary_sensor.parcel_box_contact
     to: 'on'
-    platform: state
+    trigger: state
   - id: manual_reset
     entity_id: input_boolean.parcel_box_manual_reset
     to: 'on'
-    platform: state
+    trigger: state
   - id: daily_reset
     at: 06:00:00
-    platform: time
+    trigger: time
   - id: mobile_reset
     event_type: mobile_app_notification_action
     event_data:
       action: PARCEL_RESET
-    platform: event
+    trigger: event
   - id: mobile_dismiss
     event_type: mobile_app_notification_action
     event_data:
       action: PARCEL_DISMISS
-    platform: event
+    trigger: event
   conditions: []
   actions:
   - choose:
@@ -37,14 +37,22 @@
         state: 'off'
       sequence:
       - target:
-          entity_id: media_player.all_speakers
+          entity_id:
+          - media_player.bedroom_speaker
+          - media_player.dining_room_speaker
+          - media_player.office_speaker
+          - media_player.sunroom_speaker
         data:
           volume_level: 0.7
         action: media_player.volume_set
       - delay:
           seconds: 4
       - target:
-          entity_id: media_player.all_speakers
+          entity_id:
+          - media_player.bedroom_speaker
+          - media_player.dining_room_speaker
+          - media_player.office_speaker
+          - media_player.sunroom_speaker
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -63,7 +71,11 @@
       - delay:
           seconds: 3
       - target:
-          entity_id: media_player.all_speakers
+          entity_id:
+          - media_player.bedroom_speaker
+          - media_player.dining_room_speaker
+          - media_player.office_speaker
+          - media_player.sunroom_speaker
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -82,7 +94,11 @@
       - delay:
           seconds: 3
       - target:
-          entity_id: media_player.all_speakers
+          entity_id:
+          - media_player.bedroom_speaker
+          - media_player.dining_room_speaker
+          - media_player.office_speaker
+          - media_player.sunroom_speaker
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=AndrewNeural

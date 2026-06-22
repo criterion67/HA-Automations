@@ -2,7 +2,7 @@
   alias: Master Critical System Updates Notification
   triggers:
   - event_type: state_changed
-    platform: event
+    trigger: event
   conditions:
   - condition: template
     value_template: '{% set ha_start = namespace(ts=0) %}{% for s in states if s.domain
@@ -34,7 +34,7 @@
   actions:
   - variables:
       new: '{{ trigger.event.data.new_state }}'
-      last_change: '{{ as_timestamp(new.last_changed) }}'
+      last_change: '{{ as_timestamp(new.last_changed, 0) }}'
       now_ts: '{{ as_timestamp(now()) }}'
       cooldown_secs: 300
       raw: '{{ new.name }}'
