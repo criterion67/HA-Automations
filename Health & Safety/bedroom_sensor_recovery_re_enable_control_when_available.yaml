@@ -2,12 +2,15 @@
   alias: Bedroom Sensor Recovery - Re-enable Control When Available
   description: When bedroom sensor comes back online, dismiss the unavailability notification.
   triggers:
-  - entity_id: sensor.temp_sensor_bedroom_temperature
+  - entity_id:
+    - sensor.temp_sensor_bedroom_temperature
     from:
     - unavailable
     - unknown
     for:
-      minutes: 2
+      hours: 0
+      minutes: 15
+      seconds: 0
     trigger: state
   conditions:
   - condition: template
