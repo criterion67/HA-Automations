@@ -3,29 +3,21 @@
   description: Attic light is switched on and off based on the open) closed state
     of either interior or garage attic doors.
   triggers:
-  - type: opened
-    device_id: 6c0064af47945901b8f85ce9631f4672
-    entity_id: 0758d9ba429a433200d73509a81b2531
-    domain: binary_sensor
-    trigger: device
+  - trigger: state
+    entity_id: binary_sensor.attic_attic_door_1_opening
+    to: 'on'
     id: Attic Door 1 Open
-  - type: not_opened
-    device_id: 6c0064af47945901b8f85ce9631f4672
-    entity_id: 0758d9ba429a433200d73509a81b2531
-    domain: binary_sensor
-    trigger: device
+  - trigger: state
+    entity_id: binary_sensor.attic_attic_door_1_opening
+    to: 'off'
     id: Attic Door 1 Closed
-  - type: opened
-    device_id: c189cc6a3c80d4ab9a3d3902bb86aa14
-    entity_id: 0983627f19e975ba625a292b0f23a0f4
-    domain: binary_sensor
-    trigger: device
+  - trigger: state
+    entity_id: binary_sensor.attic_attic_door_2_opening
+    to: 'on'
     id: Attic Door 2 Open
-  - type: not_opened
-    device_id: c189cc6a3c80d4ab9a3d3902bb86aa14
-    entity_id: 0983627f19e975ba625a292b0f23a0f4
-    domain: binary_sensor
-    trigger: device
+  - trigger: state
+    entity_id: binary_sensor.attic_attic_door_2_opening
+    to: 'off'
     id: Attic Door 2 Closed
   conditions: []
   actions:
