@@ -14,7 +14,7 @@
     - binary_sensor.hvac_condensate_pan_sensor_9
     to:
     - 'on'
-    platform: state
+    trigger: state
   actions:
   - variables:
       triggered_sensor: '{{ trigger.to_state.name }}'
@@ -77,7 +77,7 @@
               sound:
                 name: default
                 critical: 1
-                volume: 1.0
+                volume: 1
               interruption-level: critical
             channel: alarm_stream
             importance: high
@@ -88,15 +88,15 @@
       - repeat:
           count: 3
           sequence:
-          - target:
-              entity_id: switch.foley_alarm_siren
-            action: switch.turn_on
+          - action: switch.turn_on
             data: {}
+            target:
+              entity_id: switch.ring_alarm_siren
           - delay: 00:00:08
-          - target:
-              entity_id: switch.foley_alarm_siren
-            action: switch.turn_off
+          - action: switch.turn_off
             data: {}
+            target:
+              entity_id: switch.ring_alarm_siren
           - delay: 00:00:12
       - delay: 00:05:00
   mode: restart
