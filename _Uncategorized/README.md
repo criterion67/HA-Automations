@@ -1,6 +1,6 @@
 # _Uncategorized
 
-29 automation(s) in this category.
+31 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -12,6 +12,8 @@
 | Health - Stamp Last BP Reading on New Systolic | Updates last_bp_reading datetime and last_known_systolic only when a genuinely new (different) systolic value arrives, ignoring unknown/value flapping from Health Connect sync gaps. |
 | Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 - 2 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2 short: 80s Super Hits Radio. Button 2 hold: Smooth Jazz Chill. Button 3: Previous Track. Button 4: Next Track. |
 | Humidity Override – Venstar Cool Setpoint | Monitors foyer humidity (sensor.temp_sensor_foyer_humidity, fallback: sensor.indoor_thermostat_humidity). When above 50%, saves the current cool setpoint and drops it 3°F (floor 70°F). Restores the original setpoint when humidity reaches 43% or below. Tracks manual setpoint changes during an active override so user adjustments are not overwritten on restore. Falls back to the thermostat built-in sensor if the Aqara sensor goes offline. |
+| HVAC Filter Reminder - Daily Check | Checks daily if HVAC filters are due and sends an actionable notification |
+| HVAC Filter Reminder - Handle Actions | Handles snooze and replaced actions from HVAC filter notifications |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
 | LCM: Calendar Slot Enable/Disable - Slot 4 | Enables Slot 4 when a Gmail calendar event starts, disables it when the event ends. Works alongside Calendar PIN Setter. |
 | LCM: Slot Usage Limiter - Slot 4 | Decrements the usage counter each time Slot 4 PIN is used. Disables slot when counter reaches 0. |

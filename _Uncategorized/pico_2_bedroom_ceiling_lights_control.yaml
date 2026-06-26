@@ -6,24 +6,31 @@
   - event_type: lutron_caseta_button_event
     event_data:
       device_id: 3f75b498f61be17ef9a463a3775b8628
+      button_type: 'on'
+      action: press
+    id: 'on'
+    trigger: event
+  - event_type: lutron_caseta_button_event
+    event_data:
+      device_id: 3f75b498f61be17ef9a463a3775b8628
       button_type: 'off'
       action: press
     id: 'off'
-    platform: event
+    trigger: event
   - event_type: lutron_caseta_button_event
     event_data:
       device_id: 3f75b498f61be17ef9a463a3775b8628
       button_type: raise
       action: press
     id: raise
-    platform: event
+    trigger: event
   - event_type: lutron_caseta_button_event
     event_data:
       device_id: 3f75b498f61be17ef9a463a3775b8628
       button_type: lower
       action: press
     id: lower
-    platform: event
+    trigger: event
   actions:
   - choose:
     - conditions:

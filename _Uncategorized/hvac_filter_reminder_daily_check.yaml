@@ -1,0 +1,34 @@
+- id: '1782396479145'
+  alias: HVAC Filter Reminder - Daily Check
+  description: Checks daily if HVAC filters are due and sends an actionable notification
+  triggers:
+  - trigger: time
+    at: 09:00:00
+  - trigger: homeassistant
+    event: start
+  conditions:
+  - condition: template
+    value_template: '{{ as_timestamp(now()) >= state_attr(''input_datetime.filter_reminder_date'',
+      ''timestamp'') }}'
+  - condition: template
+    value_template: '{{ as_timestamp(now()) >= as_timestamp(states(''input_datetime.hvac_filter_snooze_until''))
+      }}'
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.hvac_filter_reminder_active
+  - action: notify.mobile_app_pixel_9
+    data:
+      title: 🔧 HVAC Filter Change Due
+      message: Time to replace your HVAC filters (16"×20"×1", qty 2). Check your supply
+        or pick up filters at the hardware store.
+      data:
+        actions:
+        - action: HVAC_FILTER_SNOOZE
+          title: Snooze 24h
+        - action: HVAC_FILTER_REPLACED
+          title: Filter Replaced ✓
+        tag: hvac_filter_reminder
+        channel: Reminders
+        importance: high
+  mode: single

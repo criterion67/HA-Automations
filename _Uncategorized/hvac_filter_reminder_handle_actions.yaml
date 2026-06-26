@@ -1,0 +1,28 @@
+- id: '1782396489815'
+  alias: HVAC Filter Reminder - Handle Actions
+  description: Handles snooze and replaced actions from HVAC filter notifications
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: HVAC_FILTER_SNOOZE
+    id: snooze
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: HVAC_FILTER_REPLACED
+    id: replaced
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: snooze
+      sequence:
+      - action: script.hvac_filter_snooze
+    - conditions:
+      - condition: trigger
+        id: replaced
+      sequence:
+      - action: script.hvac_filter_replaced
+  mode: single
