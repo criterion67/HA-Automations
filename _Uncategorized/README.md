@@ -1,6 +1,6 @@
 # _Uncategorized
 
-31 automation(s) in this category.
+33 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -8,6 +8,8 @@
 | Bathroom- TTS Announcement Test | Plays a welcome TTS on entry and a lights-off TTS on departure. Single mode prevents repeat announcements while presence is active. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |
+| Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
+| Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
 | Health - Auto-Dismiss BP Reminder on Reading | Automatically turns off the BP dashboard reminder when either BP sensor is updated within 30 minutes of the morning reminder window (7–10 AM) or the evening reminder reset (7 PM). |
 | Health - Stamp Last BP Reading on New Systolic | Updates last_bp_reading datetime and last_known_systolic only when a genuinely new (different) systolic value arrives, ignoring unknown/value flapping from Health Connect sync gaps. |
 | Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 - 2 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2 short: 80s Super Hits Radio. Button 2 hold: Smooth Jazz Chill. Button 3: Previous Track. Button 4: Next Track. |

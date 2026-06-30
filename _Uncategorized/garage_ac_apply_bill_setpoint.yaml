@@ -1,0 +1,28 @@
+- id: '1782752306790'
+  alias: Garage AC - Apply Bill Setpoint
+  description: When Bill adjusts the dummy thermostat helper, apply the value to the
+    real garage AC only if it is 80°F or above. Values below 80 are silently ignored
+    — the restore automation handles snapping the AC back.
+  triggers:
+  - trigger: state
+    entity_id: input_number.garage_ac_bill_setpoint
+    id: bill_adjusted
+  conditions:
+  - condition: numeric_state
+    entity_id: input_number.garage_ac_bill_setpoint
+    above: 79.9
+  - condition: state
+    entity_id: input_boolean.garage_heat_cool_mode
+    state: 'on'
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: climate.garage_ac
+      state: 'off'
+  actions:
+  - action: climate.set_temperature
+    target:
+      entity_id: climate.garage_ac
+    data:
+      temperature: '{{ states(''input_number.garage_ac_bill_setpoint'') | float }}'
+  mode: restart

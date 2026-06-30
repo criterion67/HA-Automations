@@ -1,0 +1,33 @@
+- id: '1782751117583'
+  alias: Garage AC - Restore Setpoint After Unauthorized Adjustment
+  description: If the garage AC temperature setpoint is lowered below 80°F while in
+    cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer
+    if adjusted again before the delay expires.
+  triggers:
+  - trigger: numeric_state
+    entity_id: climate.garage_ac
+    attribute: temperature
+    below: 80
+    id: setpoint_lowered
+  conditions:
+  - condition: state
+    entity_id: input_boolean.garage_heat_cool_mode
+    state: 'on'
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: climate.garage_ac
+      state: 'off'
+  actions:
+  - delay:
+      minutes: 5
+  - condition: numeric_state
+    entity_id: climate.garage_ac
+    attribute: temperature
+    below: 80
+  - action: climate.set_temperature
+    target:
+      entity_id: climate.garage_ac
+    data:
+      temperature: 80
+  mode: restart
