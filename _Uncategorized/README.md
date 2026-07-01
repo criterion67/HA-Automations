@@ -1,6 +1,6 @@
 # _Uncategorized
 
-33 automation(s) in this category.
+39 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -26,6 +26,12 @@
 | Monthly Valve Test | On the 1st of each month, cycles the main water valve closed then open to verify it is operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |
+| Petkit - Evening Feed (6:00 PM) 40g | Dispenses 40g (2/5 cup) for Gracie's evening meal at 6:00 PM. Transition schedule: 40g morning / 30g noon / 40g evening = 110g daily. |
+| Petkit - Midday Feed (12:00 PM) 30g | Dispenses 30g (3/10 cup) for Gracie's midday meal at noon. Transition schedule: 40g morning / 30g noon / 40g evening = 110g daily. |
+| Petkit - Morning Feed (7:00 AM) 40g | Dispenses 40g (2/5 cup) for Gracie's morning meal at 7:00 AM. Transition schedule: 40g morning / 30g noon / 40g evening = 110g daily. |
+| Petkit - Notify if Feed Not Dispensed | Checks 5 minutes after each scheduled feeding time whether the feeder actually dispensed. If binary_sensor.fresh_element_solo_feeding never went on since the scheduled time, sends an alert to Scott's phone. Covers morning (7:00 AM), midday (12:00 PM), and evening (6:00 PM) feeds. |
+| Petkit - Notify on Feeding Completed | Sends a mobile notification to Scott's phone when the Fresh Element Solo finishes dispensing food. Triggers on the off transition of the feeding binary sensor (dispensing complete) and includes total dispensed today and times fed. |
+| Petkit - Notify on Low Food Level | Sends a mobile notification to Scott's phone when the Fresh Element Solo food level sensor reports low (problem state on). Does not re-notify until food is refilled and goes low again. |
 | Pico 2 - Bedroom Ceiling Lights Control | Controls bedroom ceiling lights using the Lutron Pico 2 remote: on, off, raise brightness, lower brightness. |
 | Pico 2 - Bedroom: ON Button | Handles single, double, and hold for the Pico 2 ON button. Single=turn on, Hold=50% warm white, Double=100% warm white. |
 | Power Outage - Desktop Shutdown | Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host are handled separately by the EFR3P-2 automation. |

@@ -1,0 +1,20 @@
+- id: '1782884802280'
+  alias: Petkit - Morning Feed (7:00 AM) 40g
+  description: 'Dispenses 40g (2/5 cup) for Gracie''s morning meal at 7:00 AM. Transition
+    schedule: 40g morning / 30g noon / 40g evening = 110g daily.'
+  triggers:
+  - trigger: time
+    at: 07:00:00
+  actions:
+  - action: media_player.play_media
+    target:
+      entity_id: media_player.dogs_cast
+    data:
+      media_content_id: media-source://media_source/local/oscillator-9000-hz-tone.mp3
+      media_content_type: audio/mpeg
+  - action: text.set_value
+    target:
+      entity_id: text.fresh_element_solo_manual_feed
+    data:
+      value: '40'
+  mode: single

@@ -1,0 +1,59 @@
+- id: '1782884833157'
+  alias: Petkit - Notify if Feed Not Dispensed
+  description: Checks 5 minutes after each scheduled feeding time whether the feeder
+    actually dispensed. If binary_sensor.fresh_element_solo_feeding never went on
+    since the scheduled time, sends an alert to Scott's phone. Covers morning (7:00
+    AM), midday (12:00 PM), and evening (6:00 PM) feeds.
+  triggers:
+  - at: 07:05:00
+    trigger: time
+    id: morning_check
+  - at: '12:05:00'
+    trigger: time
+    id: midday_check
+  - at: '18:05:00'
+    trigger: time
+    id: evening_check
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.fresh_element_solo_feeding
+    state: 'off'
+    for:
+      minutes: 5
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: morning_check
+      sequence:
+      - action: notify.send_message
+        data:
+          title: ⚠️ Gracie's Feeder — Morning Feed Missed
+          message: The 7:00 AM feeding does not appear to have dispensed. Check the
+            feeder.
+        target:
+          entity_id: notify.scott_s_phone
+    - conditions:
+      - condition: trigger
+        id: midday_check
+      sequence:
+      - action: notify.send_message
+        data:
+          title: ⚠️ Gracie's Feeder — Midday Feed Missed
+          message: The 12:00 PM feeding does not appear to have dispensed. Check the
+            feeder.
+        target:
+          entity_id: notify.scott_s_phone
+    - conditions:
+      - condition: trigger
+        id: evening_check
+      sequence:
+      - action: notify.send_message
+        data:
+          title: ⚠️ Gracie's Feeder — Evening Feed Missed
+          message: The 6:00 PM feeding does not appear to have dispensed. Check the
+            feeder.
+        target:
+          entity_id: notify.scott_s_phone
+  mode: parallel
+  max: 3
