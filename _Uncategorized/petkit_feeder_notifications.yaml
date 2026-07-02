@@ -1,0 +1,43 @@
+- id: '1782936136651'
+  alias: Petkit - Feeder Notifications
+  description: Sends notifications for feeder state events. Triggers on feeding completed
+    (binary_sensor.fresh_element_solo_feeding off transition) and food level low (binary_sensor.fresh_element_solo_food_level
+    on transition).
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.fresh_element_solo_feeding
+    from: 'on'
+    to: 'off'
+    id: feeding_complete
+  - trigger: state
+    entity_id: binary_sensor.fresh_element_solo_food_level
+    from: 'off'
+    to: 'on'
+    id: food_low
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: feeding_complete
+      sequence:
+      - action: notify.send_message
+        target:
+          entity_id: notify.scott_s_phone
+        data:
+          title: 🐾 Gracie's Feeder Dispensed
+          message: 'Fresh Element Solo just dispensed food. Today: {{ states(''sensor.fresh_element_solo_total_dispensed'')
+            }}g total, {{ states(''sensor.fresh_element_solo_times_dispensed'') }}
+            feeding(s).'
+    - conditions:
+      - condition: trigger
+        id: food_low
+      sequence:
+      - action: notify.send_message
+        target:
+          entity_id: notify.scott_s_phone
+        data:
+          title: 🐾 Gracie's Feeder — Low Food
+          message: The food bin on the Fresh Element Solo is running low. Time to
+            refill!
+  mode: parallel
+  max: 2
