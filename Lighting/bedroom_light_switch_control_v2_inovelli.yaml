@@ -60,12 +60,6 @@
         type: brightness_increase
         enabled: false
       button_3_double:
-      - target:
-          device_id: dc04449302bfc891611f3db1646158a1
-        data:
-          segments: 1,6
-        action: dreame_vacuum.vacuum_clean_segment
-        enabled: false
       - action: dreame_vacuum.vacuum_clean_segment
         metadata: {}
         target:

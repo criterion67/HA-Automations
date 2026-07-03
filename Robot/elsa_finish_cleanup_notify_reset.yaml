@@ -1,28 +1,28 @@
 - id: '1759124281059'
-  alias: Jarvis – Finish Cleanup (Notify + Reset)
-  description: Clears room selections and sends notifications when Jarvis finishes.
+  alias: Elsa – Finish Cleanup (Notify + Reset)
+  description: Clears room selections and sends notifications when Elsa finishes.
   triggers:
   - id: docked
     trigger: state
-    entity_id: vacuum.jarvis
+    entity_id: vacuum.z60_ultra_roller_complete
     to: docked
     for:
       seconds: 5
   - id: idle
     trigger: state
-    entity_id: vacuum.jarvis
+    entity_id: vacuum.z60_ultra_roller_complete
     to: idle
     for:
       seconds: 5
   - id: completed
     trigger: state
-    entity_id: sensor.jarvis_task_status
+    entity_id: sensor.z60_ultra_roller_complete_task_status
     to: completed
     for:
       seconds: 5
   - id: drying
     trigger: state
-    entity_id: sensor.jarvis_state
+    entity_id: sensor.z60_ultra_roller_complete_state
     to: drying
     for:
       minutes: 1
@@ -34,25 +34,27 @@
         }}'
       valid_transition: '{{ trigger.from_state is not none and trigger.from_state.state
         not in [''unknown'',''unavailable''] }}'
-      v_state: '{{ states(''vacuum.jarvis'') }}'
-      task_status: '{{ states(''sensor.jarvis_task_status'') }}'
-      dryer: '{{ states(''sensor.jarvis_state'') }}'
-      area: '{{ state_attr(''vacuum.jarvis'',''cleaned_area'') or '''' }}'
-      time_min: '{{ state_attr(''vacuum.jarvis'',''cleaning_time'') or '''' }}'
+      v_state: '{{ states(''vacuum.z60_ultra_roller_complete'') }}'
+      task_status: '{{ states(''sensor.z60_ultra_roller_complete_task_status'') }}'
+      dryer: '{{ states(''sensor.z60_ultra_roller_complete_state'') }}'
+      area: '{{ state_attr(''vacuum.z60_ultra_roller_complete'',''cleaned_area'')
+        or '''' }}'
+      time_min: '{{ state_attr(''vacuum.z60_ultra_roller_complete'',''cleaning_time'')
+        or '''' }}'
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ trigger.id == ''drying'' and valid_transition }}'
       sequence:
       - variables:
-          msg: Jarvis has completed cleaning and is now drying.
+          msg: Elsa has completed cleaning and is now drying.
       - action: notify.mobile_app_pixel_9
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
       - action: notify.mobile_app_galaxy_watch7_904t
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
     - conditions:
       - condition: template
@@ -60,17 +62,17 @@
           \ from_state in ['cleaning','returning','paused'] }}\n"
       sequence:
       - variables:
-          msg: 'Jarvis has returned to the dock.{{ '' Cleaned '' ~ area ~ '' m² in
-            '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
+          msg: 'Elsa has returned to the dock.{{ '' Cleaned '' ~ area ~ '' m² in ''
+            ~ time_min ~ '' min.'' if area and time_min else '''' }}
 
             '
       - action: notify.mobile_app_pixel_9
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
       - action: notify.mobile_app_galaxy_watch7_904t
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
     - conditions:
       - condition: template
@@ -78,17 +80,17 @@
           \ from_state in ['cleaning','returning','paused'] }}\n"
       sequence:
       - variables:
-          msg: 'Jarvis is idle, cleaning cycle ended.{{ '' Cleaned '' ~ area ~ ''
-            m² in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
+          msg: 'Elsa is idle, cleaning cycle ended.{{ '' Cleaned '' ~ area ~ '' m²
+            in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
 
             '
       - action: notify.mobile_app_pixel_9
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
       - action: notify.mobile_app_galaxy_watch7_904t
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
     - conditions:
       - condition: template
@@ -96,17 +98,17 @@
           \  and from_state not in ['completed'] }}\n"
       sequence:
       - variables:
-          msg: 'Jarvis has completed the cleaning cycle.{{ '' Cleaned '' ~ area ~
-            '' m² in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
+          msg: 'Elsa has completed the cleaning cycle.{{ '' Cleaned '' ~ area ~ ''
+            m² in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
 
             '
       - action: notify.mobile_app_pixel_9
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
       - action: notify.mobile_app_galaxy_watch7_904t
         data:
-          title: Jarvis update
+          title: Elsa update
           message: '{{ msg }}'
   - choose:
     - conditions:
