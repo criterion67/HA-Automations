@@ -7,12 +7,12 @@
     '
   triggers:
   - entity_id:
-    - sensor.network_cabinet_temp_monitor_temperature
+    - sensor.temp_sensor_network_cabinet
     above: 85
     id: temp_high
     trigger: numeric_state
   - entity_id:
-    - sensor.network_cabinet_temp_monitor_temperature
+    - sensor.temp_sensor_network_cabinet
     below: 85
     id: temp_low
     trigger: numeric_state
@@ -49,7 +49,7 @@
       sequence:
       - delay: 00:05:00
       - condition: numeric_state
-        entity_id: sensor.network_cabinet_temp_monitor_temperature
+        entity_id: sensor.temp_sensor_network_cabinet
         below: 85
       - target:
           entity_id: fan.network_cabinet_fan
@@ -65,7 +65,7 @@
       - condition: trigger
         id: presence_off
       - condition: numeric_state
-        entity_id: sensor.network_cabinet_temp_monitor_temperature
+        entity_id: sensor.temp_sensor_network_cabinet
         above: 85
       sequence:
       - target:
