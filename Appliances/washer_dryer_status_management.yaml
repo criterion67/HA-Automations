@@ -6,51 +6,51 @@
 
     '
   triggers:
-  - entity_id: sensor.sv346034n_laundry_machine_state
+  - entity_id: sensor.machine_state_machine_status
     to: Run
     id: 'On'
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Load Size Detection
     id: Load Size Detection
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Fill
     id: Fill
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Wash
     id: Wash
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Rinse
     id: Rinse
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Drain
     id: Drain
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Spin
     id: Spin
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Drying
     id: Drying
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_sub_cycle
+    trigger: state
+  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
     to: Cool Down
     id: Cool Down
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_machine_state
+    trigger: state
+  - entity_id: sensor.machine_state_machine_status
     to: Finished
     id: Finished
-    platform: state
-  - entity_id: sensor.sv346034n_laundry_machine_state
+    trigger: state
+  - entity_id: sensor.machine_state_machine_status
     to: 'Off'
     id: 'Off'
     enabled: false
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - choose:
