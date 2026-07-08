@@ -5,7 +5,7 @@
     and the time is between 8:00 a.m. and 8:00 p.m.
   triggers:
   - minutes: /10
-    platform: time_pattern
+    trigger: time_pattern
   conditions:
   - condition: state
     entity_id: person.scott_funk
@@ -21,10 +21,6 @@
     - condition: state
       entity_id: climate.indoor_thermostat
       state: heat
-  - condition: template
-    value_template: "{{\n  state_attr('climate.indoor_thermostat', 'fan_state') ==\
-      \ 1 and\n  state_attr('climate.indoor_thermostat', 'hvac_action') in ['heating',\
-      \ 'cooling']\n}}\n"
   actions:
   - target:
       entity_id: switch.scent_diffuser
