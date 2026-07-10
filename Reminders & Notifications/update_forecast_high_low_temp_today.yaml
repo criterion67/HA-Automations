@@ -1,7 +1,8 @@
 - id: '1773536601423'
-  alias: Update Forecast Low Temp Today
+  alias: Update Forecast High/Low Temp Today
   description: Calls weather.get_forecasts daily and on startup to store today's forecast
-    low in input_number.forecast_low_temp_today for use in dashboard visibility conditions.
+    high/low in input_number.forecast_high_temp_today and input_number.forecast_low_temp_today
+    for use on dashboards.
   triggers:
   - trigger: time
     at: 00:01:00
@@ -19,5 +20,11 @@
       entity_id: input_number.forecast_low_temp_today
     data:
       value: '{{ forecast_data[''weather.pirateweather''][''forecast''][0][''templow'']
+        }}'
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.forecast_high_temp_today
+    data:
+      value: '{{ forecast_data[''weather.pirateweather''][''forecast''][0][''temperature'']
         }}'
   mode: single

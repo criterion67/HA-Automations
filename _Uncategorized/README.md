@@ -1,6 +1,6 @@
 # _Uncategorized
 
-36 automation(s) in this category.
+34 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -16,8 +16,6 @@
 | HVAC Filter Reminder - Daily Check | Checks daily if HVAC filters are due and sends an actionable notification |
 | HVAC Filter Reminder - Handle Actions | Handles snooze and replaced actions from HVAC filter notifications |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
-| LCM: Calendar Slot Enable/Disable - Slot 4 | Enables Slot 4 when a Gmail calendar event starts, disables it when the event ends. Works alongside Calendar PIN Setter. |
-| LCM: Slot Usage Limiter - Slot 4 | Decrements the usage counter each time Slot 4 PIN is used. Disables slot when counter reaches 0. |
 | LibreLink - Sensor Expiration Notification | Sends mobile notifications and TTS announcements at 24 hours, 1 hour, and at the moment of Libre 3 sensor expiration. |
 | Living Room TV - Turn Off When Bill Leaves | When Bill has been away from home for 10 minutes, turn off the Living Room Chromecast. If Scott is home, send an actionable notification first asking whether to keep it on. If no response within 2 minutes, turn it off automatically. |
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
@@ -26,7 +24,7 @@
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |
 | Petkit - Feeder Notifications | Sends notifications for feeder state events. Triggers on feeding completed (binary_sensor.fresh_element_solo_feeding off transition) and food level low (binary_sensor.fresh_element_solo_food_level on transition). |
-| Petkit - Feeding Schedule | Dispenses Gracie's three daily meals via the Fresh Element Solo and plays the 9000 Hz tone to call her. Schedule: 40g at 7:00 AM, 30g at 12:00 PM, 40g at 6:00 PM = 110g daily total. |
+| Petkit - Feeding Schedule | Dispenses Gracie's three daily meals via the Fresh Element Solo and plays the 9000 Hz tone to call her. Schedule: 30g at 7:00 AM, 20g at 12:00 PM, 30g at 6:00 PM = 80g daily total. |
 | Petkit - Notify if Feed Not Dispensed | Checks 5 minutes after each scheduled feeding time whether the feeder actually dispensed. If binary_sensor.fresh_element_solo_feeding never went on since the scheduled time, sends an alert to Scott's phone. Covers morning (7:00 AM), midday (12:00 PM), and evening (6:00 PM) feeds. |
 | Petkit - Notify on Battery Issue | Alerts Scott if the Fresh Element Solo loses USB power and switches to battery backup, or if the batteries are physically removed. Battery level 'Not in use' means USB powered — any other state means running on batteries. |
 | Pico 2 - Bedroom Ceiling Lights Control | Controls bedroom ceiling lights using the Lutron Pico 2 remote: on, off, raise brightness, lower brightness. |
