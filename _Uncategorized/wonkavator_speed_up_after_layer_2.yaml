@@ -1,0 +1,21 @@
+- id: '1784054695567'
+  alias: Wonkavator Speed Up After Layer 2
+  description: Switches Wonkavator 3D printer speed to Ludicrous once layer 2 has
+    completed (fires when current_layer becomes 3). Only runs when input_boolean.wonkavator_speed_boost_enabled
+    is on, so it can be toggled per print.
+  triggers:
+  - above: 2
+    below: 4
+    entity_id: sensor.wonkavator_3d_current_layer
+    trigger: numeric_state
+  conditions:
+  - condition: state
+    entity_id: input_boolean.wonkavator_speed_boost_enabled
+    state: 'on'
+  actions:
+  - action: select.select_option
+    data:
+      option: ludicrous
+    target:
+      entity_id: select.wonkavator_3d_printing_speed
+  mode: single
