@@ -1,0 +1,43 @@
+- id: '1784164934392'
+  alias: FP300 Presence Sensor Test
+  description: ''
+  triggers:
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.aqara_fp300_presence_sensor_presence
+    options:
+      for: 00:00:00
+    id: Detected
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.aqara_fp300_presence_sensor_presence
+    options:
+      behavior: each
+      for: 00:00:00
+    id: Clear
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Detected
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.bedroom_alert_light
+        data:
+          color_name: fuchsia
+    - conditions:
+      - condition: trigger
+        id:
+        - Clear
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.bedroom_alert_light
+        data: {}
+        enabled: true
+  mode: single
