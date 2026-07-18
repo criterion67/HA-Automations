@@ -16,7 +16,7 @@
 | Garage Light Override Control | Manages override mode and direct light control. Single press: enables input_boolean.garage_presence_override and turns on ceiling lights. Double press or physical switch off: disables override, turns off ceiling lights, turns off workbench light (switch.workbench_light), and clears input_boolean.workbench_occupied. |
 | Garage Lights on when Garage door opened | Garage lights will turn on when garage door is opened between sunset and sunrise for 10 minutes and then turn off. Automation will not run again for 1 hour after lights are turned off. |
 | Hall Bath Presence Lighting Control v2 | Lighting control based on presence with day and night split. |
-| Light Control: Bedroom Inovelli switch | Controls bedroom ceiling lights and bedside lamps via Inovelli switch — single tap up/down for ceiling, double tap for bedside lamps. |
+| Light Control: Bedroom Inovelli switch | Multi-tap actions for the bedroom Inovelli switch. Single-tap on/off/dim is now handled by a native Zigbee group binding (switch -> Bedroom Downlights group), not by this automation. Double tap: bedside lamps. Triple tap: all bedroom lights (light domain only, area-scoped, deliberately excludes switches/smart plugs). |
 | Light Control: Bill's Desk |  |
 | Light Control: Bill's Recliner | Aqara mini button: single press toggles lamp, double press toggles overhead light. |
 | Living Room TV - Control TV Backlighting | Turns the Living Room TV backlight on or off based on the TV's power state. Includes a 3-second retry for turn-off if the light fails to respond. |

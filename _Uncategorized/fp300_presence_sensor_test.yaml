@@ -4,13 +4,13 @@
   triggers:
   - trigger: occupancy.detected
     target:
-      entity_id: binary_sensor.aqara_fp300_presence_sensor_presence
+      entity_id: binary_sensor.aqara_fp300_presence_sensor_1_presence
     options:
       for: 00:00:00
     id: Detected
   - trigger: occupancy.cleared
     target:
-      entity_id: binary_sensor.aqara_fp300_presence_sensor_presence
+      entity_id: binary_sensor.aqara_fp300_presence_sensor_1_presence
     options:
       behavior: each
       for: 00:00:00

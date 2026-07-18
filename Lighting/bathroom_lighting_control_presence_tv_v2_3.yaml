@@ -8,32 +8,32 @@
   - entity_id: binary_sensor.bathroom_presence_radar_target
     to: 'on'
     id: Presence_On
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.bathroom_presence_radar_target
     to: 'off'
     id: Presence_Off
-    platform: state
+    trigger: state
+    for:
+      seconds: 2
   - entity_id: media_player.bedroom_tv_chromecast
     to: paused
     for:
-      seconds: 5
+      seconds: 45
     id: TV_Paused
-    platform: state
+    trigger: state
   - entity_id: media_player.bedroom_tv_chromecast
     to: playing
     for:
-      seconds: 5
+      seconds: 45
     id: TV_Playing
-    platform: state
-  - platform: time
-    at: '23:00:00'
+    trigger: state
+  - at: '23:00:00'
     id: Vanity_Cutover
+    trigger: time
   conditions:
   - condition: template
-    value_template: "{% if trigger.id in ['Presence_On', 'Presence_Off'] %}\n  {{\
-      \ (now_ts - presence_cd) > cooldown_time or presence_cd == 0 }}\n{% elif trigger.id\
-      \ in ['TV_Paused', 'TV_Playing'] %}\n  {{ (now_ts - tv_cd) > cooldown_time or\
-      \ tv_cd == 0 }}\n{% else %}\n  true\n{% endif %}\n"
+    value_template: "{% if trigger.id in ['TV_Paused', 'TV_Playing'] %}\n  {{ (now_ts\
+      \ - tv_cd) > cooldown_time or tv_cd == 0 }}\n{% else %}\n  true\n{% endif %}\n"
   actions:
   - choose:
     - conditions:

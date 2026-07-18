@@ -1,78 +1,46 @@
 - id: '1772667792517'
   alias: 'Light Control: Bedroom Inovelli switch'
-  description: Controls bedroom ceiling lights and bedside lamps via Inovelli switch
-    — single tap up/down for ceiling, double tap for bedside lamps.
+  description: 'Multi-tap actions for the bedroom Inovelli switch. Single-tap on/off/dim
+    is now handled by a native Zigbee group binding (switch -> Bedroom Downlights
+    group), not by this automation. Double tap: bedside lamps. Triple tap: all bedroom
+    lights (light domain only, area-scoped, deliberately excludes switches/smart plugs).'
   triggers:
-  - entity_id:
-    - light.bedroom_light_switch
-    to: 'on'
-    id: 1X Up
-    platform: state
-  - entity_id:
-    - light.bedroom_light_switch
-    to: 'off'
-    id: 1x Down
-    platform: state
   - device_id: cf2b54ede5b6725a721039bc1f9bb552
     domain: zha
-    type: remote_button_double_press
-    subtype: Up
     id: 2X Up
-    platform: device
-  - device_id: cf2b54ede5b6725a721039bc1f9bb552
-    domain: zha
-    type: remote_button_double_press
-    subtype: Down
-    id: 2X Down
-    platform: device
-  - device_id: cf2b54ede5b6725a721039bc1f9bb552
-    domain: zha
-    type: remote_button_triple_press
     subtype: Up
-    id: 3X Up
-    platform: device
+    trigger: device
+    type: remote_button_double_press
   - device_id: cf2b54ede5b6725a721039bc1f9bb552
     domain: zha
-    type: remote_button_triple_press
+    id: 2X Down
     subtype: Down
+    trigger: device
+    type: remote_button_double_press
+  - device_id: cf2b54ede5b6725a721039bc1f9bb552
+    domain: zha
+    id: 3X Up
+    subtype: Up
+    trigger: device
+    type: remote_button_triple_press
+  - device_id: cf2b54ede5b6725a721039bc1f9bb552
+    domain: zha
     id: 3X Down
-    platform: device
+    subtype: Down
+    trigger: device
+    type: remote_button_triple_press
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: trigger
         id:
-        - 1X Up
-      sequence:
-      - action: light.turn_on
-        metadata: {}
-        data: {}
-        target:
-          entity_id: light.bedroom_ceiling_lights
-    - conditions:
-      - condition: trigger
-        id:
-        - 1x Down
-      sequence:
-      - action: light.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id: light.bedroom_ceiling_lights
-    - conditions:
-      - condition: trigger
-        id:
         - 2X Up
       sequence:
       - action: light.turn_on
-        metadata: {}
-        data: {}
         target:
           entity_id: light.bedroom_bedside_lamps_group
       - action: light.turn_off
-        metadata: {}
-        data: {}
         target:
           entity_id: light.bedroom_ceiling_lights
     - conditions:
@@ -81,23 +49,33 @@
         - 2X Down
       sequence:
       - action: light.turn_off
-        metadata: {}
-        data: {}
         target:
           entity_id: light.bedroom_bedside_lamps_group
       - action: light.turn_off
-        metadata: {}
-        data: {}
         target:
           entity_id: light.bedroom_ceiling_lights
     - conditions:
       - condition: trigger
         id:
         - 3X Up
-      sequence: []
+      sequence:
+      - action: light.turn_on
+        data: {}
+        metadata: {}
+        note: Domain-scoped to light.* only via light.turn_on - never touches switch/smart-plug
+          entities in the area.
+        target:
+          area_id: bedroom
     - conditions:
       - condition: trigger
         id:
         - 3X Down
-      sequence: []
-  mode: single
+      sequence:
+      - action: light.turn_off
+        data: {}
+        metadata: {}
+        note: Domain-scoped to light.* only via light.turn_off - never touches switch/smart-plug
+          entities in the area.
+        target:
+          area_id: bedroom
+  mode: restart

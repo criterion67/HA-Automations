@@ -1,11 +1,12 @@
 # _Uncategorized
 
-36 automation(s) in this category.
+37 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
 | Bathroom- TTS Announcement Test | Plays a welcome TTS on entry and a lights-off TTS on departure. Single mode prevents repeat announcements while presence is active. |
+| Bedroom: Snapshot & Auto-Off/Restore on Presence | When the Aqara FP300 presence sensor reports no presence for 15 minutes, snapshots the current state of bedroom lights, ceiling fan, and TV, then turns them off. When presence returns, restores the snapshot. Presence must be stable for 30 seconds before restoring, to filter mmWave sensor flicker. Signe Lamp's active effect is captured separately and re-applied after restore, since the scene's captured color attributes otherwise override the effect. A pending-flag guards the restore so a brief presence flicker (sensor going off then quickly back on, never reaching the 15-minute threshold) does not re-apply a stale snapshot; restore only runs after the automation itself actually turned things off. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |
 | FP300 Presence Sensor Test |  |
