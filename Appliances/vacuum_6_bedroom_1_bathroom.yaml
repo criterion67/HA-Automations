@@ -1,0 +1,14 @@
+- id: '1707327990684'
+  alias: Vacuum 6- Bedroom & 1- Bathroom
+  description: ''
+  triggers: []
+  conditions: []
+  actions:
+  - target:
+      device_id: 229916033cfaeeaf0a79ac35dab59d53
+    data:
+      segments:
+      - 8
+      - 5
+    action: dreame_vacuum.vacuum_clean_segment
+  mode: single

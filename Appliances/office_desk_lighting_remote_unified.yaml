@@ -121,5 +121,10 @@
     - conditions:
       - condition: trigger
         id: zen37_scene004_single
-      sequence: []
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.nabu_casa_skyconnect_v1_0_office_lamps
   mode: single
