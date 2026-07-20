@@ -1,6 +1,6 @@
 # _Uncategorized
 
-37 automation(s) in this category.
+38 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -23,6 +23,7 @@
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
 | Medication Reminders - Mobile Notifications | Sends mobile notifications to Pixel 9 at each scheduled medication time with Snooze (30 min) and Taken action buttons. Six time slots: 7am (Levothyroxine), 8am (morning meds + antibiotics), 10am (supplements), 5pm (Levofloxacin), 7pm (evening meds), bedtime (Magnesium). Snooze fires a second notification after 30 minutes by turning on the corresponding input_boolean snooze flag, which re-triggers via state change. Taken dismisses without re-alerting. |
 | Monthly Valve Test | On the 1st of each month, cycles the main water valve closed then open to verify it is operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
+| NFC - Office Door Unlock |  |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |
 | Petkit - Feeder Notifications | Sends notifications for feeder state events. Triggers on feeding completed (binary_sensor.fresh_element_solo_feeding off transition) and food level low (binary_sensor.fresh_element_solo_food_level on transition). |

@@ -1,0 +1,20 @@
+- id: '1784516228676'
+  alias: NFC - Office Door Unlock
+  description: ''
+  triggers:
+  - trigger: tag
+    tag_id: 0b24eba4-5a73-4827-a108-1e00e06b197f
+  conditions: []
+  actions:
+  - action: lock.unlock
+    metadata: {}
+    target:
+      entity_id: lock.office_door_lock
+    data: {}
+  - action: notify.send_message
+    target:
+      entity_id: notify.scott_s_phone
+    data:
+      title: Office Door
+      message: Office door lock unlocked
+  mode: single
