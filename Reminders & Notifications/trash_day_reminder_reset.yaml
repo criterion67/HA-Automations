@@ -45,7 +45,7 @@
           sequence:
           - action: light.turn_on
             target:
-              entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+              entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
             data:
               rgb_color:
               - 0
@@ -59,7 +59,7 @@
           sequence:
           - action: light.turn_off
             target:
-              entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+              entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
     - conditions:
       - condition: trigger
         id: 6pm
@@ -84,7 +84,7 @@
       sequence:
       - action: light.turn_off
         target:
-          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+          entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
     - conditions:
       - condition: trigger
         id: 12am_thu
@@ -98,7 +98,7 @@
         data: {}
       - action: light.turn_off
         target:
-          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+          entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
     - conditions:
       - condition: trigger
         id: 1201am_thu
@@ -122,7 +122,7 @@
       sequence:
       - action: light.turn_on
         target:
-          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+          entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
         data:
           rgb_color:
           - 255
@@ -153,7 +153,7 @@
         data: {}
       - action: light.turn_off
         target:
-          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+          entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
     - conditions:
       - condition: trigger
         id: fri_reset
@@ -171,6 +171,6 @@
         data: {}
       - action: light.turn_off
         target:
-          entity_id: light.bt_proxy_3_bluetooth_proxy_3_status_led
+          entity_id: light.bt_proxy_1_bluetooth_proxy_1_status_led
   mode: queued
   max: 10
