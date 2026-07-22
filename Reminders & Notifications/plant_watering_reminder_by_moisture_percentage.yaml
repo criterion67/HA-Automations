@@ -5,21 +5,22 @@
   triggers:
   - entity_id: sensor.soil_sensor_1_soil_moisture
     below: 25
-    platform: numeric_state
     for:
       minutes: 5
+    trigger: numeric_state
   - entity_id: sensor.soil_sensor_2_soil_moisture
     below: 28
-    platform: numeric_state
     for:
       minutes: 5
+    trigger: numeric_state
+    enabled: false
   - entity_id: sensor.soil_sensor_3_soil_moisture
     below: 10
-    platform: numeric_state
     for:
       minutes: 5
+    trigger: numeric_state
   - event_type: mobile_app_notification_action
-    platform: event
+    trigger: event
   actions:
   - choose:
     - conditions:
