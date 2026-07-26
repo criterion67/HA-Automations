@@ -123,7 +123,7 @@
       - data:
           title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
-        action: notify.mobile_app_bill_s_phone
+        action: notify.mobile_app_bills_phone
       - target:
           entity_id:
           - input_boolean.mailbox_notified
@@ -151,7 +151,7 @@
         action: notify.mobile_app_pixel_9
       - data:
           message: Don't forget to check the mail today!
-        action: notify.mobile_app_bill_s_phone
+        action: notify.mobile_app_bills_phone
     - conditions:
       - condition: trigger
         id: daily_reset

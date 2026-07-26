@@ -125,7 +125,7 @@
           title: Parcel Delivery
           message: A package was delivered to the front porch parcel box at {{ now().strftime('%I:%M
             %p on %b %-d') }}
-        action: notify.mobile_app_bill_s_phone
+        action: notify.mobile_app_bills_phone
     - conditions:
       - condition: trigger
         id: manual_reset
