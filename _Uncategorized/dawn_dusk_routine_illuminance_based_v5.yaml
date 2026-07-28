@@ -1,0 +1,50 @@
+- id: '1785192671325'
+  alias: Dawn Dusk Routine (Illuminance Based v5)
+  description: Illuminance-based test that replaces the sun elevation offsets. Dawn
+    opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises
+    above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when
+    illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance.
+    Test version running while v4 (elevation based) is disabled.
+  triggers:
+  - above: 500
+    entity_id: sensor.weather_station_illuminance
+    for:
+      minutes: 2
+    id: Dawn
+    trigger: numeric_state
+  - below: 400
+    entity_id: sensor.weather_station_illuminance
+    for:
+      minutes: 2
+    id: Dusk
+    trigger: numeric_state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Dawn
+      sequence:
+      - parallel:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.dawn_group
+        - action: cover.open_cover
+          target:
+            entity_id: cover.bedroom_curtains
+    - conditions:
+      - condition: trigger
+        id: Dusk
+      sequence:
+      - parallel:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.dusk_group
+        - action: cover.close_cover
+          target:
+            entity_id: cover.bedroom_curtains
+      - delay: 00:00:10
+      - action: scene.turn_on
+        target:
+          entity_id: scene.dusk_group
+  mode: single

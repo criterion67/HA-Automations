@@ -1,6 +1,6 @@
 # _Uncategorized
 
-40 automation(s) in this category.
+41 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -11,6 +11,7 @@
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |
 | Dashboard - Reset NWS Alert Dismissed When Alerts Clear | Re-show the NWS Alert dashboard card whenever the active alert count is non-zero, by clearing the manual dismiss flag |
+| Dawn Dusk Routine (Illuminance Based v5) | Illuminance-based test that replaces the sun elevation offsets. Dawn opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance. Test version running while v4 (elevation based) is disabled. |
 | FP300 Presence Sensor Test |  |
 | Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
