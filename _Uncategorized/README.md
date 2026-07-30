@@ -1,18 +1,15 @@
 # _Uncategorized
 
-41 automation(s) in this category.
+38 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
-| Arc lamp presence test.  |  |
 | Bathroom- TTS Announcement Test | Plays a welcome TTS on entry and a lights-off TTS on departure. Single mode prevents repeat announcements while presence is active. |
-| Bedroom: Snapshot & Auto-Off/Restore on Presence | When the Aqara FP300 presence sensor reports no presence for 15 minutes, snapshots the current state of bedroom lights, ceiling fan, and TV, then turns them off. When presence returns, restores the snapshot. Presence must be stable for 30 seconds before restoring, to filter mmWave sensor flicker. Signe Lamp's active effect is captured separately and re-applied after restore, since the scene's captured color attributes otherwise override the effect. A pending-flag guards the restore so a brief presence flicker (sensor going off then quickly back on, never reaching the 15-minute threshold) does not re-apply a stale snapshot; restore only runs after the automation itself actually turned things off. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |
 | Dashboard - Reset NWS Alert Dismissed When Alerts Clear | Re-show the NWS Alert dashboard card whenever the active alert count is non-zero, by clearing the manual dismiss flag |
 | Dawn Dusk Routine (Illuminance Based v5) | Illuminance-based test that replaces the sun elevation offsets. Dawn opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance. Test version running while v4 (elevation based) is disabled. |
-| FP300 Presence Sensor Test |  |
 | Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
 | Health - Auto-Dismiss BP Reminder on Reading | Automatically turns off the BP dashboard reminder when either BP sensor is updated within 30 minutes of the morning reminder window (7–10 AM) or the evening reminder reset (7 PM). |

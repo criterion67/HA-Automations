@@ -55,7 +55,7 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | Master Garage Climate Control | Central controller for garage heat and cool based on button, temperature, and freeze protection. |
 | Master Wonkavator Print Finished TTS | Announce when Wonkavator finishes printing with speaker fallback and light cue |
 | Master Wonkavator Print Start Reset | Resets announcement state only when a REAL new print begins |
-| Master: Garage Climate Doors | Turns off heater or AC when doors open, resumes automatically when closed, and sends actionable notifications to stop climate. |
+| Master: Garage Climate Doors | Turns off heater or AC when doors open, resumes automatically when closed, and sends actionable notifications for cool/heat resume. |
 | Medication Reminders with Mounjaro | Provides audible reminders and visual alerts for taking medications at designated times and days. Uses parallel actions for efficiency and restores TV lights to their original state after reminders. |
 | Network Cabinet Fan Smart Control | Controls the network cabinet fan based on temperature and office presence. Turns on at 85°F or higher, off 5 min after temp drops below 85°F. Disables fan while office is occupied. Honors override via input_boolean.network_cabinet_fan_automation_enabled. |
 | New consumable added to to-do list |  |

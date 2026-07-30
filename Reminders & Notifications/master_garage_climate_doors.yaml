@@ -1,33 +1,41 @@
 - id: '1764972777413'
   alias: 'Master: Garage Climate Doors'
   description: 'Turns off heater or AC when doors open, resumes automatically when
-    closed, and sends actionable notifications to stop climate.
+    closed, and sends actionable notifications for cool/heat resume.
 
     '
   triggers:
   - entity_id: cover.garage_door
+    for: 00:03:00
+    id: door_open
     to: open
-    for: 00:02:00
-    id: door_open
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.rear_door
-    to: 'on'
-    for: 00:02:00
+    for: 00:03:00
     id: door_open
-    platform: state
+    to: 'on'
+    trigger: state
   - entity_id:
     - cover.garage_door
     - binary_sensor.rear_door
+    id: doors_closed
     to:
     - closed
     - 'off'
-    id: doors_closed
-    platform: state
-  - event_type: mobile_app_notification_action
-    event_data:
-      action: GARAGE_DOOR_STOP_CLIMATE
-    id: stop_climate
-    platform: event
+    trigger: state
+  - id: check_notify
+    minutes: /1
+    trigger: time_pattern
+  - event_data:
+      action: GARAGE_DOOR_RESUME_COOL
+    event_type: mobile_app_notification_action
+    id: resume_cool
+    trigger: event
+  - event_data:
+      action: GARAGE_DOOR_RESUME_HEAT
+    event_type: mobile_app_notification_action
+    id: resume_heat
+    trigger: event
   conditions: []
   actions:
   - variables:
@@ -52,71 +60,165 @@
               entity_id: switch.garage_heater
               state: 'on'
           sequence:
-          - target:
-              entity_id: input_datetime.garage_ac_last_off_time
+          - action: input_datetime.set_datetime
             data:
               datetime: '{{ now().isoformat() }}'
-            action: input_datetime.set_datetime
-          - target:
+            target:
+              entity_id: input_datetime.garage_ac_last_off_time
+          - action: climate.turn_off
+            target:
               entity_id: climate.garage_ac
-            action: climate.turn_off
-          - target:
+          - action: switch.turn_off
+            target:
               entity_id: switch.garage_heater
-            action: switch.turn_off
-    - conditions:
-      - condition: trigger
-        id: doors_closed
-      sequence:
-      - condition: template
-        value_template: "{{ states('input_datetime.garage_ac_last_off_time') not in\
-          \ ['unknown','unavailable','']\n   and (now().timestamp() - as_timestamp(states('input_datetime.garage_ac_last_off_time')))\
-          \ < 300 }}\n"
-      - choose:
-        - conditions:
-          - condition: template
-            value_template: '{{ vacation == ''off'' and mode_boolean == ''on'' }}'
-          sequence:
-          - target:
-              entity_id: switch.garage_heater
-            action: switch.turn_on
-          - data:
-              title: Garage Climate
-              message: Heater has resumed. Tap to stop climate.
-              data:
-                actions:
-                - action: GARAGE_DOOR_STOP_CLIMATE
-                  title: Stop climate
-            action: notify.mobile_app_pixel_9
-        - conditions:
-          - condition: template
-            value_template: '{{ vacation == ''off'' and mode_boolean == ''off'' }}'
-          sequence:
-          - target:
-              entity_id: climate.garage_ac
-            data:
-              hvac_mode: cool
-              temperature: 80
-            action: climate.set_temperature
-          - data:
-              title: Garage Climate
-              message: AC has resumed. Tap to stop climate.
-              data:
-                actions:
-                - action: GARAGE_DOOR_STOP_CLIMATE
-                  title: Stop climate
-            action: notify.mobile_app_pixel_9
-    - conditions:
-      - condition: trigger
-        id: stop_climate
-      sequence:
-      - target:
-          entity_id: climate.garage_ac
-        action: climate.turn_off
-      - target:
-          entity_id: switch.garage_heater
-        action: switch.turn_off
-      - data:
-          title: Garage Climate
-          message: Climate stopped by user request.
-        action: notify.mobile_app_pixel_9
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.garage_ac_off_notified
+  - if:
+    - condition: trigger
+      id: doors_closed
+    then:
+    - condition: template
+      value_template: '{{ states(''input_datetime.garage_ac_last_off_time'') not in
+        [''unknown'',''unavailable'',''''] and (now().timestamp() - as_timestamp(states(''input_datetime.garage_ac_last_off_time'')))
+        < 300 }}'
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ vacation == ''off'' and mode_boolean == ''on'' }}'
+        sequence:
+        - action: switch.turn_on
+          target:
+            entity_id: switch.garage_heater
+        - action: notify.mobile_app_pixel_9
+          data:
+            message: Heater has resumed.
+            title: Garage Climate
+      - conditions:
+        - condition: template
+          value_template: '{{ vacation == ''off'' and mode_boolean == ''off'' }}'
+        sequence:
+        - action: climate.set_temperature
+          data:
+            hvac_mode: cool
+            temperature: 80
+          target:
+            entity_id: climate.garage_ac
+        - action: notify.mobile_app_pixel_9
+          data:
+            message: AC has resumed.
+            title: Garage Climate
+  - if:
+    - condition: trigger
+      id: check_notify
+    - condition: state
+      entity_id: climate.garage_ac
+      state: 'off'
+    - condition: state
+      entity_id: switch.garage_heater
+      state: 'off'
+    - condition: state
+      entity_id: input_boolean.garage_ac_off_notified
+      state: 'off'
+    - condition: template
+      value_template: '{{ states(''input_datetime.garage_ac_last_off_time'') not in
+        [''unknown'',''unavailable'',''''] and (now().timestamp() - as_timestamp(states(''input_datetime.garage_ac_last_off_time'')))
+        >= 600 }}'
+    then:
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.garage_ac_off_notified
+    - action: notify.mobile_app_pixel_9
+      data:
+        data:
+          actions:
+          - action: GARAGE_DOOR_RESUME_COOL
+            title: Cool
+          - action: GARAGE_DOOR_RESUME_HEAT
+            title: Heat
+          - action: GARAGE_DOOR_DISMISS
+            title: Dismiss
+          tag: garage_climate_alert
+        message: Garage AC and heater have been off 5+ minutes because a door is still
+          open.
+        title: Garage Climate
+    - action: notify.mobile_app_bills_phone
+      data:
+        data:
+          actions:
+          - action: GARAGE_DOOR_RESUME_COOL
+            title: Cool
+          - action: GARAGE_DOOR_RESUME_HEAT
+            title: Heat
+          - action: GARAGE_DOOR_DISMISS
+            title: Dismiss
+          tag: garage_climate_alert
+        message: Garage AC and heater have been off 5+ minutes because a door is still
+          open.
+        title: Garage Climate
+  - if:
+    - condition: trigger
+      id: resume_cool
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.garage_heater
+    - action: climate.set_temperature
+      data:
+        hvac_mode: cool
+        temperature: 80
+      target:
+        entity_id: climate.garage_ac
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.garage_ac_off_notified
+    - action: notify.mobile_app_pixel_9
+      data:
+        data:
+          tag: garage_climate_alert
+        message: clear_notification
+    - action: notify.mobile_app_bills_phone
+      data:
+        data:
+          tag: garage_climate_alert
+        message: clear_notification
+    - action: notify.mobile_app_pixel_9
+      data:
+        message: AC has resumed.
+        title: Garage Climate
+    - action: notify.mobile_app_bills_phone
+      data:
+        message: AC has resumed.
+        title: Garage Climate
+  - if:
+    - condition: trigger
+      id: resume_heat
+    then:
+    - action: climate.turn_off
+      target:
+        entity_id: climate.garage_ac
+    - action: switch.turn_on
+      target:
+        entity_id: switch.garage_heater
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.garage_ac_off_notified
+    - action: notify.mobile_app_pixel_9
+      data:
+        data:
+          tag: garage_climate_alert
+        message: clear_notification
+    - action: notify.mobile_app_bills_phone
+      data:
+        data:
+          tag: garage_climate_alert
+        message: clear_notification
+    - action: notify.mobile_app_pixel_9
+      data:
+        message: Heater has resumed.
+        title: Garage Climate
+    - action: notify.mobile_app_bills_phone
+      data:
+        message: Heater has resumed.
+        title: Garage Climate
   mode: single
