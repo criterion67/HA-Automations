@@ -1,50 +1,97 @@
 - id: '1757355570578'
   alias: HVAC UV Bulb Monitor
-  description: Notify if the HVAC UV purifier draws <5W for 24h; allow Snooze or Dismiss
-    from the notification.
+  description: Alerts when the HVAC UV purifier has drawn under 5W for a full 24 hours,
+    which indicates a failed bulb or ballast. Uses a level-based daily check against
+    a 24h max Statistics helper instead of an edge-based numeric_state trigger, because
+    the original edge trigger fired once on 2026-06-20 and could never re-arm after
+    the power stayed at 0W. Snooze defers 24h via an input_datetime stamp; Dismiss
+    suppresses alerts until the purifier draws power again. Both are restart-safe.
   triggers:
-  - trigger: numeric_state
+  - at: 09:00:00
+    id: daily_check
+    note: 'Level-based daily poll. Deliberately not a numeric_state trigger: an edge
+      trigger cannot re-fire once the sensor is already below threshold.'
+    trigger: time
+  - above: 5
     entity_id: sensor.hvac_uv_purifier_power
-    below: 5
-    for:
-      hours: 24
+    id: power_restored
+    note: Bulb replaced or power restored. Clears both the dismiss flag and any active
+      snooze.
+    trigger: numeric_state
+  - event_data:
+      action: UV_SNOOZE_24H
+    event_type: mobile_app_notification_action
+    id: snooze
+    trigger: event
+  - event_data:
+      action: UV_DISMISS
+    event_type: mobile_app_notification_action
+    id: dismiss
+    trigger: event
   conditions: []
   actions:
-  - action: notify.mobile_app_pixel_9
-    data:
-      title: ⚠️ HVAC UV Bulb Alert
-      message: UV purifier has been < 5W for 24 hours. The bulb may have failed.
-      data:
-        tag: hvac_uv_bulb_low_power
-        sticky: true
-        channel: HVAC Alerts
-        actions:
-        - action: UV_SNOOZE_24H
-          title: Snooze 24h
-        - action: UV_DISMISS
-          title: Dismiss
-  - wait_for_trigger:
-    - event_type: mobile_app_notification_action
-      event_data:
-        action: UV_SNOOZE_24H
-      trigger: event
-    - event_type: mobile_app_notification_action
-      event_data:
-        action: UV_DISMISS
-      trigger: event
-    timeout: 02:00:00
-    continue_on_timeout: true
   - choose:
     - conditions:
-      - condition: template
-        value_template: "{{ wait.trigger is not none and\n   wait.trigger.event is\
-          \ defined and\n   wait.trigger.event.data.action == 'UV_SNOOZE_24H' }}\n"
+      - condition: trigger
+        id: daily_check
+      - below: 5
+        condition: numeric_state
+        entity_id: sensor.hvac_uv_purifier_power_24h_max
+      - condition: state
+        entity_id: input_boolean.hvac_uv_alert_dismissed
+        state: 'off'
+      - '{{ state_attr(''input_datetime.hvac_uv_alert_snooze_until'', ''timestamp'')
+        is none or now().timestamp() > state_attr(''input_datetime.hvac_uv_alert_snooze_until'',
+        ''timestamp'') }}'
+      note: 'Fires only if all four gates pass: right trigger, sustained low draw,
+        not dismissed, not snoozed.'
       sequence:
-      - delay: '24:00:00'
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            actions:
+            - action: UV_SNOOZE_24H
+              title: Snooze 24h
+            - action: UV_DISMISS
+              title: Dismiss
+            channel: HVAC Alerts
+            sticky: true
+            tag: hvac_uv_bulb_low_power
+          message: UV purifier peak draw over the last 24h was {{ states('sensor.hvac_uv_purifier_power_24h_max')
+            }} W, below the 5 W threshold. The bulb may have failed.
+          title: ⚠️ HVAC UV Bulb Alert
     - conditions:
-      - condition: template
-        value_template: "{{ wait.trigger is not none and\n   wait.trigger.event is\
-          \ defined and\n   wait.trigger.event.data.action == 'UV_DISMISS' }}\n"
-      sequence: []
+      - condition: trigger
+        id: power_restored
+      note: Resets suppression state so the next genuine failure alerts normally.
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hvac_uv_alert_dismissed
+      - action: input_datetime.set_datetime
+        data:
+          datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+        target:
+          entity_id: input_datetime.hvac_uv_alert_snooze_until
+    - conditions:
+      - condition: trigger
+        id: snooze
+      note: input_datetime survives restarts, unlike an inline delay.
+      sequence:
+      - action: input_datetime.set_datetime
+        data:
+          datetime: '{{ (now() + timedelta(hours=24)).strftime(''%Y-%m-%d %H:%M:%S'')
+            }}'
+        target:
+          entity_id: input_datetime.hvac_uv_alert_snooze_until
+    - conditions:
+      - condition: trigger
+        id: dismiss
+      note: Stays suppressed until the power_restored trigger clears it.
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.hvac_uv_alert_dismissed
     default: []
-  mode: single
+  max: 10
+  mode: parallel

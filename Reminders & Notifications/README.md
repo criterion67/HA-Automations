@@ -25,7 +25,7 @@
 | Garage AC Power Loss Notification |  |
 | Garbage/Recycling Pickup AI Notification | Detects when green garbage can or blue recycling bin have been emptied by city trucks on Thursday mornings. |
 | Health - Blood Pressure Morning Reminder | Send reminder notification between 7 AM and 10 AM if blood pressure hasn't been logged today |
-| HVAC UV Bulb Monitor | Notify if the HVAC UV purifier draws <5W for 24h; allow Snooze or Dismiss from the notification. |
+| HVAC UV Bulb Monitor | Alerts when the HVAC UV purifier has drawn under 5W for a full 24 hours, which indicates a failed bulb or ballast. Uses a level-based daily check against a 24h max Statistics helper instead of an edge-based numeric_state trigger, because the original edge trigger fired once on 2026-06-20 and could never re-arm after the power stayed at 0W. Snooze defers 24h via an input_datetime stamp; Dismiss suppresses alerts until the purifier draws power again. Both are restart-safe. |
 | Kitchen Fridge Alerts: Low Battery | Monitors battery level on both the refrigerator temp sensor (sensor.battery_sensor_main_fridge) and the freezer Inkbird sensor (sensor.inkbird_temperature_sensor_battery). Fires when either drops below 10%.
 
 The 10% threshold is intentional: these sensors run on small batteries and can drop quickly once they pass 20%. A dead sensor means temperature monitoring is completely blind. Alerting at 10% gives enough lead time to replace batteries before the sensor drops offline.
