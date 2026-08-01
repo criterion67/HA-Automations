@@ -5,7 +5,7 @@
   conditions: []
   actions:
   - target:
-      device_id: 229916033cfaeeaf0a79ac35dab59d53
+      device_id: 99b831a3db899ddea39b22d2e72f75aa
     data:
       segments:
       - 8

@@ -9,42 +9,42 @@
     - 'off'
     for: 00:05:00
     id: Bathroom
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.laundry_room_presence_online
     to:
     - unavailable
     - 'off'
     for: 00:05:00
     id: Laundry
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.apollo_mtr_1_cc063c_online
     to:
     - unavailable
     - 'off'
     for: 00:05:00
     id: Garage
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.apollo_msr_2_f58628_online
     to:
     - unavailable
     - 'off'
     for: 00:05:00
     id: HallBath
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.apollo_msr_2_f736b0_online
     to:
     - unavailable
     - 'off'
     for: 00:05:00
     id: Office
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.apollo_air_1_3e9fe4_online
     to:
     - unavailable
     - 'off'
     for: 00:05:00
     id: AIR1
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - choose:
@@ -54,40 +54,40 @@
       sequence:
       - action: homeassistant.reload_config_entry
         target:
-          device_id: d0b9359d9664f847a988724508d7075c
+          entity_id: binary_sensor.apollo_msr_2_f58a4c_online
     - conditions:
       - condition: trigger
         id: Laundry
       sequence:
       - action: homeassistant.reload_config_entry
         target:
-          device_id: e0776a0f764757aaa5d2af30fa6ce95d
+          entity_id: binary_sensor.laundry_room_presence_online
     - conditions:
       - condition: trigger
         id: Garage
       sequence:
       - action: homeassistant.reload_config_entry
         target:
-          device_id: ff4283c0b6e88cbc2b27a8fe1e1a2dbe
+          entity_id: binary_sensor.apollo_mtr_1_cc063c_online
     - conditions:
       - condition: trigger
         id: HallBath
       sequence:
       - action: homeassistant.reload_config_entry
         target:
-          device_id: a0df1c8bb58fafc04a2a039347d5853f
+          entity_id: binary_sensor.apollo_msr_2_f58628_online
     - conditions:
       - condition: trigger
         id: Office
       sequence:
       - action: homeassistant.reload_config_entry
         target:
-          device_id: 036d4758ee399b05fb485f27ac5d206a
+          entity_id: binary_sensor.apollo_msr_2_f736b0_online
     - conditions:
       - condition: trigger
         id: AIR1
       sequence:
       - action: homeassistant.reload_config_entry
         target:
-          device_id: af5c9a77df9911a612f37fadd0f42586
+          entity_id: binary_sensor.apollo_air_1_3e9fe4_online
   mode: parallel

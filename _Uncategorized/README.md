@@ -1,11 +1,12 @@
 # _Uncategorized
 
-38 automation(s) in this category.
+39 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
 | Bathroom- TTS Announcement Test | Plays a welcome TTS on entry and a lights-off TTS on departure. Single mode prevents repeat announcements while presence is active. |
+| Bills Lamp: Force Full Brightness | Bills Lamp is a Lutron Caseta plug-in dimmer that remembers its last level, so a single accidental brightness change keeps replaying on every turn-on and makes the lamp appear to dim by itself. Bill only ever wants it on or off. This forces 100% whenever the lamp turns on, and also snaps it back if the level drops while it is already on (for example an accidental drag on the more-info brightness slider or a voice command carrying a brightness). The 2 second delay on the dim trigger lets a slider drag settle before correcting, so the automation does not fight a live drag. Setting 100% also rewrites the level the Caseta remembers, so the underlying cause stops compounding. Both triggers converge on the same action, so no choose block is needed; mode is restart so overlapping fires cannot stack. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |
 | Dashboard - Reset NWS Alert Dismissed When Alerts Clear | Re-show the NWS Alert dashboard card whenever the active alert count is non-zero, by clearing the manual dismiss flag |

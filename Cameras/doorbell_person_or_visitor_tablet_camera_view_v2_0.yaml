@@ -27,7 +27,7 @@
       device_id:
       - 9b6f1d82aeb414da86e3d7afd9156e83
       - a9214fb40d85cc451175d4ccb7262585
-      - a6ead26dd26d0b43b3059d9ef2554da3
+      - 40e383f71e7bc1b2d46bc6a82898d899
       url: http://192.168.10.168:8123/doorbell-camera/0?hide_header&hide_sidebar
     continue_on_error: true
   - alias: Wait 30 seconds while displaying camera
@@ -38,7 +38,7 @@
       device_id:
       - 9b6f1d82aeb414da86e3d7afd9156e83
       - a9214fb40d85cc451175d4ccb7262585
-      - a6ead26dd26d0b43b3059d9ef2554da3
+      - 40e383f71e7bc1b2d46bc6a82898d899
       url: http://192.168.10.168:8123/scotts-dashboard-tablet/0
     continue_on_error: true
   - alias: Turn off Fire Tablet screen after viewing
