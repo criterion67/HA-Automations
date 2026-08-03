@@ -1,0 +1,78 @@
+- id: '1785709222103'
+  alias: Weather - AI Weather Report (Hourly)
+  description: Generates a short two sentence weather narrative every hour and stores
+    it in input_text.ai_weather_report for display on the Weather dashboard. Blends
+    live WS90 backyard weather station readings with the next 8 hours of the Google
+    Weather forecast, then sends both to ai_task.google_ai_task (Google Gemini, free
+    tier). Modeled on the AI Weather Report card in the Google Weather app, which
+    the Google Weather HA integration does not expose. If the AI call fails, for example
+    a rate limit, the automation stops and the previous report stays on the card rather
+    than blanking it. Also runs 2 minutes after a Home Assistant restart so the card
+    is never stale after a reboot.
+  triggers:
+  - id: hourly
+    minutes: 0
+    trigger: time_pattern
+  - event: start
+    id: startup
+    trigger: homeassistant
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: startup
+      sequence:
+      - delay:
+          minutes: 2
+  - action: weather.get_forecasts
+    data:
+      type: hourly
+    response_variable: fc
+    target:
+      entity_id: weather.scott_s_home
+  - action: ai_task.generate_data
+    data:
+      entity_id: ai_task.google_ai_task
+      instructions: 'You write the short weather blurb shown on a home dashboard in
+        Foley, Alabama, on the Gulf Coast.
+
+
+        BACKYARD WEATHER STATION, measured right now:
+
+        Temperature {{ states(''sensor.weather_station_temperature'') | float(0) |
+        round(0) | int }} F, feels like {{ states(''sensor.weather_station_apparent_temperature'')
+        | float(0) | round(0) | int }} F, humidity {{ states(''sensor.weather_station_humidity'')
+        | float(0) | round(0) | int }} percent, dew point {{ states(''sensor.weather_station_dew_point'')
+        | float(0) | round(0) | int }} F, pressure {{ states(''sensor.weather_station_pressure'')
+        | float(0) | round(2) }} inHg, wind {{ states(''sensor.weather_station_wind_speed'')
+        | float(0) | round(0) | int }} mph gusting {{ states(''sensor.weather_station_gust_speed'')
+        | float(0) | round(0) | int }} mph, rain rate {{ states(''sensor.weather_station_rain_rate'')
+        }} in/h, UV index {{ states(''sensor.weather_station_uv_index'') }}, sky {{
+        states(''sensor.weather_station_weather_condition'') }}.
+
+
+        GOOGLE FORECAST, next 8 hours:
+
+        {% for h in fc[''weather.scott_s_home''].forecast[:8] %}{{ as_local(as_datetime(h.datetime)).strftime(''%-I
+        %p'') }}: {{ h.condition }}, {{ h.temperature }} F, {{ h.precipitation_probability
+        }} percent chance of rain.
+
+        {% endfor %}
+
+        Write at most two sentences, under 200 characters total. The first sentence
+        says what it is like outside right now, leaning on the weather station numbers.
+        The second says what is coming over the next several hours, leaning on the
+        forecast. Conversational plain English, the way a local would say it. Where
+        the station and the forecast disagree about current conditions, trust the
+        station. No preamble, no markdown, no emoji, no bullet points, no headings,
+        no quotation marks. Output only the sentences.'
+      task_name: AI Weather Report
+    response_variable: report
+  - action: input_text.set_value
+    data:
+      value: '{{ report.data | trim | truncate(250, True, '''') }}'
+    target:
+      entity_id: input_text.ai_weather_report
+  max_exceeded: silent
+  mode: single

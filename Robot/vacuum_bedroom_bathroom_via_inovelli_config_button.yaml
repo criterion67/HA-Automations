@@ -10,14 +10,6 @@
     trigger: device
   conditions: []
   actions:
-  - target:
-      device_id: dc04449302bfc891611f3db1646158a1
-    data:
-      segments:
-      - 1
-      - 2
-    action: dreame_vacuum.vacuum_clean_segment
-    enabled: false
   - action: button.press
     metadata: {}
     target:

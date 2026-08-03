@@ -1,64 +1,136 @@
 - id: '1773096059524'
   alias: Doorbell - Delivery Vehicle AI Notification
-  description: When a vehicle is detected by the Driveway 2 camera, OR when the mailbox
-    or parcel box sensors trip, captures snapshots from both Driveway 2 and the G6
-    Pro Doorbell, sends both to LLM Vision to identify delivery carriers (USPS, FedEx,
-    UPS, Amazon) and whether a package is being left. Suppresses notification if no
-    delivery is detected.
+  description: 'Fires on three triggers, each handled differently. The parcel box
+    and mailbox contact sensors are treated as near certain deliveries, so those notify
+    unless the AI recognizes a resident collecting items rather than a courier leaving
+    them. A vehicle detection on the Driveway 2 camera is treated as unproven, so
+    it only notifies when the AI positively identifies a delivery. All paths send
+    three frames (driveway wide shot, front porch, and the downward package camera)
+    to LLM Vision on Google Gemini for a structured JSON verdict. The prompt leads
+    with a location rule: carriers never pull into the driveway, they stop on the
+    street, so any vehicle in the driveway is a resident or visitor vehicle and is
+    ignored. It also lists where packages turn up, namely the parcel box, in front
+    of the door, beside the white porch column, and on the sidewalk. Nothing is written
+    to the timeline automatically; only a passing verdict creates an LLM Vision event
+    labeled Package and pushes a notification to the Pixel.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
-    to: 'on'
     for:
       seconds: 5
-    platform: state
+    id: driveway
+    to: 'on'
+    trigger: state
   - entity_id: binary_sensor.mailbox_sensor_door
+    id: mailbox
     to: 'on'
-    platform: state
+    trigger: state
   - entity_id: binary_sensor.parcel_box_contact
+    id: parcel_box
     to: 'on'
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - action: camera.snapshot
-    target:
-      entity_id: camera.driveway_2_high_resolution_channel
     data:
       filename: /config/www/snapshots/delivery_driveway.png
-  - action: camera.snapshot
     target:
-      entity_id: camera.g6_pro_entry_high_resolution_channel
+      entity_id: camera.driveway_2_high_resolution_channel
+  - action: camera.snapshot
     data:
       filename: /config/www/snapshots/delivery_doorbell.png
+    target:
+      entity_id: camera.g6_pro_entry_high_resolution_channel
   - delay:
       seconds: 2
   - action: llmvision.image_analyzer
-    metadata: {}
     data:
-      provider: 01JBPN7YR0C9Y9CGVMJ8TCQEZ5
+      description_field: description
+      expose_images: true
+      generate_title: false
       image_entity:
       - camera.driveway_2_high_resolution_channel
       - camera.g6_pro_entry_high_resolution_channel
-      message: 'You are seeing two camera views of the same property. The first image
-        is a wide driveway and street view. The second image is the front porch close-up.
-        Is there a delivery vehicle or driver from USPS, FedEx, UPS, or Amazon visible
-        in either image? If yes: identify the carrier, describe the vehicle or driver,
-        and state whether a package appears to have been left at the front door. If
-        no delivery vehicle or driver is visible, respond only with: No delivery detected.
-        Respond in 2 sentences or less.'
-      target_width: 1280
-      detail: high
-      max_tokens: 120
-      temperature: 0.2
+      - camera.g6_pro_entry_package_camera
       include_filename: false
+      max_tokens: 300
+      message: 'You are seeing three camera views of the same residential property.
+        The first image is a wide driveway and street view. The second image is the
+        front porch. The third image is a downward facing package camera pointed at
+        the doorstep.
+
+
+        LOCATION RULE, apply this strictly and above everything else: delivery vehicles
+        NEVER pull into this driveway. They always stop on the street, either in front
+        of the driveway, in front of the mailbox, or in front of the house. Therefore
+        any vehicle sitting in the driveway itself is a resident or visitor vehicle
+        and must be ignored completely, whatever its make, color, size or type.
+
+
+        Also ignore lawn care equipment and people mowing, neighbors, pets, and vehicles
+        simply driving past without stopping.
+
+
+        WHERE PACKAGES APPEAR, in the second image (the front porch view): a BROWN
+        PARCEL BOX sits in the BOTTOM RIGHT corner of that frame, partly cut off by
+        the edge. Around 95 percent of deliveries go into that box, so a courier reaching
+        toward the bottom right of the porch is almost always making a delivery. The
+        remainder are set down on the concrete porch floor across the lower half of
+        that frame: on or beside the doormat directly in front of the door at bottom
+        center, at the base of the white porch column in the middle of the frame,
+        or a little further out on the walkway leading away from the porch. Check
+        every one of those spots, and treat any box, envelope, padded mailer or bag
+        resting on the porch floor as a package.
+
+
+        Set delivery to true ONLY if a delivery vehicle from USPS, FedEx, UPS, or
+        Amazon is stopped on the street, or a uniformed courier is on foot approaching
+        the property, or a package appears to have just been left in any of the places
+        listed above. Otherwise set delivery to false.
+
+
+        Set resident_retrieving to true only if the person visible is clearly a resident
+        of the house collecting mail or a package rather than delivering one, for
+        example someone walking out from the front door to the parcel box or mailbox.
+        If no person is visible, set resident_retrieving to false.'
+      provider: 01KZ2A24SYVPMCX8DTYVJTZTVV
+      response_format: json
+      store_in_timeline: false
+      structure: '{"type": "object", "properties": {"delivery": {"type": "boolean",
+        "description": "true only if a carrier vehicle is stopped on the street, a
+        courier is on foot, or a package appears newly left"}, "carrier": {"type":
+        "string", "description": "USPS, FedEx, UPS, Amazon, or none"}, "package_left":
+        {"type": "boolean", "description": "true if a package appears to have been
+        left on the porch, at the door, by the column, or on the sidewalk"}, "package_location":
+        {"type": "string", "description": "where the package is: parcel box, front
+        door, white column, sidewalk, or none"}, "resident_retrieving": {"type": "boolean",
+        "description": "true if the person visible is a resident collecting mail or
+        a package rather than delivering one"}, "title": {"type": "string", "description":
+        "Short event title, under 6 words"}, "description": {"type": "string", "description":
+        "One or two sentence description of what was seen"}}, "required": ["delivery",
+        "carrier", "package_left", "package_location", "resident_retrieving", "title",
+        "description"], "additionalProperties": false}'
+      target_width: 1280
+      title_field: title
     response_variable: response
   - condition: template
-    value_template: '{{ ''no delivery'' not in response.response_text | lower }}'
+    value_template: '{% set t = trigger.id | default('''') %}{% set r = response.structured_response
+      %}{{ (t in [''parcel_box'', ''mailbox''] and not (r.resident_retrieving | default(false)))
+      or (t == ''driveway'' and (r.delivery | default(false))) }}'
+  - action: llmvision.create_event
+    data:
+      camera_entity: camera.driveway_2_high_resolution_channel
+      description: '{{ response.structured_response.description }}'
+      image_path: '{{ response.key_frame }}'
+      label: Package
+      title: '{{ response.structured_response.title }}'
   - action: notify.mobile_app_pixel_9
     data:
-      title: Delivery Detected! 📦
-      message: '{{ response.response_text }}'
       data:
+        image: /local/snapshots/delivery_doorbell.png
         tag: doorbell_delivery_ai
-        image: /local/snapshots/delivery_driveway.png
         url: homeassistant://navigate/lovelace
+      message: '{{ response.structured_response.description }}'
+      title: '{{ ''Package Delivered! 📦'' if trigger.id | default('''') in [''parcel_box'',
+        ''mailbox''] else ''Delivery Detected! 📦'' }}'
+  max_exceeded: silent
   mode: single

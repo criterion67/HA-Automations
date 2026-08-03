@@ -23,7 +23,7 @@
       detail: high
       max_tokens: 100
       temperature: 0.2
-      provider: 01JBPN7YR0C9Y9CGVMJ8TCQEZ5
+      provider: 01KZ2A24SYVPMCX8DTYVJTZTVV
       image_entity:
       - camera.driveway_2_high_resolution_channel
       message: Is there a USPS mail truck in the snapshot? The mailbox is on a white

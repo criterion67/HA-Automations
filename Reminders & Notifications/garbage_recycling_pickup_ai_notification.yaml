@@ -1,45 +1,92 @@
 - id: '1769749220185'
   alias: Garbage/Recycling Pickup AI Notification
-  description: Detects when green garbage can or blue recycling bin have been emptied
-    by city trucks on Thursday mornings.
+  description: On Thursday mornings between 6:00 and 7:30, a vehicle detection on
+    the Driveway 2 camera sends a frame to LLM Vision (Google Gemini) asking for a
+    structured JSON verdict on whether the green garbage bin and blue recycling bin
+    have been collected. The prompt tells the model to ignore the homeowner's parked
+    pickup, visitor vehicles, lawn equipment, neighbors, pets, and passing traffic.
+    Nothing is written to the timeline automatically. Only when pickup_detected comes
+    back true does the automation create an LLM Vision timeline event labeled Truck
+    and push a notification. This replaces the old version, which stored every Thursday-morning
+    vehicle detection on the timeline and notified unconditionally, so any passing
+    car during that window would alert.
   triggers:
-  - platform: state
-    entity_id: binary_sensor.driveway_2_vehicle_detected_2
+  - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     to: 'on'
+    trigger: state
   conditions:
-  - condition: time
-    after: 06:00:00
+  - after: 06:00:00
     before: 07:30:00
+    condition: time
   - condition: time
     weekday:
     - thu
   actions:
   - action: camera.snapshot
-    target:
-      entity_id: camera.driveway_2_high_resolution_channel
     data:
       filename: /config/www/snapshots/garbage_pickup.png
+    target:
+      entity_id: camera.driveway_2_high_resolution_channel
   - action: llmvision.image_analyzer
     data:
-      provider: 01JBPN7YR0C9Y9CGVMJ8TCQEZ5
+      description_field: description
+      expose_images: true
+      generate_title: false
       image_entity:
       - camera.driveway_2_high_resolution_channel
-      message: 'Look at the upper left area of the camera view. Are the garbage/recycling
-        bins visible there? The GREEN bin is garbage, the BLUE bin is recycling. Report:
-        1) Are bins visible in upper left? 2) If NOT visible there, have they been
-        moved/emptied? 3) Is there a city garbage truck? Respond concisely.'
-      target_width: 1280
-      detail: high
-      max_tokens: 150
-      temperature: 0.2
       include_filename: false
+      max_tokens: 300
+      message: 'This is a driveway and street view of a residential property. On collection
+        day the GREEN garbage bin and BLUE recycling bin are staged near the upper
+        left of the frame, at the end of the driveway.
+
+
+        LOCATION RULE, apply this strictly and above everything else: collection trucks
+        operate from the street and NEVER pull into this driveway. Therefore any vehicle
+        sitting in the driveway itself is a resident or visitor vehicle and must be
+        ignored completely, whatever its make, color, size or type.
+
+
+        Also ignore lawn equipment, neighbors, pets, and ordinary passing traffic
+        that does not stop.
+
+
+        Set pickup_detected to true ONLY if a city garbage or recycling collection
+        truck is stopped on the street, or the bins that were staged for collection
+        are clearly no longer in place or have been tipped or moved as if just emptied.
+        Otherwise set pickup_detected to false.'
+      provider: 01KZ2A24SYVPMCX8DTYVJTZTVV
+      response_format: json
+      store_in_timeline: false
+      structure: '{"type": "object", "properties": {"pickup_detected": {"type": "boolean",
+        "description": "true only if a collection truck is visible or the staged bins
+        have clearly been emptied or moved"}, "truck_present": {"type": "boolean",
+        "description": "true if a city garbage or recycling truck is visible"}, "bins_present":
+        {"type": "boolean", "description": "true if the green or blue bins are still
+        staged at the end of the driveway"}, "title": {"type": "string", "description":
+        "Short event title, under 6 words"}, "description": {"type": "string", "description":
+        "One or two sentence description of what was seen"}}, "required": ["pickup_detected",
+        "truck_present", "bins_present", "title", "description"], "additionalProperties":
+        false}'
+      target_width: 1280
+      title_field: title
     response_variable: response
-  - delay:
-      seconds: 1
+  - condition: template
+    value_template: '{{ response.structured_response.pickup_detected | default(false)
+      }}'
+  - action: llmvision.create_event
+    data:
+      camera_entity: camera.driveway_2_high_resolution_channel
+      description: '{{ response.structured_response.description }}'
+      image_path: '{{ response.key_frame }}'
+      label: Truck
+      title: '{{ response.structured_response.title }}'
   - action: notify.mobile_app_pixel_9
     data:
-      title: Garbage/Recycling Pickup Detected! 🗑️♻️
-      message: '{{ response.response_text }}'
       data:
         image: /local/snapshots/garbage_pickup.png
+        tag: garbage_pickup_ai
+      message: '{{ response.structured_response.description }}'
+      title: Garbage/Recycling Pickup Detected! 🗑️♻️
+  max_exceeded: silent
   mode: single
