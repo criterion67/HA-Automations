@@ -5,12 +5,12 @@
 
     '
   triggers:
-  - device_id: 0692e92c3a10fc27e64992758dbd5f9f
-    domain: zha
-    type: remote_button_short_press
-    subtype: remote_button_short_press
+  - trigger: event
+    event_type: zha_event
+    event_data:
+      device_ieee: 00:15:8d:00:09:26:fc:58
+      command: single
     id: button
-    trigger: device
   - entity_id:
     - sensor.temp_sensor_garage
     - sensor.temp_sensor_rudys_crate
@@ -32,10 +32,6 @@
     trigger: numeric_state
   conditions: []
   actions:
-  - variables:
-      mode_boolean: '{{ states(''input_boolean.garage_heat_cool_mode'') }}'
-      vacation: '{{ states(''input_boolean.vacation'') }}'
-      bill_home: '{{ is_state(''person.bill_funk'', ''home'') }}'
   - choose:
     - conditions:
       - condition: trigger
@@ -43,8 +39,9 @@
       sequence:
       - choose:
         - conditions:
-          - condition: template
-            value_template: '{{ mode_boolean == ''on'' }}'
+          - condition: state
+            entity_id: input_boolean.garage_heat_cool_mode
+            state: 'on'
           sequence:
           - target:
               entity_id: input_boolean.garage_heat_cool_mode
@@ -63,8 +60,9 @@
                 metadata: {}
             action: media_player.play_media
         - conditions:
-          - condition: template
-            value_template: '{{ mode_boolean == ''off'' }}'
+          - condition: state
+            entity_id: input_boolean.garage_heat_cool_mode
+            state: 'off'
           sequence:
           - target:
               entity_id: input_boolean.garage_heat_cool_mode
@@ -89,10 +87,26 @@
       - condition: trigger
         id: high_temp_cool
       sequence:
-      - condition: template
-        value_template: "{{ mode_boolean == 'off' and vacation == 'off' and bill_home\
-          \ and\n   is_state('climate.garage_ac', 'off') and\n   is_state('cover.garage_door',\
-          \ 'closed') and\n   is_state('binary_sensor.rear_door', 'off') }}\n"
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: input_boolean.garage_heat_cool_mode
+          state: 'off'
+        - condition: state
+          entity_id: input_boolean.vacation
+          state: 'off'
+        - condition: state
+          entity_id: person.bill_funk
+          state: home
+        - condition: state
+          entity_id: climate.garage_ac
+          state: 'off'
+        - condition: state
+          entity_id: cover.garage_door
+          state: closed
+        - condition: state
+          entity_id: binary_sensor.rear_door
+          state: 'off'
       - target:
           entity_id: climate.garage_ac
         data:
@@ -107,9 +121,17 @@
       - condition: trigger
         id: dry_to_cool
       sequence:
-      - condition: template
-        value_template: "{{ mode_boolean == 'off' and vacation == 'off' and\n   is_state_attr('climate.garage_ac',\
-          \ 'hvac_mode', 'dry') }}\n"
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: input_boolean.garage_heat_cool_mode
+          state: 'off'
+        - condition: state
+          entity_id: input_boolean.vacation
+          state: 'off'
+        - condition: state
+          entity_id: climate.garage_ac
+          state: dry
       - target:
           entity_id: climate.garage_ac
         data:
@@ -124,9 +146,17 @@
       - condition: trigger
         id: freeze_protect
       sequence:
-      - condition: template
-        value_template: '{{ mode_boolean == ''on'' and vacation == ''off'' and bill_home
-          }}'
+      - condition: and
+        conditions:
+        - condition: state
+          entity_id: input_boolean.garage_heat_cool_mode
+          state: 'on'
+        - condition: state
+          entity_id: input_boolean.vacation
+          state: 'off'
+        - condition: state
+          entity_id: person.bill_funk
+          state: home
       - target:
           entity_id: climate.garage_heater
         data:

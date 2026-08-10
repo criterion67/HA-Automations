@@ -36,7 +36,7 @@
         - Home
         - Neighborhood
       - condition: state
-        entity_id: light.living_room_bills_light
+        entity_id: light.living_room_bills_lamp
         state: 'off'
       - condition: template
         value_template: '{{ (now() - states.device_tracker.bill_s_phone.last_changed).total_seconds()
@@ -45,7 +45,7 @@
           '
       sequence:
       - target:
-          entity_id: light.living_room_bills_light
+          entity_id: light.living_room_bills_lamp
         action: light.turn_on
         data: {}
       - delay:
@@ -70,11 +70,11 @@
       - condition: trigger
         id: Away
       - condition: state
-        entity_id: light.living_room_bills_light
+        entity_id: light.living_room_bills_lamp
         state: 'on'
       sequence:
       - target:
-          entity_id: light.living_room_bills_light
+          entity_id: light.living_room_bills_lamp
         action: light.turn_off
         data: {}
     - conditions:
@@ -86,11 +86,11 @@
         - home
         - Neighborhood
       - condition: state
-        entity_id: light.living_room_bills_light
+        entity_id: light.living_room_bills_lamp
         state: 'on'
       sequence:
       - target:
-          entity_id: light.living_room_bills_light
+          entity_id: light.living_room_bills_lamp
         action: light.turn_on
         data: {}
   mode: single

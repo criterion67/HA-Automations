@@ -1,0 +1,49 @@
+- id: '1786320805878'
+  alias: 'Bathroom Vanity: Double Tap Full Bright with AL Override'
+  description: Double tapping up on the Bathroom Light Switch marks the vanity group
+    as manually controlled in Adaptive Lighting, then applies the daylight scene (full
+    brightness, 6535K). Without the manual control mark, AL re-adapts brightness back
+    down on its next 90 second cycle because detect_non_ha_changes is off and commands
+    sent over the Zigbee group bind are invisible to it. When the vanity group turns
+    off from any source (paddle, presence automation, dashboard), manual control is
+    released so AL resumes adapting on the next turn on. Replaces the former 'Bathroom
+    light switch daylight scene' automation, which used the same double tap trigger
+    without the AL handling.
+  triggers:
+  - device_id: 05fadbb6a5379e43e8614cd1e00b8013
+    domain: zha
+    id: double_tap_up
+    subtype: Up
+    trigger: device
+    type: remote_button_double_press
+  - entity_id: light.bathroom_vanity_light_group
+    id: lights_off
+    to: 'off'
+    trigger: state
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: double_tap_up
+      sequence:
+      - action: adaptive_lighting.set_manual_control
+        data:
+          entity_id: switch.adaptive_lighting_bathroom
+          lights:
+          - light.bathroom_vanity_light_group
+          manual_control: true
+      - action: scene.turn_on
+        target:
+          entity_id: scene.bathroom_lights_daylight_temperature_on
+    - conditions:
+      - condition: trigger
+        id: lights_off
+      sequence:
+      - action: adaptive_lighting.set_manual_control
+        data:
+          entity_id: switch.adaptive_lighting_bathroom
+          lights:
+          - light.bathroom_vanity_light_group
+          manual_control: false
+  max: 10
+  mode: parallel

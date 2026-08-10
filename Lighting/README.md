@@ -1,10 +1,9 @@
 # Lighting
 
-23 automation(s) in this category.
+21 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
-| Bathroom light switch daylight scene |  |
 | Bathroom Lighting Control (Presence + TV v2.3) | Smart bathroom lighting tied to bedroom TV activity and mmWave presence with corrected overnight time handling. |
 | Bathroom Mirror: Light Control | Lighting control for bathroom mirror on/off |
 | Bathroom Shower: Light Timer v4.4 | Door open sets 5000 K at 100%. If still open after 1:30, red plus chime plus TTS, then back to 5000 K. After announcement, the next door close starts a 10 minute in shower timer and announces "Shower timer has started". Timer finish shows a brief red reminder, then returns to 5000 K. Light turns off when the door closes for quick in and out, or when you exit and close the door after a timed shower. |
@@ -18,7 +17,6 @@
 | Hall Bath Presence Lighting Control v2 | Lighting control based on presence with day and night split. |
 | Light Control: Bedroom Inovelli switch | Multi-tap actions for the bedroom Inovelli switch. Single-tap on/off/dim is now handled by a native Zigbee group binding (switch -> Bedroom Downlights group), not by this automation. Double tap: bedside lamps. Triple tap: all bedroom lights (light domain only, area-scoped, deliberately excludes switches/smart plugs). |
 | Light Control: Bill's Desk |  |
-| Light Control: Bill's Recliner | Aqara mini button: single press toggles lamp, double press toggles overhead light. |
 | Living Room TV - Control TV Backlighting | Turns the Living Room TV backlight on or off based on the TV's power state. Includes a 3-second retry for turn-off if the light fails to respond. |
 | Lutron Aurora: Living Room Floor Lamps v2.5 (Performance Edition) | Ultra-responsive control with true off, daylight toggle, and stabilized dimming. |
 | Pantry Door: Light On/Off | This automation controls the pantry light based on the door's status. It turns the light on when the door is opened, turns it off when the door is closed, and automatically turns it off if the door is left open for more than 5 minutes. |

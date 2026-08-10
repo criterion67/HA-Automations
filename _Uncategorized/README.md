@@ -1,10 +1,11 @@
 # _Uncategorized
 
-39 automation(s) in this category.
+40 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
 | Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
+| Bathroom Vanity: Double Tap Full Bright with AL Override | Double tapping up on the Bathroom Light Switch marks the vanity group as manually controlled in Adaptive Lighting, then applies the daylight scene (full brightness, 6535K). Without the manual control mark, AL re-adapts brightness back down on its next 90 second cycle because detect_non_ha_changes is off and commands sent over the Zigbee group bind are invisible to it. When the vanity group turns off from any source (paddle, presence automation, dashboard), manual control is released so AL resumes adapting on the next turn on. Replaces the former 'Bathroom light switch daylight scene' automation, which used the same double tap trigger without the AL handling. |
 | Bathroom- TTS Announcement Test | Plays a welcome TTS on entry and a lights-off TTS on departure. Single mode prevents repeat announcements while presence is active. |
 | Controller - Philips Hue Smart Button Blueprint - Taken Control |  |
 | Dashboard - Reset Dog Door Dismissed When Dog Door Opens |  |

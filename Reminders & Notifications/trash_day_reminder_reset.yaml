@@ -30,6 +30,9 @@
   - entity_id: input_boolean.trash_day_tomorrow
     id: led_tomorrow
     trigger: state
+    to:
+    - 'on'
+    - 'off'
   conditions: []
   actions:
   - choose:
