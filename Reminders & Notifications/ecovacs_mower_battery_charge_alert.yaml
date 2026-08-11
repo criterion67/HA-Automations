@@ -90,7 +90,6 @@
       - target:
           entity_id:
           - media_player.bedroom_group
-          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/Best Chime Tone.mp3
@@ -106,7 +105,6 @@
       - target:
           entity_id:
           - media_player.bedroom_group
-          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie%27s+battery+has+discharged+to+17%25+and+will+now+return+to+the+dock+to+charge.&language=en-US&voice=AndrewNeural
