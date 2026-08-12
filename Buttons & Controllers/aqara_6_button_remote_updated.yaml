@@ -10,79 +10,79 @@
     type: remote_button_alt_short_press
     subtype: button_1
     id: 1st pressed 1x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_double_press
     subtype: button_1
     id: 1st pressed 2x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_short_press
     subtype: button_2
     id: 2nd pressed 1x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_double_press
     subtype: button_2
     id: 2nd pressed 2x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_short_press
     subtype: button_3
     id: 3rd pressed 1x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_double_press
     subtype: button_3
     id: 3rd pressed 2x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_short_press
     subtype: button_4
     id: 4th pressed 1x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_double_press
     subtype: button_4
     id: 4th pressed 2x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_short_press
     subtype: button_5
     id: 5th pressed 1x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_double_press
     subtype: button_5
     id: 5th pressed 2x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_short_press
     subtype: button_6
     id: 6th pressed 1x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_alt_double_press
     subtype: button_6
     id: 6th pressed 2x
-    platform: device
+    trigger: device
   - device_id: 5a336e9dd50ab3414fe213761591cad8
     domain: zha
     type: remote_button_triple_press
     subtype: button_6
     id: 6th pressed 3x
-    platform: device
+    trigger: device
   conditions: []
   actions:
   - choose:
@@ -149,7 +149,7 @@
               cache: true
               message: The garage door has been closed
               language: en-US
-              voice: AndrewNeural
+              voice: JennyNeural
             action: tts.speak
     - conditions:
       - condition: trigger
@@ -183,7 +183,7 @@
               cache: true
               message: The garage door has been opened
               language: en-US
-              voice: AndrewNeural
+              voice: JennyNeural
             action: tts.speak
     - conditions:
       - condition: trigger

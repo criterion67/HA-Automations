@@ -5,7 +5,7 @@
   - entity_id:
     - binary_sensor.smoke_detectors_smoke_detectors
     to: 'on'
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - action: lock.unlock
@@ -62,12 +62,6 @@
       message: 'Smoke has been detected in the house! '
       title: URGENT - Smoke Detected!
       data:
-        push:
-          sound:
-            name: default
-            critical: 1
-            volume: 1.0
-          interruption-level: critical
         channel: alarm_stream
         importance: high
         ttl: 0

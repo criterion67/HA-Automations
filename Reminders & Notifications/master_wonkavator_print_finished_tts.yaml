@@ -5,13 +5,15 @@
   triggers:
   - entity_id: sensor.wonkavator_3d_print_status
     to: finish
-    platform: state
+    trigger: state
   conditions:
   - condition: state
     entity_id: input_boolean.wonkavator_print_announced
     state: 'off'
   - condition: template
     value_template: '{{ trigger.from_state.state != ''finish'' }}'
+    note: Template is intentional. Trigger context (trigger.from_state) is only reachable
+      via template. Do not convert.
   actions:
   - action: input_boolean.turn_on
     target:
@@ -47,7 +49,7 @@
             media:
               media_content_id: "{{\n  \"media-source://tts/tts.home_assistant_cloud?message=Wonkavator\
                 \ print \"\n  ~ states('sensor.wonkavator_3d_task_name')\n  ~ \" has\
-                \ finished&language=en-US&voice=AndrewNeural\"\n}}\n"
+                \ finished&language=en-US&voice=JennyNeural\"\n}}\n"
               media_content_type: provider
               metadata:
                 title: Wonkavator print finished

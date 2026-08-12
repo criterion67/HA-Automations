@@ -45,6 +45,9 @@
     - conditions:
       - condition: trigger
         id: door_open
+      - condition: state
+        entity_id: input_boolean.mower_cycle_active
+        state: 'off'
       sequence:
       - choose:
         - conditions:

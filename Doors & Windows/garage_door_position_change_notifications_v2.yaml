@@ -1,6 +1,8 @@
 - id: '1763771518580'
   alias: Garage Door position change notifications v2
-  description: ''
+  description: Announces and notifies on garage door open and close. Suppressed while
+    input_boolean.mower_cycle_active is on, so a mower cycle does not fire four TTS
+    announcements and four notifications into the bedroom.
   triggers:
   - entity_id:
     - binary_sensor.garage_door_position
@@ -18,7 +20,10 @@
     to:
     - 'off'
     trigger: state
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.mower_cycle_active
+    state: 'off'
   actions:
   - choose:
     - conditions:
@@ -51,7 +56,7 @@
           - media_player.bedroom_speaker
         data:
           media:
-            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata:
               title: The garage door has been opened
@@ -62,7 +67,7 @@
               - media_content_type: app
                 media_content_id: media-source://tts
               - media_content_type: provider
-                media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=AndrewNeural
+                media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
         action: media_player.play_media
       - action: notify.mobile_app_pixel_9
         metadata: {}
@@ -91,7 +96,7 @@
           - media_player.bedroom_speaker
         data:
           media:
-            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata:
               title: The garage door has been closed

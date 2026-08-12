@@ -4,8 +4,8 @@
     to verify it is operational. Sends a mobile notification with results. On failure,
     sends a critical alert and creates a persistent dashboard notification.
   triggers:
-  - platform: time
-    at: '10:00:00'
+  - at: '10:00:00'
+    trigger: time
   conditions:
   - condition: template
     value_template: '{{ now().day == 1 }}'
@@ -57,12 +57,6 @@
 
           • Main Water Valve: {{ ''✅ PASS'' if main_valve_ok else ''❌ FAIL'' }}'
         data:
-          push:
-            sound:
-              name: default
-              critical: 1
-              volume: 1.0
-            interruption-level: critical
           channel: alarm_stream
           importance: high
           ttl: 0

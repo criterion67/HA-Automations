@@ -4,8 +4,7 @@
     Triggers critical alerts for readings below 40. Plays TTS alert, sends notification,
     and flashes TV lights red.
   triggers:
-  - platform: numeric_state
-    entity_id:
+  - entity_id:
     - sensor.librelink_glucose_measurement
     below: 40
     for:
@@ -14,6 +13,7 @@
       seconds: 10
       milliseconds: 0
     id: BG Low
+    trigger: numeric_state
   conditions: []
   actions:
   - action: media_player.play_media
@@ -28,12 +28,6 @@
       message: Glucose level is {{ states('sensor.librelink_glucose_measurement')
         }} mg/dL (below 40)
       data:
-        push:
-          sound:
-            name: default
-            critical: 1
-            volume: 1
-          interruption-level: critical
         channel: alarm_stream
         importance: high
         ttl: 0

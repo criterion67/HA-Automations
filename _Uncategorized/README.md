@@ -1,6 +1,6 @@
 # _Uncategorized
 
-40 automation(s) in this category.
+41 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -24,6 +24,20 @@
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
 | Medication Reminders - Mobile Notifications | Sends mobile notifications to Pixel 9 at each scheduled medication time with Snooze (30 min) and Taken action buttons. Six time slots: 7am (Levothyroxine), 8am (morning meds + antibiotics), 10am (supplements), 5pm (Levofloxacin), 7pm (evening meds), bedtime (Magnesium). Snooze fires a second notification after 30 minutes by turning on the corresponding input_boolean snooze flag, which re-triggers via state change. Taken dismisses without re-alerting. |
 | Monthly Valve Test | On the 1st of each month, cycles the main water valve closed then open to verify it is operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
+| Mower Garage Return | Return half of the MOVA LiDAX Ultra 2000 AWD garage sequence. Companion to script.mower_zone_cycle, which handles the outbound half.
+
+WHY THIS IS AN AUTOMATION AND NOT PART OF THE SCRIPT
+The mower can decide to come home on its own for a completed session, low battery, or rain, and a mow can run for hours. A script waiting that long would die on a Home Assistant restart and the door would never reopen, leaving the mower stranded outside a closed door. A state triggered automation survives restarts.
+
+WHAT IT DOES
+1. On binary_sensor.jason_momower_returning going on, opens the garage door and stops it after 2.5 seconds for a 21 inch opening. Verified 2026-08-11 from history: on a natural end of session the returning flag goes on 0.25 seconds after mowing goes off and stays on for about 1 minute 40 seconds before the mower docks, so there is ample time for the door to open.
+2. On binary_sensor.jason_momower_docked going on, waits 30 seconds for the mower to settle, closes the door, waits for the door to travel, then clears input_boolean.mower_cycle_active and notifies Scott's Pixel 9.
+
+The whole automation is gated on input_boolean.mower_cycle_active being on, so it only acts during a cycle that Home Assistant started. A mow started from the MOVA app will not move the garage door.
+
+KNOWN GAP: the returning flag does NOT fire when a session is ended with lawn_mower.dock, because that path stops the session before docking. In that case the door will not reopen automatically. That is a manual intervention anyway, so it is treated as acceptable rather than worked around.
+
+SAFETY: the opener photo eyes remain the physical backstop and will reverse the door if the mower is in the doorway while it closes. |
 | NFC - Office Door Unlock |  |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |

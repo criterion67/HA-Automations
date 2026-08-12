@@ -6,7 +6,7 @@
   - entity_id: lawn_mower.david_mowie
     from: mowing
     to: error
-    platform: state
+    trigger: state
   conditions:
   - condition: template
     value_template: '{% set last = state_attr(''automation.david_mowie_stuck_or_error_alert'',
@@ -14,6 +14,8 @@
       {{ (as_timestamp(now()) - last_ts) > 900 }}
 
       '
+    note: Template is intentional. A 15 minute self cooldown reads this automation
+      own last_triggered, which has no native condition equivalent. Do not convert.
   actions:
   - action: notify.mobile_app_pixel_9
     data:
@@ -31,7 +33,7 @@
     data:
       metadata: {}
       media:
-        media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+gotten+stuck+and+needs+assistance.&language=en-US&voice=AndrewNeural
+        media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+gotten+stuck+and+needs+assistance.&language=en-US&voice=JennyNeural
         media_content_type: provider
         metadata: {}
   mode: single

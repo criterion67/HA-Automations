@@ -6,7 +6,7 @@
   triggers:
   - entity_id: binary_sensor.g6_pro_doorbell_doorbell
     to: 'on'
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - parallel:
@@ -48,7 +48,7 @@
           seconds: 2
       - data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata:
               title: Someone's at the front door.
@@ -60,7 +60,7 @@
               - media_content_type: app
                 media_content_id: media-source://tts
               - media_content_type: provider
-                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=AndrewNeural
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Someone%27s+at+the+front+door.&language=en-US&voice=JennyNeural
         target:
           entity_id: media_player.dining_room_speaker_cast
         action: media_player.play_media

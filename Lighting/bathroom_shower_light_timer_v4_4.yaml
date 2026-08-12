@@ -12,16 +12,16 @@
   - id: door_opened
     entity_id: binary_sensor.bathroom_shower_door_sensor_contact
     to: 'on'
-    platform: state
+    trigger: state
   - id: door_closed
     entity_id: binary_sensor.bathroom_shower_door_sensor_contact
     to: 'off'
-    platform: state
+    trigger: state
   - id: timer_finished
     event_type: timer.finished
     event_data:
       entity_id: timer.shower_in_shower_timer
-    platform: event
+    trigger: event
   conditions: []
   actions:
   - choose:
@@ -54,6 +54,8 @@
         - conditions:
           - condition: template
             value_template: '{{ wait.trigger is not none }}'
+            note: Template is intentional. Checking a wait result is the documented
+              pattern and has no native condition equivalent. Do not convert.
           sequence:
           - action: light.turn_off
             target:
@@ -83,7 +85,7 @@
           target:
             entity_id: media_player.era_100_bathroom
           data:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+shower+is+ready&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+shower+is+ready&language=en-US&voice=JennyNeural
             media_content_type: provider
             announce: true
             extra:
@@ -126,7 +128,7 @@
             target:
               entity_id: media_player.era_100_bathroom
             data:
-              media_content_id: media-source://tts/tts.home_assistant_cloud?message=Shower+timer+has+started&language=en-US&voice=AndrewNeural
+              media_content_id: media-source://tts/tts.home_assistant_cloud?message=Shower+timer+has+started&language=en-US&voice=JennyNeural
               media_content_type: provider
               announce: true
               extra:

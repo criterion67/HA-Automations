@@ -10,7 +10,7 @@
       minutes: 30
       seconds: 0
     id: Hot
-    platform: numeric_state
+    trigger: numeric_state
   - entity_id:
     - sensor.bedroom_fridge_temperature
     to: unavailable
@@ -19,7 +19,7 @@
       minutes: 30
       seconds: 0
     id: Offline
-    platform: state
+    trigger: state
   - entity_id:
     - sensor.bedroom_fridge_temperature
     to: unknown
@@ -28,7 +28,7 @@
       minutes: 30
       seconds: 0
     id: Offline
-    platform: state
+    trigger: state
   conditions: []
   actions:
   - choose:
@@ -39,9 +39,9 @@
       sequence:
       - repeat:
           while:
-          - condition: template
-            value_template: '{{ states(''sensor.bedroom_fridge_temperature'')|float(0)
-              > 50 }}'
+          - condition: numeric_state
+            entity_id: sensor.bedroom_fridge_temperature
+            above: 50
           sequence:
           - variables:
               temp_f: '{{ (states(''sensor.bedroom_fridge_temperature'')|float(0)
@@ -68,7 +68,7 @@
               media:
                 media_content_id: media-source://tts/tts.home_assistant_cloud?message={{
                   ('Heads up. The bedroom fridge temperature is ' ~ temp_f ~ ' degrees
-                  Fahrenheit. Please check it.') | urlencode }}&language=en-US&voice=AndrewNeural
+                  Fahrenheit. Please check it.') | urlencode }}&language=en-US&voice=JennyNeural
                 media_content_type: provider
                 metadata:
                   title: Bedroom fridge temperature alert
@@ -81,12 +81,6 @@
               data:
                 ttl: 0
                 priority: high
-                push:
-                  sound:
-                    name: default
-                    critical: 1
-                    volume: 1.0
-                  interruption-level: critical
                 channel: alarm_stream
                 importance: high
           - delay:
@@ -116,7 +110,7 @@
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message={{
               ('Attention. The bedroom fridge temperature sensor is not reporting.
-              Please check the sensor or connection.') | urlencode }}&language=en-US&voice=AndrewNeural
+              Please check the sensor or connection.') | urlencode }}&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata:
               title: Bedroom fridge sensor unavailable alert
@@ -130,12 +124,6 @@
           data:
             ttl: 0
             priority: high
-            push:
-              sound:
-                name: default
-                critical: 1
-                volume: 1.0
-              interruption-level: critical
             channel: alarm_stream
             importance: high
   mode: single

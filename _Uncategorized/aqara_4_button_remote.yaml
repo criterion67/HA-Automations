@@ -122,7 +122,7 @@
               cache: true
               message: The garage door has been closed
               language: en-US
-              voice: AndrewNeural
+              voice: JennyNeural
             action: tts.speak
     - conditions:
       - condition: trigger
@@ -156,6 +156,6 @@
               cache: true
               message: The garage door has been opened
               language: en-US
-              voice: AndrewNeural
+              voice: JennyNeural
             action: tts.speak
   mode: single

@@ -2,18 +2,16 @@
   alias: 'Rear Gate: Open Notification'
   description: Contact sensor to monitor whether rear yard gate is open or closed.
   triggers:
-  - type: opened
-    device_id: a26866a0ef5d5d6014712334728e60db
-    entity_id: 2cce734b56b42d97154aa17bcc88d1b0
-    domain: binary_sensor
-    platform: device
+  - trigger: state
+    entity_id: binary_sensor.rear_yard_gate
+    to: 'on'
   conditions: []
   actions:
   - action: media_player.play_media
     target:
       entity_id: media_player.bedroom_group
     data:
-      media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+gate+has+been+opened&language=en-US&voice=AndrewNeural
+      media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+gate+has+been+opened&language=en-US&voice=JennyNeural
       media_content_type: provider
     metadata:
       title: The gate has been opened
@@ -25,7 +23,7 @@
       - media_content_type: app
         media_content_id: media-source://tts
       - media_content_type: provider
-        media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+gate+has+been+opened&language=en-US&voice=AndrewNeural
+        media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+gate+has+been+opened&language=en-US&voice=JennyNeural
   - data:
       message: Side gate was opened at {{ now().strftime('%I:%M %p on %b %-d') }}
       title: Gate Notification

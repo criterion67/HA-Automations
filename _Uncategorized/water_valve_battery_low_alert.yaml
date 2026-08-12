@@ -4,10 +4,10 @@
     a critical mobile notification with battery type and quantity, creates a Google
     Calendar purchase reminder, and posts a persistent dashboard notification.
   triggers:
-  - platform: numeric_state
-    entity_id: sensor.main_water_valve_battery
+  - entity_id: sensor.main_water_valve_battery
     below: 15
     id: main_valve_battery
+    trigger: numeric_state
   actions:
   - choose:
     - conditions:
@@ -21,12 +21,6 @@
             \ 3.6V 9000mAh C Size\n  Li-SOCl₂ Lithium (Non-Rechargeable)\n\nA purchase\
             \ reminder has been added to your calendar."
           data:
-            push:
-              sound:
-                name: default
-                critical: 1
-                volume: 1.0
-              interruption-level: critical
             channel: alarm_stream
             importance: high
             ttl: 0

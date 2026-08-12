@@ -101,7 +101,7 @@
           - media_player.sunroom_speaker
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=JennyNeural
             media_content_type: audio/mp3
             metadata: {}
         action: media_player.play_media

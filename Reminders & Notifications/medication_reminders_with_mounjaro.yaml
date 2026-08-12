@@ -47,13 +47,16 @@
             trigger.id == 'evening_1' %}Time+for+evening+medications+{% elif trigger.id
             == 'evening_2' %}Time+for+second+evening+medications+{% elif trigger.id
             == 'mounjaro_reminder' %}Time+for+Mounjaro+weekly+injection+{% endif %}
-            &language=en-US&voice=AndrewNeural
+            &language=en-US&voice=JennyNeural
           media_content_type: provider
           metadata: {}
       action: media_player.play_media
     - if:
       - condition: template
         value_template: '{{ not tv_lights_were_on }}'
+        note: Template is intentional. Tests the captured variable tv_lights_were_on;
+          a native state condition would re-evaluate at check time and break the save
+          and restore logic. Do not convert.
       then:
       - target:
           entity_id: light.tv_lights
@@ -69,6 +72,9 @@
     - conditions:
       - condition: template
         value_template: '{{ not tv_lights_were_on }}'
+        note: Template is intentional. Tests the captured variable tv_lights_were_on;
+          a native state condition would re-evaluate at check time and break the save
+          and restore logic. Do not convert.
       sequence:
       - target:
           entity_id: light.tv_lights
@@ -77,6 +83,9 @@
     - conditions:
       - condition: template
         value_template: '{{ tv_lights_were_on }}'
+        note: Template is intentional. Tests the captured variable tv_lights_were_on;
+          a native state condition would re-evaluate at check time and break the save
+          and restore logic. Do not convert.
       sequence:
       - data:
           lights:

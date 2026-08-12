@@ -58,7 +58,7 @@
           - media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+recharged+to+80%25+and+will+now+finish+mowing.&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie+has+recharged+to+80%25+and+will+now+finish+mowing.&language=en-US&voice=JennyNeural
             media_content_type: audio/mp3
             metadata: {}
         action: media_player.play_media
@@ -107,7 +107,7 @@
           - media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie%27s+battery+has+discharged+to+17%25+and+will+now+return+to+the+dock+to+charge.&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=David+Mowie%27s+battery+has+discharged+to+17%25+and+will+now+return+to+the+dock+to+charge.&language=en-US&voice=JennyNeural
             media_content_type: audio/mp3
             metadata: {}
         action: media_player.play_media

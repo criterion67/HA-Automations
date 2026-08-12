@@ -106,7 +106,7 @@
           - media_player.sunroom_speaker
         data:
           media:
-            media_content_id: media-source://tts/cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=JennyNeural
             media_content_type: provider
         action: media_player.play_media
       - data:

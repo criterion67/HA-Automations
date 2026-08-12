@@ -68,7 +68,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+on&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+on&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -91,7 +91,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+detecting+load+size&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+detecting+load+size&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -103,7 +103,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+filling&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+filling&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -115,7 +115,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+wash+mode&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+wash+mode&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -127,7 +127,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+rinse+mode&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+rinse+mode&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -139,7 +139,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+draining&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+draining&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -151,7 +151,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+spin+mode&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Washing+machine+is+in+spin+mode&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -163,7 +163,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Laundry+load+is+now+drying&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Laundry+load+is+now+drying&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -175,7 +175,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+in+cool+down+mode&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+in+cool+down+mode&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -197,7 +197,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+has+finished.&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+has+finished.&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media
@@ -226,7 +226,7 @@
           entity_id: media_player.bedroom_group
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+now+off&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Dryer+is+now+off&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         action: media_player.play_media

@@ -1,0 +1,96 @@
+- id: '1786500995692'
+  alias: Mower Garage Return
+  description: 'Return half of the MOVA LiDAX Ultra 2000 AWD garage sequence. Companion
+    to script.mower_zone_cycle, which handles the outbound half.
+
+
+    WHY THIS IS AN AUTOMATION AND NOT PART OF THE SCRIPT
+
+    The mower can decide to come home on its own for a completed session, low battery,
+    or rain, and a mow can run for hours. A script waiting that long would die on
+    a Home Assistant restart and the door would never reopen, leaving the mower stranded
+    outside a closed door. A state triggered automation survives restarts.
+
+
+    WHAT IT DOES
+
+    1. On binary_sensor.jason_momower_returning going on, opens the garage door and
+    stops it after 2.5 seconds for a 21 inch opening. Verified 2026-08-11 from history:
+    on a natural end of session the returning flag goes on 0.25 seconds after mowing
+    goes off and stays on for about 1 minute 40 seconds before the mower docks, so
+    there is ample time for the door to open.
+
+    2. On binary_sensor.jason_momower_docked going on, waits 30 seconds for the mower
+    to settle, closes the door, waits for the door to travel, then clears input_boolean.mower_cycle_active
+    and notifies Scott''s Pixel 9.
+
+
+    The whole automation is gated on input_boolean.mower_cycle_active being on, so
+    it only acts during a cycle that Home Assistant started. A mow started from the
+    MOVA app will not move the garage door.
+
+
+    KNOWN GAP: the returning flag does NOT fire when a session is ended with lawn_mower.dock,
+    because that path stops the session before docking. In that case the door will
+    not reopen automatically. That is a manual intervention anyway, so it is treated
+    as acceptable rather than worked around.
+
+
+    SAFETY: the opener photo eyes remain the physical backstop and will reverse the
+    door if the mower is in the doorway while it closes.'
+  triggers:
+  - entity_id: binary_sensor.jason_momower_returning
+    id: returning
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.jason_momower_docked
+    id: docked
+    to: 'on'
+    trigger: state
+  conditions:
+  - alias: Only act during an active mower cycle started from Home Assistant
+    condition: state
+    entity_id: input_boolean.mower_cycle_active
+    state: 'on'
+  actions:
+  - choose:
+    - alias: Mower is heading home, reopen the door
+      conditions:
+      - condition: trigger
+        id: returning
+      sequence:
+      - action: cover.open_cover
+        alias: Start the door opening
+        target:
+          entity_id: cover.garage_door
+      - alias: Wait the calibrated interval for a 21 inch opening
+        delay:
+          milliseconds: 2500
+      - action: cover.stop_cover
+        alias: Stop the door partway
+        target:
+          entity_id: cover.garage_door
+    - alias: Mower has docked, close up and clear the flag
+      conditions:
+      - condition: trigger
+        id: docked
+      sequence:
+      - alias: Let the mower settle fully into the dock before moving the door
+        delay:
+          seconds: 30
+      - action: cover.close_cover
+        alias: Close the garage door
+        target:
+          entity_id: cover.garage_door
+      - alias: Give the door time to finish travelling before unsuppressing
+        delay:
+          seconds: 20
+      - action: input_boolean.turn_off
+        alias: Clear the suppression flag, ending the cycle
+        target:
+          entity_id: input_boolean.mower_cycle_active
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: Jason MoMower has docked and the garage door is closed.
+          title: Mower Cycle Complete
+  mode: parallel

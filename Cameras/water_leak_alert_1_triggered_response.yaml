@@ -58,7 +58,7 @@
       - data:
           media:
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Attention%2C+a+water+leak+has+been+detected+at+the+{{
-              triggered_sensor | replace(' ', '+') }}.+Please+check+the+area+and+turn+off+the+water.&language=en-US&voice=AndrewNeural
+              triggered_sensor | replace(' ', '+') }}.+Please+check+the+area+and+turn+off+the+water.&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata: {}
         target:
@@ -73,12 +73,6 @@
               title: Snooze
             - action: DISMISS_LEAK
               title: Dismiss
-            push:
-              sound:
-                name: default
-                critical: 1
-                volume: 1
-              interruption-level: critical
             channel: alarm_stream
             importance: high
             ttl: 0

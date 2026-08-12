@@ -45,7 +45,7 @@
           entity_id: media_player.bedroom_speaker
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+charging&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+charging&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata:
               title: Watch is charging
@@ -57,7 +57,7 @@
               - media_content_type: app
                 media_content_id: media-source://tts
               - media_content_type: provider
-                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+charging&language=en-US&voice=AndrewNeural
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+charging&language=en-US&voice=JennyNeural
     - conditions:
       - condition: trigger
         id:
@@ -86,7 +86,7 @@
           entity_id: media_player.bedroom_speaker
         data:
           media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+now+fully+charged&language=en-US&voice=AndrewNeural
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+now+fully+charged&language=en-US&voice=JennyNeural
             media_content_type: provider
             metadata:
               title: Watch is now fully charged
@@ -98,7 +98,7 @@
               - media_content_type: app
                 media_content_id: media-source://tts
               - media_content_type: provider
-                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+now+fully+charged&language=en-US&voice=AndrewNeural
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+now+fully+charged&language=en-US&voice=JennyNeural
         action: media_player.play_media
       - data:
           title: Watch Fully Charged

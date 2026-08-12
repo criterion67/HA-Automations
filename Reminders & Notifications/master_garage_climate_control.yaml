@@ -55,7 +55,7 @@
               entity_id: media_player.dining_room_speaker
             data:
               media:
-                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Garage+heat+mode+activated&language=en-US&voice=AndrewNeural
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Garage+heat+mode+activated&language=en-US&voice=JennyNeural
                 media_content_type: provider
                 metadata: {}
             action: media_player.play_media
@@ -79,7 +79,7 @@
               entity_id: media_player.dining_room_speaker
             data:
               media:
-                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Garage+A+C+mode+activated&language=en-US&voice=AndrewNeural
+                media_content_id: media-source://tts/tts.home_assistant_cloud?message=Garage+A+C+mode+activated&language=en-US&voice=JennyNeural
                 media_content_type: provider
                 metadata: {}
             action: media_player.play_media
