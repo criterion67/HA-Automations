@@ -20,6 +20,18 @@
     goes off and stays on for about 1 minute 40 seconds before the mower docks, so
     there is ample time for the door to open.
 
+    3. ERROR HANDLING: if binary_sensor.jason_momower_error_active goes on during
+    a cycle, sends an ACTIONABLE notification to Scott''s Pixel 9 with two buttons,
+    Close Garage and Leave Open, plus the current door state and the error text. The
+    taps are handled by the companion automation Mower Notification Actions. A time
+    based watchdog was built first and then removed on 2026-08-12 at Scott''s request:
+    an automatic close risks shutting the door on him while he is working in the garage,
+    and it cannot tell a stalled mower from a slow one. Letting Scott decide from
+    the notification is the safer design. NOTE: this means there is still no automatic
+    close if the mower stalls silently without raising an error. The door would stay
+    open until Scott notices.
+
+
     2. On binary_sensor.jason_momower_docked going on, waits 30 seconds for the mower
     to settle, closes the door, waits for the door to travel, then clears input_boolean.mower_cycle_active
     and notifies Scott''s Pixel 9.
@@ -47,6 +59,10 @@
     id: docked
     to: 'on'
     trigger: state
+  - trigger: state
+    entity_id: binary_sensor.jason_momower_error_active
+    to: 'on'
+    id: mower_error
   conditions:
   - alias: Only act during an active mower cycle started from Home Assistant
     condition: state
@@ -93,4 +109,24 @@
         data:
           message: Jason MoMower has docked and the garage door is closed.
           title: Mower Cycle Complete
+    - alias: Mower reported an error during a cycle, offer to close the garage
+      conditions:
+      - condition: trigger
+        id: mower_error
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Jason MoMower Error
+          message: 'The mower reported a problem during a mowing cycle and may not
+            make it back to the dock. The garage door is currently {{ states("cover.garage_door")
+            }}. Error: {{ states("sensor.jason_momower_error") }}'
+          data:
+            actions:
+            - action: MOWER_CLOSE_GARAGE
+              title: Close Garage
+            - action: MOWER_LEAVE_OPEN
+              title: Leave Open
+            tag: mower_error
+            persistent: true
+            importance: high
   mode: parallel

@@ -1,0 +1,75 @@
+- id: '1786567462613'
+  alias: Mower Notification Actions
+  description: 'Handles the action buttons on the Jason MoMower error notification
+    sent by automation.mower_garage_return.
+
+
+    WHY THIS IS A SEPARATE AUTOMATION
+
+    Mower Garage Return is gated on input_boolean.mower_cycle_active being on. If
+    that flag were ever cleared while an error notification was still sitting on Scott''s
+    phone, a tap would silently do nothing. Handling the taps here, ungated, means
+    the buttons always work.
+
+
+    WHAT IT DOES
+
+    - MOWER_CLOSE_GARAGE: closes the garage door and confirms. The cycle flag is deliberately
+    NOT cleared, so the door will still reopen automatically if the mower later recovers
+    and reports returning.
+
+    - MOWER_LEAVE_OPEN: acknowledges and does nothing to the door.
+
+
+    Both replies reuse the notification tag mower_error so they replace the original
+    alert on the phone rather than stacking up.
+
+
+    CONTEXT: this replaced a time based watchdog that automatically closed the door
+    after 15 minutes open during a cycle. Scott removed that on 2026-08-12 because
+    it could shut the door on him while he was working in the garage, and it could
+    not distinguish a stalled mower from a slow return. The tradeoff is that a silent
+    stall with no error raised will leave the door open until Scott notices.'
+  triggers:
+  - event_data:
+      action: MOWER_CLOSE_GARAGE
+    event_type: mobile_app_notification_action
+    id: close_garage
+    trigger: event
+  - event_data:
+      action: MOWER_LEAVE_OPEN
+    event_type: mobile_app_notification_action
+    id: leave_open
+    trigger: event
+  actions:
+  - choose:
+    - alias: Scott tapped Close Garage
+      conditions:
+      - condition: trigger
+        id: close_garage
+      sequence:
+      - action: cover.close_cover
+        alias: Close the garage door
+        target:
+          entity_id: cover.garage_door
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: mower_error
+          message: Closing the garage door now. The mower cycle flag is still set,
+            so the door will reopen on its own if Jason MoMower recovers and reports
+            returning.
+          title: Garage Closing
+    - alias: Scott tapped Leave Open
+      conditions:
+      - condition: trigger
+        id: leave_open
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: mower_error
+          message: Leaving the garage door as it is. Nothing further will move it
+            automatically except the normal return sequence when Jason MoMower docks.
+          title: Garage Left As Is
+  mode: queued

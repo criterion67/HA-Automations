@@ -1,6 +1,6 @@
 # _Uncategorized
 
-41 automation(s) in this category.
+42 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -31,6 +31,8 @@ The mower can decide to come home on its own for a completed session, low batter
 
 WHAT IT DOES
 1. On binary_sensor.jason_momower_returning going on, opens the garage door and stops it after 2.5 seconds for a 21 inch opening. Verified 2026-08-11 from history: on a natural end of session the returning flag goes on 0.25 seconds after mowing goes off and stays on for about 1 minute 40 seconds before the mower docks, so there is ample time for the door to open.
+3. ERROR HANDLING: if binary_sensor.jason_momower_error_active goes on during a cycle, sends an ACTIONABLE notification to Scott's Pixel 9 with two buttons, Close Garage and Leave Open, plus the current door state and the error text. The taps are handled by the companion automation Mower Notification Actions. A time based watchdog was built first and then removed on 2026-08-12 at Scott's request: an automatic close risks shutting the door on him while he is working in the garage, and it cannot tell a stalled mower from a slow one. Letting Scott decide from the notification is the safer design. NOTE: this means there is still no automatic close if the mower stalls silently without raising an error. The door would stay open until Scott notices.
+
 2. On binary_sensor.jason_momower_docked going on, waits 30 seconds for the mower to settle, closes the door, waits for the door to travel, then clears input_boolean.mower_cycle_active and notifies Scott's Pixel 9.
 
 The whole automation is gated on input_boolean.mower_cycle_active being on, so it only acts during a cycle that Home Assistant started. A mow started from the MOVA app will not move the garage door.
@@ -38,6 +40,18 @@ The whole automation is gated on input_boolean.mower_cycle_active being on, so i
 KNOWN GAP: the returning flag does NOT fire when a session is ended with lawn_mower.dock, because that path stops the session before docking. In that case the door will not reopen automatically. That is a manual intervention anyway, so it is treated as acceptable rather than worked around.
 
 SAFETY: the opener photo eyes remain the physical backstop and will reverse the door if the mower is in the doorway while it closes. |
+| Mower Notification Actions | Handles the action buttons on the Jason MoMower error notification sent by automation.mower_garage_return.
+
+WHY THIS IS A SEPARATE AUTOMATION
+Mower Garage Return is gated on input_boolean.mower_cycle_active being on. If that flag were ever cleared while an error notification was still sitting on Scott's phone, a tap would silently do nothing. Handling the taps here, ungated, means the buttons always work.
+
+WHAT IT DOES
+- MOWER_CLOSE_GARAGE: closes the garage door and confirms. The cycle flag is deliberately NOT cleared, so the door will still reopen automatically if the mower later recovers and reports returning.
+- MOWER_LEAVE_OPEN: acknowledges and does nothing to the door.
+
+Both replies reuse the notification tag mower_error so they replace the original alert on the phone rather than stacking up.
+
+CONTEXT: this replaced a time based watchdog that automatically closed the door after 15 minutes open during a cycle. Scott removed that on 2026-08-12 because it could shut the door on him while he was working in the garage, and it could not distinguish a stalled mower from a slow return. The tradeoff is that a silent stall with no error raised will leave the door open until Scott notices. |
 | NFC - Office Door Unlock |  |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |
