@@ -37,7 +37,7 @@ WHAT IT DOES
 
 The whole automation is gated on input_boolean.mower_cycle_active being on, so it only acts during a cycle that Home Assistant started. A mow started from the MOVA app will not move the garage door.
 
-KNOWN GAP: the returning flag does NOT fire when a session is ended with lawn_mower.dock, because that path stops the session before docking. In that case the door will not reopen automatically. That is a manual intervention anyway, so it is treated as acceptable rather than worked around.
+CORRECTED 2026-08-13: the returning flag DOES now fire on the lawn_mower.dock path. It was observed going on at 17:54:31, about half a second after script.mower_send_home issued its dock command. The earlier claim that it never fires on that path is wrong, whether because v0.2.68 changed the state flow or because the original 2026-08-11 observation did not generalise. Both this automation and script.mower_send_home were built on that false premise, which is why they collided on the door and shut it on the mower.
 
 SAFETY: the opener photo eyes remain the physical backstop and will reverse the door if the mower is in the doorway while it closes. |
 | Mower Notification Actions | Handles the action buttons on the Jason MoMower error notification sent by automation.mower_garage_return.

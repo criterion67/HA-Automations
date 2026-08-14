@@ -42,10 +42,13 @@
     MOVA app will not move the garage door.
 
 
-    KNOWN GAP: the returning flag does NOT fire when a session is ended with lawn_mower.dock,
-    because that path stops the session before docking. In that case the door will
-    not reopen automatically. That is a manual intervention anyway, so it is treated
-    as acceptable rather than worked around.
+    CORRECTED 2026-08-13: the returning flag DOES now fire on the lawn_mower.dock
+    path. It was observed going on at 17:54:31, about half a second after script.mower_send_home
+    issued its dock command. The earlier claim that it never fires on that path is
+    wrong, whether because v0.2.68 changed the state flow or because the original
+    2026-08-11 observation did not generalise. Both this automation and script.mower_send_home
+    were built on that false premise, which is why they collided on the door and shut
+    it on the mower.
 
 
     SAFETY: the opener photo eyes remain the physical backstop and will reverse the
@@ -75,6 +78,15 @@
       - condition: trigger
         id: returning
       sequence:
+      - condition: state
+        entity_id: cover.garage_door
+        state: closed
+        alias: Only open if the door is actually shut
+        note: BUG FIX 2026-08-13. script.mower_send_home opens the door itself, then
+          the returning flag fires moments later and this branch sent a SECOND open_cover
+          to a door already stopped partway. On this pulse based opener with no position
+          control that reverses the door and it closes. That stranded the mower outside
+          a shut door at 17:54 and produced Return to station failed.
       - action: cover.open_cover
         alias: Start the door opening
         target:
@@ -94,6 +106,15 @@
       - alias: Let the mower settle fully into the dock before moving the door
         delay:
           seconds: 30
+      - condition: state
+        entity_id: binary_sensor.jason_momower_docked
+        state: 'on'
+        alias: Confirm the mower is STILL docked after the settle delay
+        note: BUG FIX 2026-08-13. A 0.32 second docked flicker at 17:56:48 satisfied
+          the trigger, and 30 seconds later this branch closed the door and cleared
+          the flag while the mower was still out on the lawn. If this condition fails
+          the sequence halts, deliberately leaving the door OPEN and the flag SET
+          so the real docking is still handled.
       - action: cover.close_cover
         alias: Close the garage door
         target:
