@@ -51,6 +51,24 @@
     it on the mower.
 
 
+    ANNOUNCEMENT ADDED 2026-08-14: the returning branch now speaks on media_player.bedroom_group
+    via tts.home_assistant_cloud, but only between 07:00 and 19:00, and always sends
+    a Pixel 9 notification regardless of the hour. Both run BEFORE the door-closed
+    condition so they still fire on the script.mower_send_home path, where the door
+    is already open and the rest of the branch is skipped.
+
+
+    ERROR ALERTING REBUILT 2026-08-14, now two stages. STAGE ONE fires on any error:
+    speaks on the bedroom group between 07:00 and 19:00, and the Pixel 9 alert now
+    uses channel alarm_stream, priority high, ttl 0 and sticky true, copied from automation.david_mowie_stuck_or_error_alert
+    so it sounds through silent mode and survives a clear-all. STAGE TWO fires only
+    when the error has been set for 5 minutes AND sensor.jason_momower_state_name
+    is no longer "mowing", which separates a genuine stall from a transient bump,
+    and it speaks at any hour. Background: on 2026-08-14 a Path blocked error latched
+    for 25 minutes while the mower carried on mowing normally and completed the job,
+    so a bare error flag is not by itself evidence of a problem.
+
+
     SAFETY: the opener photo eyes remain the physical backstop and will reverse the
     door if the mower is in the doorway while it closes.'
   triggers:
@@ -66,6 +84,16 @@
     entity_id: binary_sensor.jason_momower_error_active
     to: 'on'
     id: mower_error
+  - trigger: state
+    entity_id: binary_sensor.jason_momower_error_active
+    to: 'on'
+    for:
+      minutes: 5
+    id: mower_error_persistent
+    note: Added 2026-08-14. Second stage alert for an error still set after 5 minutes
+      AND where the mower has actually stopped. Exists because of the 2026-08-14 Path
+      blocked event, which latched the error flag for 25 minutes while the mower carried
+      on mowing normally and finished the job.
   conditions:
   - alias: Only act during an active mower cycle started from Home Assistant
     condition: state
@@ -78,6 +106,34 @@
       - condition: trigger
         id: returning
       sequence:
+      - alias: Spoken announcement, daytime only
+        note: Added 2026-08-14. Placed FIRST, before the door-closed condition, because
+          on the script.mower_send_home path the door is already open and that condition
+          halts the branch. If this sat after it, the announcement would never fire
+          on that path. Uses if/then rather than a bare condition so a night-time
+          return still reaches the door logic below.
+        if:
+        - condition: time
+          after: 07:00:00
+          before: '19:00:00'
+        then:
+        - action: tts.speak
+          alias: Announce on the bedroom speaker group
+          target:
+            entity_id: tts.home_assistant_cloud
+          data:
+            media_player_entity_id: media_player.bedroom_group
+            cache: false
+            message: Jason MoMower has finished mowing and is returning to the garage
+              to dock.
+      - action: notify.mobile_app_pixel_9
+        alias: Notify Scott that the mower is heading back
+        note: Deliberately NOT time gated. The spoken announcement is limited to 07:00-19:00
+          so it cannot wake Scott, but a phone notification is quiet enough to be
+          useful around the clock.
+        data:
+          title: Mower Returning
+          message: Jason MoMower has finished mowing and is heading back to the dock.
       - condition: state
         entity_id: cover.garage_door
         state: closed
@@ -135,6 +191,25 @@
       - condition: trigger
         id: mower_error
       sequence:
+      - alias: Speak the error aloud, daytime only
+        note: Added 2026-08-14. Time gated because this first stage fires on ANY error,
+          including transient ones like the 2026-08-14 Path blocked that cleared itself
+          while the mower kept working. The second stage alert is deliberately NOT
+          time gated.
+        if:
+        - condition: time
+          after: 07:00:00
+          before: '19:00:00'
+        then:
+        - action: tts.speak
+          alias: Announce the error on the bedroom speaker group
+          target:
+            entity_id: tts.home_assistant_cloud
+          data:
+            media_player_entity_id: media_player.bedroom_group
+            cache: false
+            message: Jason MoMower has reported a problem. The error is {{ states("sensor.jason_momower_error")
+              }}.
       - action: notify.mobile_app_pixel_9
         data:
           title: Jason MoMower Error
@@ -149,5 +224,63 @@
               title: Leave Open
             tag: mower_error
             persistent: true
+            sticky: true
             importance: high
+            priority: high
+            channel: alarm_stream
+            ttl: 0
+            notification_icon: mdi:robot-mower
+        note: Updated 2026-08-14. channel alarm_stream, priority high and ttl 0 copied
+          verbatim from automation.david_mowie_stuck_or_error_alert so this sounds
+          through silent mode like the Ecovacs alert does. sticky true means a clear-all
+          no longer wipes it, which is how Scott missed the 17:23 Path blocked alert.
+    - alias: Error still set after 5 minutes and the mower has stopped, treat as a
+        real stall
+      conditions:
+      - condition: trigger
+        id: mower_error_persistent
+      - condition: not
+        alias: Only if the mower is NOT still mowing
+        note: On 2026-08-14 the error flag latched for 25 minutes while sensor.jason_momower_state_name
+          stayed "mowing" and the battery kept draining at its normal rate. lawn_mower.jason_momower
+          itself reads "error" in that situation, so state_name is the entity that
+          actually distinguishes a working mower from a stalled one.
+        conditions:
+        - condition: state
+          entity_id: sensor.jason_momower_state_name
+          state: mowing
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        alias: Escalated stuck alert
+        data:
+          title: Jason MoMower Is Stuck
+          message: 'Jason MoMower has been in an error state for over 5 minutes and
+            has stopped. Error: {{ states("sensor.jason_momower_error") }}. The garage
+            door is currently {{ states("cover.garage_door") }}.'
+          data:
+            actions:
+            - action: MOWER_CLOSE_GARAGE
+              title: Close Garage
+            - action: MOWER_LEAVE_OPEN
+              title: Leave Open
+            tag: mower_stuck
+            persistent: true
+            sticky: true
+            importance: high
+            priority: high
+            channel: alarm_stream
+            ttl: 0
+            notification_icon: mdi:robot-mower
+      - action: tts.speak
+        alias: Announce the stall, any hour
+        note: Deliberately NOT time gated, unlike the first stage. By this point the
+          mower has been stopped in an error state for 5 minutes and is sitting outside,
+          so waking Scott is the lesser problem.
+        target:
+          entity_id: tts.home_assistant_cloud
+        data:
+          media_player_entity_id: media_player.bedroom_group
+          cache: false
+          message: Jason MoMower is stuck and needs assistance. The error is {{ states("sensor.jason_momower_error")
+            }}.
   mode: parallel

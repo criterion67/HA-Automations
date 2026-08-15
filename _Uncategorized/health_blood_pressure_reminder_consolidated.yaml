@@ -1,0 +1,124 @@
+- id: '1786731986924'
+  alias: Health - Blood Pressure Reminder (Consolidated)
+  description: 'Single source of truth for the blood pressure reminder, covering both
+    the dashboard card and the phone notification. At 7:00 AM and again at 7:00 PM
+    it clears input_boolean.bp_reminder_dismissed (which reveals the conditional card
+    on the Mobile and Scott''s Dashboard tablet views) and sends one push to the Pixel
+    9 tagged bp_reminder. The reminder goes away three ways, all of which end in the
+    same state: tapping Dismiss on the phone notification, tapping the dashboard card,
+    or a genuinely new systolic reading arriving from Health Connect. Any of those
+    sets the boolean on and clears the phone notification by tag, so the two surfaces
+    stay in sync. A new systolic reading also stamps input_datetime.last_bp_reading
+    and input_number.last_known_systolic; the value-change guard on that branch prevents
+    Health Connect resyncs and restarts from being mistaken for fresh readings. Replaces
+    four earlier automations: the 30 minute time_pattern morning reminder, the midnight
+    and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation.'
+  triggers:
+  - at: 07:00:00
+    id: morning
+    trigger: time
+  - at: '19:00:00'
+    id: evening
+    trigger: time
+  - entity_id: sensor.pixel_9_systolic_bp
+    id: reading
+    not_to:
+    - unknown
+    - unavailable
+    trigger: state
+  - event_data:
+      action: DISMISS_BP_REMINDER
+    event_type: mobile_app_notification_action
+    id: dismiss_action
+    trigger: event
+  - entity_id: input_boolean.bp_reminder_dismissed
+    id: flag_dismissed
+    to: 'on'
+    trigger: state
+  actions:
+  - choose:
+    - alias: Morning reminder
+      conditions:
+      - condition: trigger
+        id: morning
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.bp_reminder_dismissed
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            actions:
+            - action: DISMISS_BP_REMINDER
+              title: Dismiss
+            tag: bp_reminder
+          message: Time for your morning blood pressure reading.
+          title: Blood Pressure Reminder
+    - alias: Evening reminder
+      conditions:
+      - condition: trigger
+        id: evening
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.bp_reminder_dismissed
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            actions:
+            - action: DISMISS_BP_REMINDER
+              title: Dismiss
+            tag: bp_reminder
+          message: Time for your evening blood pressure reading.
+          title: Blood Pressure Reminder
+    - alias: New reading arrived
+      conditions:
+      - condition: trigger
+        id: reading
+      - condition: template
+        value_template: '{{ trigger.to_state.state | float(0) != states(''input_number.last_known_systolic'')
+          | float(0) }}'
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.bp_reminder_dismissed
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: bp_reminder
+          message: clear_notification
+      - action: input_datetime.set_datetime
+        data:
+          datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+        target:
+          entity_id: input_datetime.last_bp_reading
+      - action: input_number.set_value
+        data:
+          value: '{{ trigger.to_state.state | float }}'
+        target:
+          entity_id: input_number.last_known_systolic
+    - alias: Dismissed from phone notification
+      conditions:
+      - condition: trigger
+        id: dismiss_action
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.bp_reminder_dismissed
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: bp_reminder
+          message: clear_notification
+    - alias: Dismissed from dashboard card
+      conditions:
+      - condition: trigger
+        id: flag_dismissed
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: bp_reminder
+          message: clear_notification
+  max: 10
+  mode: parallel

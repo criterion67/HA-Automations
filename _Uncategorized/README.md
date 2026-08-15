@@ -1,6 +1,6 @@
 # _Uncategorized
 
-42 automation(s) in this category.
+41 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -13,8 +13,7 @@
 | Dawn Dusk Routine (Illuminance Based v5) | Illuminance-based test that replaces the sun elevation offsets. Dawn opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance. Test version running while v4 (elevation based) is disabled. |
 | Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
-| Health - Auto-Dismiss BP Reminder on Reading | Automatically turns off the BP dashboard reminder when either BP sensor is updated within 30 minutes of the morning reminder window (7–10 AM) or the evening reminder reset (7 PM). |
-| Health - Stamp Last BP Reading on New Systolic | Updates last_bp_reading datetime and last_known_systolic only when a genuinely new (different) systolic value arrives, ignoring unknown/value flapping from Health Connect sync gaps. |
+| Health - Blood Pressure Reminder (Consolidated) | Single source of truth for the blood pressure reminder, covering both the dashboard card and the phone notification. At 7:00 AM and again at 7:00 PM it clears input_boolean.bp_reminder_dismissed (which reveals the conditional card on the Mobile and Scott's Dashboard tablet views) and sends one push to the Pixel 9 tagged bp_reminder. The reminder goes away three ways, all of which end in the same state: tapping Dismiss on the phone notification, tapping the dashboard card, or a genuinely new systolic reading arriving from Health Connect. Any of those sets the boolean on and clears the phone notification by tag, so the two surfaces stay in sync. A new systolic reading also stamps input_datetime.last_bp_reading and input_number.last_known_systolic; the value-change guard on that branch prevents Health Connect resyncs and restarts from being mistaken for fresh readings. Replaces four earlier automations: the 30 minute time_pattern morning reminder, the midnight and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation. |
 | Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2 short: Spotify playlist. Button 2 long: 1000 80s Hits radio (RadioBrowser via MA). Button 3: Previous Track. Button 4: Next Track. |
 | HVAC Filter Reminder - Daily Check | Checks daily if HVAC filters are due and sends an actionable notification |
 | HVAC Filter Reminder - Handle Actions | Handles snooze and replaced actions from HVAC filter notifications |
@@ -38,6 +37,10 @@ WHAT IT DOES
 The whole automation is gated on input_boolean.mower_cycle_active being on, so it only acts during a cycle that Home Assistant started. A mow started from the MOVA app will not move the garage door.
 
 CORRECTED 2026-08-13: the returning flag DOES now fire on the lawn_mower.dock path. It was observed going on at 17:54:31, about half a second after script.mower_send_home issued its dock command. The earlier claim that it never fires on that path is wrong, whether because v0.2.68 changed the state flow or because the original 2026-08-11 observation did not generalise. Both this automation and script.mower_send_home were built on that false premise, which is why they collided on the door and shut it on the mower.
+
+ANNOUNCEMENT ADDED 2026-08-14: the returning branch now speaks on media_player.bedroom_group via tts.home_assistant_cloud, but only between 07:00 and 19:00, and always sends a Pixel 9 notification regardless of the hour. Both run BEFORE the door-closed condition so they still fire on the script.mower_send_home path, where the door is already open and the rest of the branch is skipped.
+
+ERROR ALERTING REBUILT 2026-08-14, now two stages. STAGE ONE fires on any error: speaks on the bedroom group between 07:00 and 19:00, and the Pixel 9 alert now uses channel alarm_stream, priority high, ttl 0 and sticky true, copied from automation.david_mowie_stuck_or_error_alert so it sounds through silent mode and survives a clear-all. STAGE TWO fires only when the error has been set for 5 minutes AND sensor.jason_momower_state_name is no longer "mowing", which separates a genuine stall from a transient bump, and it speaks at any hour. Background: on 2026-08-14 a Path blocked error latched for 25 minutes while the mower carried on mowing normally and completed the job, so a bare error flag is not by itself evidence of a problem.
 
 SAFETY: the opener photo eyes remain the physical backstop and will reverse the door if the mower is in the doorway while it closes. |
 | Mower Notification Actions | Handles the action buttons on the Jason MoMower error notification sent by automation.mower_garage_return.

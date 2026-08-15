@@ -1,6 +1,6 @@
 # Reminders & Notifications
 
-50 automation(s) in this category.
+48 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -10,7 +10,6 @@
 | Candle Simulated Light |  |
 | Check Unavailable Entities at 8:00 AM |  |
 | Dashboard - HVAC Cost Show at 6 PM | Show HVAC cost summary cards on tablet for 30 minutes at 6 PM daily |
-| Dashboard - Reset BP Reminder Dismissed | Re-show the BP reminder card at midnight (new day) and again at 7 PM as an evening check-in |
 | Dashboard - Reset Dog Bowl Dismissed When Bowl Refilled |  |
 | Dashboard - Reset Garage Door Dismissed When Garage Closes |  |
 | Dashboard - Reset Gate Dismissed When Gate Closes |  |
@@ -24,7 +23,6 @@
 | Entity Unavailable Notification (Immediate) |  |
 | Garage AC Power Loss Notification |  |
 | Garbage/Recycling Pickup AI Notification | On Thursday mornings between 6:00 and 7:30, a vehicle detection on the Driveway 2 camera sends a frame to LLM Vision (Google Gemini) asking for a structured JSON verdict on whether the green garbage bin and blue recycling bin have been collected. The prompt tells the model to ignore the homeowner's parked pickup, visitor vehicles, lawn equipment, neighbors, pets, and passing traffic. Nothing is written to the timeline automatically. Only when pickup_detected comes back true does the automation create an LLM Vision timeline event labeled Truck and push a notification. This replaces the old version, which stored every Thursday-morning vehicle detection on the timeline and notified unconditionally, so any passing car during that window would alert. |
-| Health - Blood Pressure Morning Reminder | Send reminder notification between 7 AM and 10 AM if blood pressure hasn't been logged today |
 | HVAC UV Bulb Monitor | Alerts when the HVAC UV purifier has drawn under 5W for a full 24 hours, which indicates a failed bulb or ballast. Uses a level-based daily check against a 24h max Statistics helper instead of an edge-based numeric_state trigger, because the original edge trigger fired once on 2026-06-20 and could never re-arm after the power stayed at 0W. Snooze defers 24h via an input_datetime stamp; Dismiss suppresses alerts until the purifier draws power again. Both are restart-safe. |
 | Kitchen Fridge Alerts: Low Battery | Monitors battery level on both the refrigerator temp sensor (sensor.battery_sensor_main_fridge) and the freezer Inkbird sensor (sensor.inkbird_temperature_sensor_battery). Fires when either drops below 10%.
 
