@@ -1,11 +1,23 @@
 - id: '1726433710777'
   alias: 'Rear Gate: Open Notification'
-  description: Contact sensor to monitor whether rear yard gate is open or closed.
+  description: 'Contact sensor to monitor whether rear yard gate is open or closed.
+    SUPPRESSED during a full yard mowing cycle: when input_boolean.mower_full_yard_cycle
+    is on, the gate is intentionally open so the mower can reach the rear yard, and
+    automation.mower_gate_reminders owns the messaging.'
   triggers:
   - trigger: state
     entity_id: binary_sensor.rear_yard_gate
     to: 'on'
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.mower_full_yard_cycle
+    state: 'off'
+    alias: Not during a full yard mowing cycle
+    note: Added 2026-08-17. During script.mower_full_yard_cycle the side gate is deliberately
+      held open for the whole rear yard run, roughly 78 minutes, so this would announce
+      "The gate has been opened" as a false alarm every time. automation.mower_gate_reminders
+      handles all gate messaging during that cycle instead. Same suppression pattern
+      already used on the garage door notifications.
   actions:
   - action: media_player.play_media
     target:

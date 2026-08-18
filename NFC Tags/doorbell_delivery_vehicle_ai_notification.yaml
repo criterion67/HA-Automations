@@ -12,7 +12,22 @@
     ignored. It also lists where packages turn up, namely the parcel box, in front
     of the door, beside the white porch column, and on the sidewalk. Nothing is written
     to the timeline automatically; only a passing verdict creates an LLM Vision event
-    labeled Package and pushes a notification to the Pixel.'
+    labeled Package and pushes a notification to the Pixel. The pushed notification
+    image now follows the trigger: the mailbox and driveway triggers attach the Driveway
+    2 snapshot, which is the only view that actually shows the mailbox and the street
+    where carriers stop, while the parcel box trigger keeps the front porch snapshot.
+    The title likewise varies by trigger so mail reads as mail rather than as a package.
+    A fourth trigger listens to the UniFi Protect package detection event on the G6
+    Pro doorbell package camera, which covers the case a courier leaves a box on the
+    porch floor without opening the parcel box and without their vehicle tripping
+    the driveway detector. That trigger ignores the unknown and unavailable states
+    so a restart cannot fire it, is treated as near certain like the parcel box, and
+    attaches a fresh snapshot of the downward package camera. The vision prompt was
+    revised on 2026-08-17 to name image 3 as the authoritative doorstep view when
+    it disagrees with the porch view, and to stop requiring signs of recent activity,
+    since the package detection path often snapshots an empty frame after the courier
+    has already left. A package now counts on presence alone, and resident_retrieving
+    requires a person to actually be visible.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     for:
@@ -28,6 +43,12 @@
     id: parcel_box
     to: 'on'
     trigger: state
+  - trigger: state
+    entity_id: event.outside_g6_pro_doorbell_package
+    id: package
+    not_to:
+    - unknown
+    - unavailable
   conditions: []
   actions:
   - action: camera.snapshot
@@ -40,6 +61,11 @@
       filename: /config/www/snapshots/delivery_doorbell.png
     target:
       entity_id: camera.g6_pro_entry_high_resolution_channel
+  - action: camera.snapshot
+    data:
+      filename: /config/www/snapshots/delivery_package.png
+    target:
+      entity_id: camera.g6_pro_entry_package_camera
   - delay:
       seconds: 2
   - action: llmvision.image_analyzer
@@ -53,10 +79,18 @@
       - camera.g6_pro_entry_package_camera
       include_filename: false
       max_tokens: 300
-      message: 'You are seeing three camera views of the same residential property.
-        The first image is a wide driveway and street view. The second image is the
-        front porch. The third image is a downward facing package camera pointed at
-        the doorstep.
+      message: 'You are seeing three camera views of the same residential property,
+        taken at the same moment.
+
+
+        IMAGE 1 is a wide driveway and street view.
+
+        IMAGE 2 is the front porch, seen from the doorbell at eye level.
+
+        IMAGE 3 is a downward facing package camera in the same doorbell, aimed straight
+        at the doorstep. It is the closest and clearest view of the ground directly
+        in front of the door. When image 2 and image 3 disagree about whether something
+        is sitting on the porch floor, trust image 3.
 
 
         LOCATION RULE, apply this strictly and above everything else: delivery vehicles
@@ -70,28 +104,34 @@
         simply driving past without stopping.
 
 
-        WHERE PACKAGES APPEAR, in the second image (the front porch view): a BROWN
-        PARCEL BOX sits in the BOTTOM RIGHT corner of that frame, partly cut off by
-        the edge. Around 95 percent of deliveries go into that box, so a courier reaching
-        toward the bottom right of the porch is almost always making a delivery. The
-        remainder are set down on the concrete porch floor across the lower half of
-        that frame: on or beside the doormat directly in front of the door at bottom
-        center, at the base of the white porch column in the middle of the frame,
-        or a little further out on the walkway leading away from the porch. Check
-        every one of those spots, and treat any box, envelope, padded mailer or bag
-        resting on the porch floor as a package.
+        WHERE PACKAGES APPEAR: a BROWN PARCEL BOX sits in the BOTTOM RIGHT corner
+        of image 2, partly cut off by the edge. Around 95 percent of deliveries go
+        into that box, so a courier reaching toward the bottom right of the porch
+        is almost always making a delivery. The remainder are set down on the concrete
+        porch floor: on or beside the doormat directly in front of the door, at the
+        base of the white porch column, or a little further out on the walkway leading
+        away from the porch. Image 3 covers the doormat and door area directly, so
+        check it carefully for anything resting on the ground. Treat any box, envelope,
+        padded mailer or bag on the porch floor as a package.
 
 
-        Set delivery to true ONLY if a delivery vehicle from USPS, FedEx, UPS, or
-        Amazon is stopped on the street, or a uniformed courier is on foot approaching
-        the property, or a package appears to have just been left in any of the places
-        listed above. Otherwise set delivery to false.
+        A package counts whether or not anyone is visible. You may be seeing the scene
+        after the courier has already left, so do not require a person, a vehicle,
+        or any sign of recent activity in order to report a package that is plainly
+        sitting there.
 
 
-        Set resident_retrieving to true only if the person visible is clearly a resident
-        of the house collecting mail or a package rather than delivering one, for
-        example someone walking out from the front door to the parcel box or mailbox.
-        If no person is visible, set resident_retrieving to false.'
+        Set delivery to true if ANY of the following hold: a delivery vehicle from
+        USPS, FedEx, UPS, or Amazon is stopped on the street; a uniformed courier
+        is on foot approaching the property; or a package is present in any of the
+        places listed above. Otherwise set delivery to false.
+
+
+        Set resident_retrieving to true only if a person is visible AND that person
+        is clearly a resident of the house collecting mail or a package rather than
+        delivering one, for example someone walking out from the front door toward
+        the parcel box or the mailbox. If no person is visible, set resident_retrieving
+        to false.'
       provider: 01KZ2A24SYVPMCX8DTYVJTZTVV
       response_format: json
       store_in_timeline: false
@@ -114,8 +154,9 @@
     response_variable: response
   - condition: template
     value_template: '{% set t = trigger.id | default('''') %}{% set r = response.structured_response
-      %}{{ (t in [''parcel_box'', ''mailbox''] and not (r.resident_retrieving | default(false)))
-      or (t == ''driveway'' and (r.delivery | default(false))) }}'
+      %}{{ (t in [''parcel_box'', ''mailbox'', ''package''] and not (r.resident_retrieving
+      | default(false))) or (t == ''driveway'' and (r.delivery | default(false)))
+      }}'
   - action: llmvision.create_event
     data:
       camera_entity: camera.driveway_2_high_resolution_channel
@@ -126,11 +167,15 @@
   - action: notify.mobile_app_pixel_9
     data:
       data:
-        image: /local/snapshots/delivery_doorbell.png
+        image: '{% set t = trigger.id | default('''') %}{{ ''/local/snapshots/delivery_package.png''
+          if t == ''package'' else (''/local/snapshots/delivery_driveway.png'' if
+          t in [''mailbox'', ''driveway''] else ''/local/snapshots/delivery_doorbell.png'')
+          }}'
         tag: doorbell_delivery_ai
         url: homeassistant://navigate/lovelace
       message: '{{ response.structured_response.description }}'
-      title: '{{ ''Package Delivered! 📦'' if trigger.id | default('''') in [''parcel_box'',
-        ''mailbox''] else ''Delivery Detected! 📦'' }}'
+      title: '{% set t = trigger.id | default('''') %}{{ ''Mail Delivered! 📬'' if
+        t == ''mailbox'' else (''Package Delivered! 📦'' if t in [''parcel_box'', ''package'']
+        else ''Delivery Detected! 📦'') }}'
   max_exceeded: silent
   mode: single

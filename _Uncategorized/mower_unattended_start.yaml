@@ -1,0 +1,121 @@
+- id: '1787009969985'
+  alias: Mower Unattended Start
+  description: 'Catches any Jason MoMower session that Home Assistant did not start,
+    and opens the garage door for it.
+
+
+    WHY THIS EXISTS. Built 2026-08-17 after a confirmed failure. During the front
+    yard run that day the mower raised "Lidar temperature high with map" at 13:58:50
+    and ended the session at roughly 96 percent. automation.mower_garage_return handled
+    that return correctly and cleared input_boolean.mower_cycle_active at 14:02:40.
+    The mower then charged to 100 percent and RESTARTED ITSELF at 14:55:30 to finish
+    the remaining few percent, with no command from Home Assistant or the MOVAhome
+    app. Because the flag had been cleared, nothing opened the door on the way out
+    and nothing opened it on the return, and Scott had to work the door by hand both
+    times.
+
+
+    WHAT IT COVERS. Any undock Home Assistant did not initiate: the mower resuming
+    an unfinished job after charging, and any session started from the MOVAhome app.
+
+
+    WHY IT IS A SEPARATE AUTOMATION. automation.mower_garage_return is gated on input_boolean.mower_cycle_active
+    being ON. This one has to fire on exactly the opposite condition, so it cannot
+    live inside that automation without breaking its gate.
+
+
+    HOW IT WORKS
+
+    1. Fires when binary_sensor.jason_momower_docked has been off for 10 seconds.
+    The 10 second hold filters the known docked-flag flicker on this firmware, and
+    costs nothing: the mower backs out, then spends roughly 60 seconds turning and
+    positioning before it is ready to move, so it is not near the doorway for at least
+    a minute after undocking.
+
+    2. Runs only when input_boolean.mower_cycle_active is OFF. Every Home Assistant
+    initiated cycle raises that flag before it touches the door, so a scripted run
+    can never reach this automation.
+
+    3. Raises the flag itself. That hands the return leg to automation.mower_garage_return
+    exactly as if script.mower_zone_cycle had started the job, and suppresses the
+    garage door notification and garage climate automations for the rest of the session.
+
+    4. Opens the door to the calibrated 21 inch gap, but ONLY if the door reads closed.
+    This opener is a pulse type with no position control, and a second open pulse
+    on a door that is open or stopped partway REVERSES it, which has stranded the
+    mower outside before.
+
+    5. If it opened the door, it waits out the rest of the 120 second exit window
+    and closes it. If the door was already open when the mower undocked, it leaves
+    the door alone entirely, on the assumption Scott opened it on purpose.
+
+    6. Notifies Scott''s Pixel either way, since an unattended start is something
+    he should know about.
+
+
+    The flag is deliberately left ON at the end. automation.mower_garage_return clears
+    it after the mower docks.'
+  triggers:
+  - entity_id: binary_sensor.jason_momower_docked
+    for:
+      seconds: 10
+    id: unattended_undock
+    to: 'off'
+    trigger: state
+  conditions:
+  - alias: Only when Home Assistant did not start this session
+    condition: state
+    entity_id: input_boolean.mower_cycle_active
+    state: 'off'
+  actions:
+  - action: input_boolean.turn_on
+    alias: Raise the suppression flag so the return leg is handled normally
+    target:
+      entity_id: input_boolean.mower_cycle_active
+  - alias: Open the door to 21 inches, but ONLY if it is actually shut
+    if:
+    - alias: Door read closed at the moment the mower undocked
+      condition: template
+      value_template: '{{ door_was_closed }}'
+    then:
+    - action: cover.open_cover
+      alias: Start the door opening
+      target:
+        entity_id: cover.garage_door
+    - alias: Wait the calibrated interval for a 21 inch opening
+      delay:
+        milliseconds: 2500
+    - action: cover.stop_cover
+      alias: Stop the door partway
+      target:
+        entity_id: cover.garage_door
+  - action: notify.mobile_app_pixel_9
+    alias: Tell Scott the mower let itself out
+    data:
+      data:
+        channel: alarm_stream
+        importance: high
+        notification_icon: mdi:robot-mower
+        priority: high
+        tag: mower_unattended
+        ttl: 0
+      message: Jason MoMower undocked without a Home Assistant command. {{ 'The garage
+        door was opened for it and will close automatically.' if door_was_closed else
+        'The garage door was already open, so it was left alone.' }}
+      title: Mower Started On Its Own
+  - alias: Close the door behind the mower, only if we opened it
+    if:
+    - alias: We are the ones who opened it
+      condition: template
+      value_template: '{{ door_was_closed }}'
+    then:
+    - alias: Finish out the 120 second exit window measured from the undock
+      delay:
+        seconds: 108
+    - action: cover.close_cover
+      alias: Close the garage door behind the mower
+      target:
+        entity_id: cover.garage_door
+  mode: single
+  variables:
+    door_was_closed: '{{ is_state(''cover.garage_door'', ''closed'') }}'

@@ -1,0 +1,265 @@
+- id: mower_gate_reminders
+  alias: Mower Gate Reminders
+  description: 'Handles the side gate for mowing. MOST branches are scoped to a FULL
+    YARD cycle (rear 3, front 1, side 2). Every branch is gated on input_boolean.mower_full_yard_cycle,
+    which script.mower_full_yard_cycle sets. That marker is what stops a manual rear-then-front
+    run from producing false gate prompts, which was Scott''s specific concern on
+    2026-08-17.
+
+
+    WHY THIS EXISTS: the rear yard is only reachable with the gate open, but the gate
+    obstructs the side yard. So the mower does the rear yard first, and Scott closes
+    the gate while it is busy on the front yard.
+
+
+    BRANCH 0, reached_rear: the mower is entering the rear yard and the gate does
+    NOT read open. Pauses immediately and alerts hard. THIS BRANCH IS UNGATED on the
+    full yard marker, unlike every other branch, because a shut or unreadable gate
+    on entry to the rear yard is a real problem on any session including a plain Rear
+    Yard button press. It fails CLOSED, so unavailable and unknown from a dead sensor
+    battery or weak signal also pause the mower.
+
+
+    BRANCH 1, reached_front: the rear yard is done, so tell Scott to go close the
+    gate. Speaks at any hour, because missing this prompt is what breaks the whole
+    cycle.
+
+
+    BRANCH 2, gate_closed: acknowledge so Scott knows it registered and stops wondering.
+
+
+    BRANCH 3, reached_side: the mower is entering the side yard with the gate STILL
+    OPEN. Pauses the mower immediately, then alerts hard. NOTE this is a mitigation,
+    not a guarantee: the zone transition is only reported once the mower is already
+    moving, so it stops it quickly rather than preventing it from ever approaching
+    the gate.
+
+
+    RESUME IS DELIBERATELY MANUAL. There is no resume service on this integration;
+    the only candidate is lawn_mower.start_mowing and it is NOT yet verified whether
+    that resumes a paused ZONE session or kicks off a whole-map mow. Until that is
+    tested with Scott watching, branch 2 only tells him it is safe to resume and he
+    does it himself.
+
+
+    BRANCH 4, cycle_ended: clears the full yard marker whenever input_boolean.mower_cycle_active
+    clears, so a normal finish, a cancel, or an early dock all clean up.'
+  triggers:
+  - entity_id: sensor.jason_momower_current_zone
+    id: reached_front
+    to: Front Yard (#1)
+    trigger: state
+  - entity_id: binary_sensor.rear_yard_gate
+    id: gate_closed
+    to: 'off'
+    trigger: state
+  - entity_id: sensor.jason_momower_current_zone
+    id: reached_side
+    to: Side Yard (#2)
+    trigger: state
+  - entity_id: input_boolean.mower_cycle_active
+    id: cycle_ended
+    to: 'off'
+    trigger: state
+  - trigger: state
+    entity_id: sensor.jason_momower_current_zone
+    to: Rear Yard (#3)
+    id: reached_rear
+    note: Added 2026-08-17. Catches a mower entering the rear yard when the gate is
+      not open, which the pre-flight checks cannot cover because the gate can be shut
+      AFTER a job has already started.
+  conditions: []
+  actions:
+  - choose:
+    - alias: Entering the rear yard without an open gate, pause and alert. NOT gated
+        on the full yard marker.
+      note: 'Deliberately UNGATED on input_boolean.mower_full_yard_cycle, at Scott
+        request 2026-08-17. Every other branch is marker-gated to avoid false prompts
+        on manual runs, but a gate that is not open when the mower is entering the
+        REAR yard is a real problem on ANY session, including a plain Rear Yard button
+        press. Fails CLOSED: the NOT condition means off, unavailable and unknown
+        all trigger this, so a dead gate sensor battery or weak signal pauses the
+        mower rather than letting it drive at a gate nobody can confirm is open.'
+      conditions:
+      - condition: trigger
+        id: reached_rear
+      - condition: not
+        alias: Gate does NOT read open
+        conditions:
+        - condition: state
+          entity_id: binary_sensor.rear_yard_gate
+          state: 'on'
+      - condition: state
+        entity_id: sensor.jason_momower_state_name
+        state: mowing
+        alias: Only while actually mowing, not while returning
+        note: Added 2026-08-17, immediately after the branch was written, to close
+          a hole found before its first run. sensor.jason_momower_current_zone briefly
+          reported "Rear Yard (#3)" at 12:52:44 on 2026-08-17 while the mower was
+          actually traversing on its way HOME, not mowing that zone. Without this
+          condition, that flicker plus a closed gate (the normal resting state) would
+          pause the mower mid-return and strand it outside. Note that lawn_mower.jason_momower
+          reads "returning" in that situation but state_name is the entity that reliably
+          distinguishes mowing from traversing.
+      sequence:
+      - action: lawn_mower.pause
+        alias: Stop the mower before it reaches the shut gate
+        target:
+          entity_id: lawn_mower.jason_momower
+      - action: tts.speak
+        alias: Hard spoken alert, any hour
+        target:
+          entity_id: tts.home_assistant_cloud
+        data:
+          media_player_entity_id: media_player.bedroom_group
+          cache: false
+          message: Jason MoMower has been paused. It is entering the rear yard but
+            the side gate is not reading open.
+      - action: notify.mobile_app_pixel_9
+        alias: Hard phone alert
+        data:
+          title: Mower Paused, Rear Gate Not Open
+          message: Jason MoMower is entering the rear yard but the side gate reads
+            {{ states("binary_sensor.rear_yard_gate") }}. It has been paused. Open
+            the gate and resume manually. If the gate reads unavailable or unknown,
+            check the contact sensor battery and signal.
+          data:
+            tag: mower_gate_blocked
+            sticky: true
+            persistent: true
+            importance: high
+            priority: high
+            channel: alarm_stream
+            ttl: 0
+            notification_icon: mdi:gate-alert
+    - alias: Rear yard done, time to close the gate
+      conditions:
+      - condition: trigger
+        id: reached_front
+      - condition: state
+        entity_id: input_boolean.mower_full_yard_cycle
+        state: 'on'
+      - condition: state
+        entity_id: binary_sensor.rear_yard_gate
+        state: 'on'
+      sequence:
+      - action: tts.speak
+        alias: Announce that the gate needs closing
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: Jason MoMower has finished the rear yard and is now mowing the
+            front yard. Please go close the side gate.
+        note: Not time gated. If Scott misses this the mower reaches the side yard
+          with the gate in the way, which is the failure this whole automation exists
+          to prevent.
+        target:
+          entity_id: tts.home_assistant_cloud
+      - action: notify.mobile_app_pixel_9
+        alias: Phone prompt with the same message
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:gate
+            priority: high
+            sticky: true
+            tag: mower_gate
+            ttl: 0
+          message: Rear yard is done and Jason MoMower is on the front yard now. Close
+            the side gate before it reaches the side yard, roughly 55 minutes.
+          title: Close The Side Gate
+    - alias: Gate closed, acknowledge it
+      conditions:
+      - condition: trigger
+        id: gate_closed
+      - condition: state
+        entity_id: input_boolean.mower_full_yard_cycle
+        state: 'on'
+      sequence:
+      - action: tts.speak
+        alias: Confirm the gate registered as closed
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: The side gate is closed. Jason MoMower is clear to continue.
+        target:
+          entity_id: tts.home_assistant_cloud
+      - alias: If the mower was paused waiting on this, tell Scott he can resume
+        if:
+        - condition: state
+          entity_id: lawn_mower.jason_momower
+          state: paused
+        note: Resume is manual on purpose. lawn_mower.start_mowing is the only candidate
+          and its behaviour on a paused ZONE session is unverified. Once tested, this
+          branch is where an automatic resume would go.
+        then:
+        - action: notify.mobile_app_pixel_9
+          data:
+            data:
+              channel: alarm_stream
+              importance: high
+              notification_icon: mdi:gate
+              priority: high
+              sticky: true
+              tag: mower_gate
+              ttl: 0
+            message: The side gate is now closed and Jason MoMower is paused. Resume
+              it manually when you are ready.
+            title: Gate Closed, Mower Is Paused
+    - alias: Entering the side yard with the gate still open, pause and alert
+      conditions:
+      - condition: trigger
+        id: reached_side
+      - condition: state
+        entity_id: input_boolean.mower_full_yard_cycle
+        state: 'on'
+      - condition: state
+        entity_id: binary_sensor.rear_yard_gate
+        state: 'on'
+      sequence:
+      - action: lawn_mower.pause
+        alias: Stop the mower before it reaches the open gate
+        note: Pause first, alert second. Verified 2026-08-17 that lawn_mower.pause
+          is available on this mower.
+        target:
+          entity_id: lawn_mower.jason_momower
+      - action: tts.speak
+        alias: Hard spoken alert, any hour
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: Jason MoMower has been paused. It reached the side yard but the
+            side gate is still open. Please close the gate.
+        target:
+          entity_id: tts.home_assistant_cloud
+      - action: notify.mobile_app_pixel_9
+        alias: Hard phone alert
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:gate-alert
+            priority: high
+            sticky: true
+            tag: mower_gate_blocked
+            ttl: 0
+          message: Jason MoMower reached the side yard with the side gate still open
+            and has been paused. Close the gate, then resume it manually.
+          title: Mower Paused, Gate Still Open
+    - alias: Cycle ended, clear the full yard marker
+      conditions:
+      - condition: trigger
+        id: cycle_ended
+      - condition: state
+        entity_id: input_boolean.mower_full_yard_cycle
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        alias: Clear the marker
+        note: Tied to mower_cycle_active clearing rather than to the side yard finishing,
+          so a cancel or an early dock cleans up too.
+        target:
+          entity_id: input_boolean.mower_full_yard_cycle
+  max: 10
+  mode: parallel

@@ -1,10 +1,15 @@
-- id: '1772666835186'
+- id: '1786996147942'
   alias: Mailbox delivery notification, 5 p.m. reminder & reset
-  description: Notifies when mail is delivered (only on first open of the day), resets
-    the notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM only
-    if the mailbox hasn't been opened a second time, and allows a manual reset using
-    a dashboard button. Adds actionable notification buttons to reset or dismiss on
-    Scott's phone only.
+  description: Notifies when mail is delivered on the first mailbox opening of the
+    day, then records a genuine second opening (mail collected) only when the delivery
+    notification has already been standing for 30 minutes, so the door sensor bouncing
+    during a single delivery does not falsely count as collection. Resets the notification
+    flag daily at 6:00 AM, reminds to check the mail at 5:00 PM if the mailbox has
+    not been opened a second time, and allows a manual reset using a dashboard button.
+    Adds actionable notification buttons to reset or dismiss on Scott phone. Uses
+    input_number.set_value rather than input_number.increment because Spook v5.0.0
+    overrides the increment service and reads a private attribute that HA core 2026.8
+    renamed, which raises an error and aborts the run.
   triggers:
   - id: mailbox_open
     entity_id: binary_sensor.mailbox_sensor_door
@@ -42,7 +47,9 @@
       sequence:
       - target:
           entity_id: input_number.mailbox_open_count
-        action: input_number.increment
+        data:
+          value: 1
+        action: input_number.set_value
       - target:
           entity_id:
           - media_player.bedroom_speaker
@@ -129,6 +136,26 @@
           - input_boolean.mailbox_notified
           - input_boolean.mail_dashboard_indicator
         action: input_boolean.turn_on
+    - conditions:
+      - condition: trigger
+        id: mailbox_open
+      - condition: numeric_state
+        entity_id: input_number.mailbox_open_count
+        above: 0
+        below: 2
+      - condition: state
+        entity_id: input_boolean.mailbox_notified
+        state: 'on'
+        for:
+          hours: 0
+          minutes: 30
+          seconds: 0
+      sequence:
+      - target:
+          entity_id: input_number.mailbox_open_count
+        data:
+          value: 2
+        action: input_number.set_value
     - conditions:
       - condition: trigger
         id: reminder_5pm

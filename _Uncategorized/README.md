@@ -1,6 +1,6 @@
 # _Uncategorized
 
-41 automation(s) in this category.
+44 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -20,6 +20,7 @@
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
 | LibreLink - Sensor Expiration Notification | Sends mobile notifications and TTS announcements at 24 hours, 1 hour, and at the moment of Libre 3 sensor expiration. |
 | Living Room TV - Turn Off When Bill Leaves | When Bill has been away from home for 10 minutes, turn off the Living Room Chromecast. If Scott is home, send an actionable notification first asking whether to keep it on. If no response within 2 minutes, turn it off automatically. |
+| Mailbox delivery notification, 5 p.m. reminder & reset | Notifies when mail is delivered on the first mailbox opening of the day, then records a genuine second opening (mail collected) only when the delivery notification has already been standing for 30 minutes, so the door sensor bouncing during a single delivery does not falsely count as collection. Resets the notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM if the mailbox has not been opened a second time, and allows a manual reset using a dashboard button. Adds actionable notification buttons to reset or dismiss on Scott phone. Uses input_number.set_value rather than input_number.increment because Spook v5.0.0 overrides the increment service and reads a private attribute that HA core 2026.8 renamed, which raises an error and aborts the run. |
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
 | Medication Reminders - Mobile Notifications | Sends mobile notifications to Pixel 9 at each scheduled medication time with Snooze (30 min) and Taken action buttons. Six time slots: 7am (Levothyroxine), 8am (morning meds + antibiotics), 10am (supplements), 5pm (Levofloxacin), 7pm (evening meds), bedtime (Magnesium). Snooze fires a second notification after 30 minutes by turning on the corresponding input_boolean snooze flag, which re-triggers via state change. Taken dismisses without re-alerting. |
 | Monthly Valve Test | On the 1st of each month, cycles the main water valve closed then open to verify it is operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
@@ -43,6 +44,21 @@ ANNOUNCEMENT ADDED 2026-08-14: the returning branch now speaks on media_player.b
 ERROR ALERTING REBUILT 2026-08-14, now two stages. STAGE ONE fires on any error: speaks on the bedroom group between 07:00 and 19:00, and the Pixel 9 alert now uses channel alarm_stream, priority high, ttl 0 and sticky true, copied from automation.david_mowie_stuck_or_error_alert so it sounds through silent mode and survives a clear-all. STAGE TWO fires only when the error has been set for 5 minutes AND sensor.jason_momower_state_name is no longer "mowing", which separates a genuine stall from a transient bump, and it speaks at any hour. Background: on 2026-08-14 a Path blocked error latched for 25 minutes while the mower carried on mowing normally and completed the job, so a bare error flag is not by itself evidence of a problem.
 
 SAFETY: the opener photo eyes remain the physical backstop and will reverse the door if the mower is in the doorway while it closes. |
+| Mower Gate Reminders | Handles the side gate for mowing. MOST branches are scoped to a FULL YARD cycle (rear 3, front 1, side 2). Every branch is gated on input_boolean.mower_full_yard_cycle, which script.mower_full_yard_cycle sets. That marker is what stops a manual rear-then-front run from producing false gate prompts, which was Scott's specific concern on 2026-08-17.
+
+WHY THIS EXISTS: the rear yard is only reachable with the gate open, but the gate obstructs the side yard. So the mower does the rear yard first, and Scott closes the gate while it is busy on the front yard.
+
+BRANCH 0, reached_rear: the mower is entering the rear yard and the gate does NOT read open. Pauses immediately and alerts hard. THIS BRANCH IS UNGATED on the full yard marker, unlike every other branch, because a shut or unreadable gate on entry to the rear yard is a real problem on any session including a plain Rear Yard button press. It fails CLOSED, so unavailable and unknown from a dead sensor battery or weak signal also pause the mower.
+
+BRANCH 1, reached_front: the rear yard is done, so tell Scott to go close the gate. Speaks at any hour, because missing this prompt is what breaks the whole cycle.
+
+BRANCH 2, gate_closed: acknowledge so Scott knows it registered and stops wondering.
+
+BRANCH 3, reached_side: the mower is entering the side yard with the gate STILL OPEN. Pauses the mower immediately, then alerts hard. NOTE this is a mitigation, not a guarantee: the zone transition is only reported once the mower is already moving, so it stops it quickly rather than preventing it from ever approaching the gate.
+
+RESUME IS DELIBERATELY MANUAL. There is no resume service on this integration; the only candidate is lawn_mower.start_mowing and it is NOT yet verified whether that resumes a paused ZONE session or kicks off a whole-map mow. Until that is tested with Scott watching, branch 2 only tells him it is safe to resume and he does it himself.
+
+BRANCH 4, cycle_ended: clears the full yard marker whenever input_boolean.mower_cycle_active clears, so a normal finish, a cancel, or an early dock all clean up. |
 | Mower Notification Actions | Handles the action buttons on the Jason MoMower error notification sent by automation.mower_garage_return.
 
 WHY THIS IS A SEPARATE AUTOMATION
@@ -55,6 +71,23 @@ WHAT IT DOES
 Both replies reuse the notification tag mower_error so they replace the original alert on the phone rather than stacking up.
 
 CONTEXT: this replaced a time based watchdog that automatically closed the door after 15 minutes open during a cycle. Scott removed that on 2026-08-12 because it could shut the door on him while he was working in the garage, and it could not distinguish a stalled mower from a slow return. The tradeoff is that a silent stall with no error raised will leave the door open until Scott notices. |
+| Mower Unattended Start | Catches any Jason MoMower session that Home Assistant did not start, and opens the garage door for it.
+
+WHY THIS EXISTS. Built 2026-08-17 after a confirmed failure. During the front yard run that day the mower raised "Lidar temperature high with map" at 13:58:50 and ended the session at roughly 96 percent. automation.mower_garage_return handled that return correctly and cleared input_boolean.mower_cycle_active at 14:02:40. The mower then charged to 100 percent and RESTARTED ITSELF at 14:55:30 to finish the remaining few percent, with no command from Home Assistant or the MOVAhome app. Because the flag had been cleared, nothing opened the door on the way out and nothing opened it on the return, and Scott had to work the door by hand both times.
+
+WHAT IT COVERS. Any undock Home Assistant did not initiate: the mower resuming an unfinished job after charging, and any session started from the MOVAhome app.
+
+WHY IT IS A SEPARATE AUTOMATION. automation.mower_garage_return is gated on input_boolean.mower_cycle_active being ON. This one has to fire on exactly the opposite condition, so it cannot live inside that automation without breaking its gate.
+
+HOW IT WORKS
+1. Fires when binary_sensor.jason_momower_docked has been off for 10 seconds. The 10 second hold filters the known docked-flag flicker on this firmware, and costs nothing: the mower backs out, then spends roughly 60 seconds turning and positioning before it is ready to move, so it is not near the doorway for at least a minute after undocking.
+2. Runs only when input_boolean.mower_cycle_active is OFF. Every Home Assistant initiated cycle raises that flag before it touches the door, so a scripted run can never reach this automation.
+3. Raises the flag itself. That hands the return leg to automation.mower_garage_return exactly as if script.mower_zone_cycle had started the job, and suppresses the garage door notification and garage climate automations for the rest of the session.
+4. Opens the door to the calibrated 21 inch gap, but ONLY if the door reads closed. This opener is a pulse type with no position control, and a second open pulse on a door that is open or stopped partway REVERSES it, which has stranded the mower outside before.
+5. If it opened the door, it waits out the rest of the 120 second exit window and closes it. If the door was already open when the mower undocked, it leaves the door alone entirely, on the assumption Scott opened it on purpose.
+6. Notifies Scott's Pixel either way, since an unattended start is something he should know about.
+
+The flag is deliberately left ON at the end. automation.mower_garage_return clears it after the mower docks. |
 | NFC - Office Door Unlock |  |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |

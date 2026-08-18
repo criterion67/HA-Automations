@@ -1,6 +1,6 @@
 # Reminders & Notifications
 
-48 automation(s) in this category.
+46 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -48,7 +48,6 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | Levoit Air Purifier Filter Below 10% Notification | Sends a daily notification when the Levoit filter life drops below 10%, with snooze and dismiss actions. |
 | Lock Batteries: Alert below 15% with Snooze and Dismiss |  |
 | Lock Offline: Possible Dead Battery Alert | If any lock is unavailable for 2+ hours, send a notification with Snooze 24h and Replaced options. Uses the same snooze store as the low battery alert. Replaced sets a 7-day snooze. |
-| Mailbox delivery notification, 5 p.m. reminder & reset | Notifies when mail is delivered (only on first open of the day), resets the notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM only if the mailbox hasn't been opened a second time, and allows a manual reset using a dashboard button. Adds actionable notification buttons to reset or dismiss on Scott's phone only. |
 | Master Critical System Updates Notification |  |
 | Master Garage Climate Control | Central controller for garage heat and cool based on button, temperature, and freeze protection. |
 | Master Wonkavator Print Finished TTS | Announce when Wonkavator finishes printing with speaker fallback and light cue |
@@ -60,8 +59,7 @@ All alerts send high-priority push to notify.mobile_app_pixel_9 with current tem
 | NFC - HVAC Filter Change Reminder |  |
 | Parcel box delivery notification | Plays chime and TTS when a package is delivered to the parcel box. Prevents repeat alerts using a dashboard indicator boolean. Allows manual reset and auto-reset at 6:00 AM. Adds actionable notification buttons to reset or dismiss on Scott's phone only. |
 | Plant Watering Reminder by Moisture Percentage | Notify when a plant drops below its moisture threshold, with Watered action and specific plant name. 24-hour cooldown to prevent duplicate notifications. |
-| Possible Mail Delivery AI Notification | Detects possible USPS mail delivery from driveway camera. DISABLED - replaced by Doorbell - Delivery Vehicle AI Notification. |
-| Rear Gate: Open Notification | Contact sensor to monitor whether rear yard gate is open or closed. |
+| Rear Gate: Open Notification | Contact sensor to monitor whether rear yard gate is open or closed. SUPPRESSED during a full yard mowing cycle: when input_boolean.mower_full_yard_cycle is on, the gate is intentionally open so the mower can reach the rear yard, and automation.mower_gate_reminders owns the messaging. |
 | Rudy's Heater Offline Alert (New) |  |
 | Toothbrush: Battery State Notification | Monitors the battery level for the Oral-B toothbrush and sends a notification when a recharge is necessary and also sends a follow-up notification once it has been recharged. |
 | Trash Day Reminder & Reset | Trash day is Thursday. Tomorrow chip shows Wed, Today chip shows Thu. Safety reset runs Fri midnight. |
