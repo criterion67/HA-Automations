@@ -1,6 +1,6 @@
 # _Uncategorized
 
-44 automation(s) in this category.
+45 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -59,6 +59,17 @@ BRANCH 3, reached_side: the mower is entering the side yard with the gate STILL 
 RESUME IS DELIBERATELY MANUAL. There is no resume service on this integration; the only candidate is lawn_mower.start_mowing and it is NOT yet verified whether that resumes a paused ZONE session or kicks off a whole-map mow. Until that is tested with Scott watching, branch 2 only tells him it is safe to resume and he does it himself.
 
 BRANCH 4, cycle_ended: clears the full yard marker whenever input_boolean.mower_cycle_active clears, so a normal finish, a cancel, or an early dock all clean up. |
+| Mower Incomplete Job Alert | Tells Scott when a mowing job ends early and SILENTLY, so a partially mowed yard is not mistaken for a finished one.
+
+WHY THIS EXISTS. Built 2026-08-18. That morning a Full Yard run mowed the rear yard, skipped the front yard entirely, mowed the side yard, then docked at 64.5 percent complete with 56 percent battery remaining and no error present. Nothing in Home Assistant said a word, because every existing alert keys off an error or off the normal return, and this return looked completely normal. Scott only found out by walking outside.
+
+WHAT IT CATCHES. Any session, started any way, that comes home with the job unfinished and no error to explain it. Low battery returns are covered too: those come home early by definition, and knowing the job is unfinished is exactly the point.
+
+WHAT IT DELIBERATELY DOES NOT DO. It does not fire when an error is present, because sensor.jason_momower_error already drives two separate alerts in automation.mower_garage_return and a third notification here would be noise. It does not restart or resume anything. It reports, and Scott decides.
+
+WHY IT TRIGGERS ON RETURNING RATHER THAN ON DOCKED. sensor.jason_momower_mowing_progress goes unavailable the moment the mower docks, so the figure has to be captured on the way home and carried through the wait. It also reads unavailable the whole time an error is latched, which is why there is a settling delay before the read.
+
+THE 95 PERCENT THRESHOLD is deliberately loose. The mower does not reliably report a clean 100, and a job that got to 96 or 97 is finished for practical purposes. |
 | Mower Notification Actions | Handles the action buttons on the Jason MoMower error notification sent by automation.mower_garage_return.
 
 WHY THIS IS A SEPARATE AUTOMATION

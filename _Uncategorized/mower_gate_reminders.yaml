@@ -207,16 +207,24 @@
             message: The side gate is now closed and Jason MoMower is paused. Resume
               it manually when you are ready.
             title: Gate Closed, Mower Is Paused
-    - alias: Entering the side yard with the gate still open, pause and alert
+    - alias: Entering the side yard to MOW it with the gate still open, pause and
+        alert. NOT gated on the full yard marker.
       conditions:
       - condition: trigger
         id: reached_side
       - condition: state
-        entity_id: input_boolean.mower_full_yard_cycle
-        state: 'on'
-      - condition: state
         entity_id: binary_sensor.rear_yard_gate
         state: 'on'
+      - condition: state
+        entity_id: sensor.jason_momower_state_name
+        state: mowing
+        alias: Only while actually mowing, not while traversing or returning
+        note: Added 2026-08-18 together with ungating this branch, and it is load
+          bearing. Scott confirmed the mower must pass THROUGH the side yard to reach
+          either the dock or the front yard from the rear yard, so every return trip
+          crosses this zone. Without this condition an ungated branch would pause
+          the mower on its way home whenever the gate was open, and strand it outside.
+          Mirrors the same guard already on the reached_rear branch.
       sequence:
       - action: lawn_mower.pause
         alias: Stop the mower before it reaches the open gate
@@ -247,6 +255,12 @@
           message: Jason MoMower reached the side yard with the side gate still open
             and has been paused. Close the gate, then resume it manually.
           title: Mower Paused, Gate Still Open
+      note: UNGATED on input_boolean.mower_full_yard_cycle as of 2026-08-18, at Scott's
+        request. Previously this branch only protected a Full Yard preset run, which
+        meant it never fired during Scott's actual workflow of pressing individual
+        zone buttons. A gate left open while the mower is mowing the side yard is
+        a real obstruction on ANY session, so this now behaves like the reached_rear
+        branch.
     - alias: Cycle ended, clear the full yard marker
       conditions:
       - condition: trigger
