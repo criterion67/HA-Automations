@@ -1,98 +1,90 @@
 - id: '1787083573676'
   alias: Mower Incomplete Job Alert
-  description: 'Tells Scott when a mowing job ends early and SILENTLY, so a partially
-    mowed yard is not mistaken for a finished one.
-
-
-    WHY THIS EXISTS. Built 2026-08-18. That morning a Full Yard run mowed the rear
-    yard, skipped the front yard entirely, mowed the side yard, then docked at 64.5
-    percent complete with 56 percent battery remaining and no error present. Nothing
-    in Home Assistant said a word, because every existing alert keys off an error
-    or off the normal return, and this return looked completely normal. Scott only
-    found out by walking outside.
-
-
-    WHAT IT CATCHES. Any session, started any way, that comes home with the job unfinished
-    and no error to explain it. Low battery returns are covered too: those come home
-    early by definition, and knowing the job is unfinished is exactly the point.
-
-
-    WHAT IT DELIBERATELY DOES NOT DO. It does not fire when an error is present, because
-    sensor.jason_momower_error already drives two separate alerts in automation.mower_garage_return
-    and a third notification here would be noise. It does not restart or resume anything.
-    It reports, and Scott decides.
-
-
-    WHY IT TRIGGERS ON RETURNING RATHER THAN ON DOCKED. sensor.jason_momower_mowing_progress
-    goes unavailable the moment the mower docks, so the figure has to be captured
-    on the way home and carried through the wait. It also reads unavailable the whole
-    time an error is latched, which is why there is a settling delay before the read.
-
-
-    THE 95 PERCENT THRESHOLD is deliberately loose. The mower does not reliably report
-    a clean 100, and a job that got to 96 or 97 is finished for practical purposes.'
+  description: "Tells Scott when a mowing job ends early and SILENTLY, so a partially\
+    \ mowed yard is not mistaken for a finished one.\n\nWHY THIS EXISTS. On 2026-08-18\
+    \ a Full Yard run mowed the rear yard, skipped the front yard entirely, mowed\
+    \ the side yard, then docked with battery to spare and no error present. Nothing\
+    \ in Home Assistant said a word, because every other alert keys off an error and\
+    \ that return looked completely normal. Scott only found out by walking outside.\n\
+    \nREBUILT 2026-08-19 on sensor.jason_momower_status_notice. The original version\
+    \ compared sensor.jason_momower_mowing_progress against 95 percent, which was\
+    \ WRONG and false-alarmed on the successful side yard run that same evening: progress\
+    \ is measured against the WHOLE MAP, so a single-zone job reads around 13 percent\
+    \ even when it finishes perfectly. Do not reintroduce a progress threshold here.\n\
+    \nTHE SIGNAL. sensor.jason_momower_status_notice is a clean discriminator, verified\
+    \ against both runs on 2026-08-18:\n  Successful side yard run: 'Mowing task started'\
+    \ 16:12:17, then 'Mowing task completed' 16:39:44, exactly as the mower turned\
+    \ for home.\n  Failed Full Yard run: the sensor never left 'none'.\nSo a finished\
+    \ job announces itself and an abandoned one does not. This works for zone jobs\
+    \ and whole-map jobs alike, because it is the mower's own verdict rather than\
+    \ anything inferred from area covered.\n\nWHY IT TRIGGERS ON RETURNING RATHER\
+    \ THAN ON DOCKED. The notice is set at the moment the mower turns for home, and\
+    \ a later session would overwrite it with 'Mowing task started'. Capturing it\
+    \ on the way home and carrying it through the wait means a self-resume cannot\
+    \ erase the evidence before it is read. Triggering on returning also guarantees\
+    \ a real session actually happened, so this cannot fire on an unrelated dock.\n\
+    \nWHAT IT DELIBERATELY DOES NOT DO. It stays silent when an error is present,\
+    \ because sensor.jason_momower_error already drives two alerts in automation.mower_garage_return\
+    \ and a third here would be noise. It does not restart or resume anything. It\
+    \ reports, and Scott decides.\n\nThe notification quotes the raw notice text so\
+    \ an unexpected value is diagnosable rather than mysterious."
   triggers:
   - entity_id: sensor.jason_momower_state_name
     id: heading_home
     to: returning
     trigger: state
   actions:
-  - alias: Let the reported progress settle before reading it
+  - alias: Let the status notice settle before reading it
+    note: On 2026-08-18 the notice flipped to 'Mowing task completed' at 16:39:44.358
+      and the returning transition landed at 16:39:44.804, so they are effectively
+      simultaneous. A short settle covers ordering jitter between the two.
     delay:
-      seconds: 8
-    note: sensor.jason_momower_mowing_progress reads unavailable while an error is
-      latched and only repopulates around the moment the mower gives up. On 2026-08-18
-      the returning transition landed at 11:59:17.5 while progress was still unavailable,
-      and the real value 64.5 did not arrive until 11:59:19.5. Reading immediately
-      would have captured unavailable and suppressed the alert.
-  - alias: Capture the progress figure before docking wipes it
-    note: Progress goes unavailable the instant the mower docks (12:01:01 on 2026-08-18),
-      so it cannot be read after the fact. It has to be captured here, on the way
-      home, and carried through.
+      seconds: 10
+  - alias: Capture the mower's own verdict before anything can overwrite it
+    note: Captured here rather than read after docking, because a self-resume would
+      reset this sensor to 'Mowing task started' and destroy the evidence. Scott's
+      mower is known to resume unfinished jobs on its own after charging.
     variables:
-      progress_at_return: '{{ states(''sensor.jason_momower_mowing_progress'') }}'
+      notice_at_return: '{{ states(''sensor.jason_momower_status_notice'') }}'
   - alias: Wait for the mower to actually reach the dock
-    continue_on_timeout: false
     note: The 60 second hold filters the known docked-flag flicker, where docked reads
-      on for under a second mid return. continue_on_timeout is false so a return that
+      on for under a second mid return. continue_on_timeout false means a return that
       never completes stays silent here and is left to the error automations.
     timeout:
       minutes: 20
+    continue_on_timeout: false
     wait_for_trigger:
-    - entity_id: binary_sensor.jason_momower_docked
+    - trigger: state
+      entity_id: binary_sensor.jason_momower_docked
+      to: 'on'
       for:
         seconds: 60
-      to: 'on'
-      trigger: state
-  - alias: Alert only if the job ended early and quietly
+  - alias: Alert only if the mower never declared the task complete
     if:
-    - alias: A real number was captured
+    - alias: The completion notice was absent
       condition: template
-      value_template: '{{ progress_at_return is not none and progress_at_return not
-        in [''unknown'', ''unavailable'', ''none'', ''''] and progress_at_return |
-        float(-1) >= 0 }}'
-    - alias: The job was not finished
-      condition: template
-      value_template: '{{ progress_at_return | float(-1) < 95 }}'
+      value_template: '{{ notice_at_return != ''Mowing task completed'' }}'
+      note: Compared against the sensor's display string, which is what this entity
+        reports as its state. The underlying attribute uses the snake_case form mowing_task_completed;
+        do not mix them up.
     - alias: No error was raised, so nothing else told Scott
       condition: state
       entity_id: sensor.jason_momower_error
       state: none
     then:
-    - action: notify.mobile_app_pixel_9
-      alias: Tell Scott the job ended early and by how much
+    - alias: Tell Scott the job ended early, and quote what the mower did say
+      action: notify.mobile_app_pixel_9
       data:
-        data:
-          channel: alarm_stream
-          importance: high
-          notification_icon: mdi:robot-mower-outline
-          priority: high
-          sticky: true
-          tag: mower_incomplete
-          ttl: 0
-        message: Jason MoMower docked at {{ progress_at_return }} percent complete
-          with {{ states('sensor.jason_momower_battery') }} percent battery and no
-          error reported. The job did not finish. Check which zone got shorted before
-          assuming the yard is done.
         title: Mowing Job Ended Early
+        message: Jason MoMower docked without reporting the task complete, on {{ states('sensor.jason_momower_battery')
+          }} percent battery and with no error. Status notice read "{{ notice_at_return
+          }}". Check which zone got shorted before assuming the yard is done.
+        data:
+          tag: mower_incomplete
+          sticky: true
+          importance: high
+          priority: high
+          channel: alarm_stream
+          ttl: 0
+          notification_icon: mdi:robot-mower-outline
   mode: single

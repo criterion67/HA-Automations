@@ -61,15 +61,20 @@ RESUME IS DELIBERATELY MANUAL. There is no resume service on this integration; t
 BRANCH 4, cycle_ended: clears the full yard marker whenever input_boolean.mower_cycle_active clears, so a normal finish, a cancel, or an early dock all clean up. |
 | Mower Incomplete Job Alert | Tells Scott when a mowing job ends early and SILENTLY, so a partially mowed yard is not mistaken for a finished one.
 
-WHY THIS EXISTS. Built 2026-08-18. That morning a Full Yard run mowed the rear yard, skipped the front yard entirely, mowed the side yard, then docked at 64.5 percent complete with 56 percent battery remaining and no error present. Nothing in Home Assistant said a word, because every existing alert keys off an error or off the normal return, and this return looked completely normal. Scott only found out by walking outside.
+WHY THIS EXISTS. On 2026-08-18 a Full Yard run mowed the rear yard, skipped the front yard entirely, mowed the side yard, then docked with battery to spare and no error present. Nothing in Home Assistant said a word, because every other alert keys off an error and that return looked completely normal. Scott only found out by walking outside.
 
-WHAT IT CATCHES. Any session, started any way, that comes home with the job unfinished and no error to explain it. Low battery returns are covered too: those come home early by definition, and knowing the job is unfinished is exactly the point.
+REBUILT 2026-08-19 on sensor.jason_momower_status_notice. The original version compared sensor.jason_momower_mowing_progress against 95 percent, which was WRONG and false-alarmed on the successful side yard run that same evening: progress is measured against the WHOLE MAP, so a single-zone job reads around 13 percent even when it finishes perfectly. Do not reintroduce a progress threshold here.
 
-WHAT IT DELIBERATELY DOES NOT DO. It does not fire when an error is present, because sensor.jason_momower_error already drives two separate alerts in automation.mower_garage_return and a third notification here would be noise. It does not restart or resume anything. It reports, and Scott decides.
+THE SIGNAL. sensor.jason_momower_status_notice is a clean discriminator, verified against both runs on 2026-08-18:
+  Successful side yard run: 'Mowing task started' 16:12:17, then 'Mowing task completed' 16:39:44, exactly as the mower turned for home.
+  Failed Full Yard run: the sensor never left 'none'.
+So a finished job announces itself and an abandoned one does not. This works for zone jobs and whole-map jobs alike, because it is the mower's own verdict rather than anything inferred from area covered.
 
-WHY IT TRIGGERS ON RETURNING RATHER THAN ON DOCKED. sensor.jason_momower_mowing_progress goes unavailable the moment the mower docks, so the figure has to be captured on the way home and carried through the wait. It also reads unavailable the whole time an error is latched, which is why there is a settling delay before the read.
+WHY IT TRIGGERS ON RETURNING RATHER THAN ON DOCKED. The notice is set at the moment the mower turns for home, and a later session would overwrite it with 'Mowing task started'. Capturing it on the way home and carrying it through the wait means a self-resume cannot erase the evidence before it is read. Triggering on returning also guarantees a real session actually happened, so this cannot fire on an unrelated dock.
 
-THE 95 PERCENT THRESHOLD is deliberately loose. The mower does not reliably report a clean 100, and a job that got to 96 or 97 is finished for practical purposes. |
+WHAT IT DELIBERATELY DOES NOT DO. It stays silent when an error is present, because sensor.jason_momower_error already drives two alerts in automation.mower_garage_return and a third here would be noise. It does not restart or resume anything. It reports, and Scott decides.
+
+The notification quotes the raw notice text so an unexpected value is diagnosable rather than mysterious. |
 | Mower Notification Actions | Handles the action buttons on the Jason MoMower error notification sent by automation.mower_garage_return.
 
 WHY THIS IS A SEPARATE AUTOMATION
