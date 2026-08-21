@@ -1,0 +1,231 @@
+- id: '1787268207663'
+  alias: NFC Tag Actions (Consolidated)
+  description: 'Single handler for 11 NFC tags, replacing 11 separate automations.
+    Each tag maps to its own trigger id and its own choose branch, so no two branches
+    can ever match the same run and the first match behavior of choose cannot silently
+    swallow a branch.
+
+
+    Mode is parallel with max 10 so scanning one tag never blocks another. The old
+    automations were each mode single but independent of one another, so a slow action
+    in one could not delay the rest; parallel preserves that independence. The tradeoff
+    is that a rapid double scan of the same tag now runs twice instead of dropping
+    the second. For the lock toggles this is harmless because both runs read the same
+    lock state and issue the same command.
+
+
+    Tags handled: Front Door Deadbolt (eff1012d), Laundry Room Door Deadbolt (two
+    separate physical tags in two different physical locations, 4b16c7c6 and 1c2ad52a,
+    both intentional, both mapped to trigger id laundry_room), Rear Door Deadbolt
+    (8018f3c2), Sunroom Door Deadbolt (6937711c), Bedroom Closet Deadbolt (b52cebc2),
+    Office Door (0b24eba4, unlock only plus notify), Garage keypad (b5c0f90b), Bedside
+    lamps (aa413690), Garbage can TTS (c5100db2).
+
+
+    Defect found and fixed during consolidation: tag eff1012d previously fired two
+    separate enabled automations that performed the identical front door toggle, so
+    every scan ran the toggle twice. It is now one branch.
+
+
+    The HVAC filter tag (823c6552) was REMOVED on 2026-08-20 at Scott''s instruction.
+    It had reset counter.hvac_filter_change_countdown and written a logbook entry
+    gated on input_datetime.filter_reminder_date equalling today. That counter was
+    orphaned, nothing decremented or displayed it, and the real filter reminder system
+    is automation.hvac_filter_reminder_daily_check plus script.hvac_filter_replaced,
+    which run on a 90 day cycle off input_datetime.filter_reminder_date. The counter
+    helper was deleted. input_datetime.filter_reminder_date was KEPT because the live
+    reminder system depends on it. The physical tag 823c6552 now does nothing.
+
+
+    The disabled second front door trigger (2b8bddee) is carried forward still disabled
+    so the original intent is not lost.
+
+
+    NOT merged here: NFC - Toggle Garage Door from Truck (b38fed34). It uses wait_for_trigger
+    with a 30 second timeout. Folding it in would either block every other tag for
+    up to 30 seconds under mode single, or change its own re-entrancy under mode parallel.
+    It stays standalone.'
+  triggers:
+  - id: front_door
+    tag_id: eff1012d-ee57-4eec-838c-9edcd248eb05
+    trigger: tag
+  - enabled: false
+    id: front_door
+    tag_id: 2b8bddee-c0a6-4841-87bf-7a4957daeda4
+    trigger: tag
+  - id: laundry_room
+    tag_id: 4b16c7c6-8c65-441a-bbbf-a9238674ee37
+    trigger: tag
+  - id: laundry_room
+    tag_id: 1c2ad52a-44d0-459a-afca-0792d14a2bff
+    trigger: tag
+  - id: rear_door
+    tag_id: 8018f3c2-a3be-4347-ab37-7e384719b753
+    trigger: tag
+  - id: sunroom
+    tag_id: 6937711c-28d9-44e2-8ce0-f8e5df120d78
+    trigger: tag
+  - id: closet
+    tag_id: b52cebc2-7126-4b57-ae72-183c5fda497a
+    trigger: tag
+  - id: office
+    tag_id: 0b24eba4-5a73-4827-a108-1e00e06b197f
+    trigger: tag
+  - id: garage_keypad
+    tag_id: b5c0f90b-f58e-4952-95bb-9a3a281fb70e
+    trigger: tag
+  - id: bedside_lamps
+    tag_id: aa413690-d152-42ca-b663-8776638160c7
+    trigger: tag
+  - id: garbage_can
+    tag_id: c5100db2-1d33-4338-8c3a-7d0ce419f7c2
+    trigger: tag
+  actions:
+  - choose:
+    - alias: Front Door Deadbolt toggle
+      conditions:
+      - condition: trigger
+        id: front_door
+      sequence:
+      - else:
+        - action: lock.lock
+          target:
+            entity_id: lock.front_door_deadbolt
+        if:
+        - condition: state
+          entity_id: lock.front_door_deadbolt
+          state: locked
+        then:
+        - action: lock.unlock
+          target:
+            entity_id: lock.front_door_deadbolt
+    - alias: Laundry Room Door Deadbolt toggle (two physical tags)
+      conditions:
+      - condition: trigger
+        id: laundry_room
+      sequence:
+      - else:
+        - action: lock.lock
+          target:
+            entity_id: lock.laundry_room_door_deadbolt
+        if:
+        - condition: state
+          entity_id: lock.laundry_room_door_deadbolt
+          state: locked
+        then:
+        - action: lock.unlock
+          target:
+            entity_id: lock.laundry_room_door_deadbolt
+    - alias: Rear Door Deadbolt toggle
+      conditions:
+      - condition: trigger
+        id: rear_door
+      sequence:
+      - else:
+        - action: lock.lock
+          target:
+            entity_id: lock.rear_door_deadbolt
+        if:
+        - condition: state
+          entity_id: lock.rear_door_deadbolt
+          state: locked
+        then:
+        - action: lock.unlock
+          target:
+            entity_id: lock.rear_door_deadbolt
+    - alias: Sunroom Door Deadbolt toggle
+      conditions:
+      - condition: trigger
+        id: sunroom
+      sequence:
+      - else:
+        - action: lock.lock
+          target:
+            entity_id: lock.sunroom_door_deadbolt
+        if:
+        - condition: state
+          entity_id: lock.sunroom_door_deadbolt
+          state: locked
+        then:
+        - action: lock.unlock
+          target:
+            entity_id: lock.sunroom_door_deadbolt
+    - alias: Bedroom Closet Deadbolt toggle
+      conditions:
+      - condition: trigger
+        id: closet
+      sequence:
+      - else:
+        - action: lock.lock
+          target:
+            entity_id: lock.bedroom_closet_door_deadbolt
+        if:
+        - condition: state
+          entity_id: lock.bedroom_closet_door_deadbolt
+          state: locked
+        then:
+        - action: lock.unlock
+          target:
+            entity_id: lock.bedroom_closet_door_deadbolt
+    - alias: Office Door unlock only, then notify
+      conditions:
+      - condition: trigger
+        id: office
+      sequence:
+      - action: lock.unlock
+        target:
+          entity_id: lock.office_door_lock
+      - action: notify.send_message
+        data:
+          message: Office door lock unlocked
+          title: Office Door
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: Garage keypad tag opens garage and unlocks laundry room
+      conditions:
+      - condition: trigger
+        id: garage_keypad
+      sequence:
+      - action: cover.open_cover
+        target:
+          entity_id: cover.garage_door
+      - action: lock.unlock
+        target:
+          entity_id: lock.laundry_room_door_deadbolt
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: Garage notification
+          title: Garage door open/Laundry room door unlocked
+    - alias: Bedside lamps toggle
+      conditions:
+      - condition: trigger
+        id: bedside_lamps
+      sequence:
+      - action: light.toggle
+        target:
+          entity_id: light.bedroom_bedside_lamps_group
+    - alias: Garbage can set out TTS announcement
+      conditions:
+      - condition: trigger
+        id: garbage_can
+      sequence:
+      - action: media_player.play_media
+        data:
+          media:
+            media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+garbage+can+has+been+set+on+the+street+for+pickup&language=en-US&voice=JennyNeural
+            media_content_type: provider
+            metadata:
+              children_media_class: null
+              media_class: app
+              navigateIds:
+              - {}
+              - media_content_id: media-source://tts
+                media_content_type: app
+              - media_content_id: media-source://tts/tts.home_assistant_cloud?message=The+garbage+can+has+been+set+on+the+street+for+pickup&language=en-US&voice=JennyNeural
+                media_content_type: provider
+              thumbnail: https://brands.home-assistant.io/_/tts/logo.png
+              title: The garbage can has been set on the street for pickup
+        target:
+          entity_id: media_player.bedroom_speaker
+  max: 10
+  mode: parallel

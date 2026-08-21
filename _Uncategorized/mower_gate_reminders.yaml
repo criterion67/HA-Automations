@@ -43,31 +43,74 @@
 
 
     BRANCH 4, cycle_ended: clears the full yard marker whenever input_boolean.mower_cycle_active
-    clears, so a normal finish, a cancel, or an early dock all clean up.'
+    clears, so a normal finish, a cancel, or an early dock all clean up.
+
+
+    LABEL FORM HANDLING, added 2026-08-20. All three current_zone triggers match both
+    the friendly form and the raw form, because an integration reload or HA restart
+    makes the sensor drop friendly names. Each also carries not_from with the same
+    pair, so a label flip mid-run is not read as a fresh zone entry. If a fourth zone
+    is ever added, both forms must be listed here or the branch silently never fires.'
   triggers:
   - entity_id: sensor.jason_momower_current_zone
     id: reached_front
-    to: Front Yard (#1)
+    to:
+    - Front Yard (#1)
+    - Zone 1
     trigger: state
+    not_from:
+    - Front Yard (#1)
+    - Zone 1
+    note: 'Matches BOTH label forms. After an integration reload or HA restart, sensor.jason_momower_current_zone
+      stops resolving friendly zone names and reports the raw form instead. Verified
+      in the recorder on 2026-08-19: it read "Rear Yard (#3)" at 11:32:14, then "Zone
+      3" at 12:31:58 after a reload, then "Zone 1" at 12:48:08. Because the trigger
+      matched only the labelled string, the close-the-gate prompt never fired that
+      day. not_from carries the SAME pair so a mid-run label flip on the zone the
+      mower is already in (labelled to raw, or raw to labelled) does not re-fire this
+      branch; only a genuine entry from another zone or from unavailable does.'
   - entity_id: binary_sensor.rear_yard_gate
     id: gate_closed
     to: 'off'
     trigger: state
   - entity_id: sensor.jason_momower_current_zone
     id: reached_side
-    to: Side Yard (#2)
+    to:
+    - Side Yard (#2)
+    - Zone 2
     trigger: state
+    not_from:
+    - Side Yard (#2)
+    - Zone 2
+    note: 'Matches BOTH label forms. After an integration reload or HA restart, sensor.jason_momower_current_zone
+      stops resolving friendly zone names and reports the raw form instead. Verified
+      in the recorder on 2026-08-19: it read "Rear Yard (#3)" at 11:32:14, then "Zone
+      3" at 12:31:58 after a reload, then "Zone 1" at 12:48:08. Because the trigger
+      matched only the labelled string, the close-the-gate prompt never fired that
+      day. not_from carries the SAME pair so a mid-run label flip on the zone the
+      mower is already in (labelled to raw, or raw to labelled) does not re-fire this
+      branch; only a genuine entry from another zone or from unavailable does.'
   - entity_id: input_boolean.mower_cycle_active
     id: cycle_ended
     to: 'off'
     trigger: state
   - trigger: state
     entity_id: sensor.jason_momower_current_zone
-    to: Rear Yard (#3)
+    to:
+    - Rear Yard (#3)
+    - Zone 3
     id: reached_rear
-    note: Added 2026-08-17. Catches a mower entering the rear yard when the gate is
-      not open, which the pre-flight checks cannot cover because the gate can be shut
-      AFTER a job has already started.
+    note: 'Matches BOTH label forms. After an integration reload or HA restart, sensor.jason_momower_current_zone
+      stops resolving friendly zone names and reports the raw form instead. Verified
+      in the recorder on 2026-08-19: it read "Rear Yard (#3)" at 11:32:14, then "Zone
+      3" at 12:31:58 after a reload, then "Zone 1" at 12:48:08. Because the trigger
+      matched only the labelled string, the close-the-gate prompt never fired that
+      day. not_from carries the SAME pair so a mid-run label flip on the zone the
+      mower is already in (labelled to raw, or raw to labelled) does not re-fire this
+      branch; only a genuine entry from another zone or from unavailable does.'
+    not_from:
+    - Rear Yard (#3)
+    - Zone 3
   conditions: []
   actions:
   - choose:

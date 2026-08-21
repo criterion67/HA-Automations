@@ -1,0 +1,122 @@
+- id: '1787271796385'
+  alias: Dashboard - Reset Dismissed Flags (Consolidated)
+  description: 'Clears the manual dismiss flags behind the conditional dashboard cards,
+    so each alert card can appear again the next time its condition returns. Replaces
+    six separate automations, one per flag.
+
+
+    Each trigger has a unique id and its own choose branch, so no branch can be shadowed
+    by the first-match behavior of choose.
+
+
+    Mode is parallel with max 10. All six originals were mode single, but they were
+    independent automations, so one firing never blocked another. Parallel preserves
+    that independence. Every branch is a single instant input_boolean.turn_off with
+    no delay or wait, so concurrent runs cannot race.
+
+
+    Mappings, all carried over unchanged:
+
+    - lawn_mower.david_mowie leaving state error clears input_boolean.mower_stuck_dismissed
+
+    - binary_sensor.rear_yard_gate to off clears input_boolean.gate_open_dismissed
+
+    - cover.garage_door to closed clears input_boolean.garage_door_open_dismissed
+
+    - sensor.dog_bowl_water_level to Full clears input_boolean.dog_bowl_empty_dismissed
+
+    - binary_sensor.dog_door to on clears input_boolean.dog_door_closed_dismissed
+
+    - sensor.nws_alerts_alerts any state change, gated on the count not being 0, clears
+    input_boolean.nws_alert_dismissed
+
+
+    The NWS branch keeps its extra condition because unlike the other five it triggers
+    on any state change of the sensor rather than on one specific target state, so
+    it needs the not-zero guard to avoid clearing the flag when alerts drop to none.
+
+
+    Note on the mower trigger: it fires on leaving error with no to state specified,
+    which is how the original behaved, so it also fires on a transition from error
+    to unavailable.'
+  triggers:
+  - entity_id: lawn_mower.david_mowie
+    from: error
+    id: mower
+    trigger: state
+  - entity_id: binary_sensor.rear_yard_gate
+    id: gate
+    to: 'off'
+    trigger: state
+  - entity_id: cover.garage_door
+    id: garage
+    to: closed
+    trigger: state
+  - entity_id: sensor.dog_bowl_water_level
+    id: dog_bowl
+    to: Full
+    trigger: state
+  - entity_id: binary_sensor.dog_door
+    id: dog_door
+    to: 'on'
+    trigger: state
+  - entity_id: sensor.nws_alerts_alerts
+    id: nws
+    trigger: state
+  actions:
+  - choose:
+    - alias: Mower left error state
+      conditions:
+      - condition: trigger
+        id: mower
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.mower_stuck_dismissed
+    - alias: Rear yard gate closed
+      conditions:
+      - condition: trigger
+        id: gate
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.gate_open_dismissed
+    - alias: Garage door closed
+      conditions:
+      - condition: trigger
+        id: garage
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.garage_door_open_dismissed
+    - alias: Dog bowl refilled to Full
+      conditions:
+      - condition: trigger
+        id: dog_bowl
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.dog_bowl_empty_dismissed
+    - alias: Dog door opened
+      conditions:
+      - condition: trigger
+        id: dog_door
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.dog_door_closed_dismissed
+    - alias: NWS alert count is non-zero
+      conditions:
+      - condition: trigger
+        id: nws
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: sensor.nws_alerts_alerts
+          state: '0'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.nws_alert_dismissed
+  max: 10
+  mode: parallel

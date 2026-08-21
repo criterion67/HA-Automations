@@ -1,0 +1,181 @@
+- id: '1787272767509'
+  alias: Petkit - Feeder Notifications (Consolidated)
+  description: 'All notification and monitoring for Gracie''s Fresh Element Solo feeder,
+    replacing three automations: Feeder Notifications, Notify if Feed Not Dispensed,
+    and Notify on Battery Issue. Every trigger has a unique id and its own choose
+    branch, so no branch can be shadowed by the first-match behavior of choose.
+
+
+    DELIBERATELY NOT MERGED: automation.petkit_feeding_schedule, which is the automation
+    that ACTUALLY DISPENSES FOOD (text.set_value on text.fresh_element_solo_manual_feed
+    at 07:00, 12:00 and 18:00, 30g / 20g / 30g, plus the 9000 Hz call tone). It stays
+    separate on purpose. Folding the feeder''s own watchdog into the same automation
+    as the actuator it watches would mean a fault in the notification path could take
+    out feeding, and the two sets of time triggers sit only 5 minutes apart, which
+    is harder to reason about when debugging a missed meal.
+
+
+    Mode is parallel with max 10. The originals were parallel max 3, parallel max
+    2 and single respectively, but they were independent automations so none could
+    block another; parallel preserves that. Every branch is a single notification
+    with no delay or wait, so concurrent runs cannot race.
+
+
+    The three feed watchdogs keep their original condition, that binary_sensor.fresh_element_solo_feeding
+    has stayed off for 5 minutes. In the original that was one shared top-level condition;
+    here it is repeated per branch so that the battery and feeder-event branches are
+    not gated by it, which matches how the three separate automations actually behaved.
+
+
+    Battery semantics carried over unchanged: sensor.fresh_element_solo_battery_level
+    reading ''Not in use'' means the feeder is on USB power, and any other value means
+    it is running on batteries.'
+  triggers:
+  - entity_id: binary_sensor.fresh_element_solo_feeding
+    from: 'on'
+    id: feeding_complete
+    to: 'off'
+    trigger: state
+  - entity_id: binary_sensor.fresh_element_solo_food_level
+    from: 'off'
+    id: food_low
+    to: 'on'
+    trigger: state
+  - at: 07:05:00
+    id: morning_check
+    trigger: time
+  - at: '12:05:00'
+    id: midday_check
+    trigger: time
+  - at: '18:05:00'
+    id: evening_check
+    trigger: time
+  - entity_id: sensor.fresh_element_solo_battery_level
+    from: Not in use
+    id: running_on_battery
+    trigger: state
+  - entity_id: binary_sensor.fresh_element_solo_battery_installed
+    id: battery_removed
+    to: 'off'
+    trigger: state
+  - entity_id: sensor.fresh_element_solo_battery_level
+    id: usb_restored
+    to: Not in use
+    trigger: state
+  actions:
+  - choose:
+    - alias: Feeding completed
+      conditions:
+      - condition: trigger
+        id: feeding_complete
+      sequence:
+      - action: notify.send_message
+        data:
+          message: 'Fresh Element Solo just dispensed food. Today: {{ states(''sensor.fresh_element_solo_total_dispensed'')
+            }}g total, {{ states(''sensor.fresh_element_solo_times_dispensed'') }}
+            feeding(s).'
+          title: 🐾 Gracie's Feeder Dispensed
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: Food bin running low
+      conditions:
+      - condition: trigger
+        id: food_low
+      sequence:
+      - action: notify.send_message
+        data:
+          message: The food bin on the Fresh Element Solo is running low. Time to
+            refill!
+          title: 🐾 Gracie's Feeder — Low Food
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: Morning feed watchdog at 07:05
+      conditions:
+      - condition: trigger
+        id: morning_check
+      - condition: state
+        entity_id: binary_sensor.fresh_element_solo_feeding
+        for:
+          minutes: 5
+        state: 'off'
+      sequence:
+      - action: notify.send_message
+        data:
+          message: The 7:00 AM feeding does not appear to have dispensed. Check the
+            feeder.
+          title: ⚠️ Gracie's Feeder — Morning Feed Missed
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: Midday feed watchdog at 12:05
+      conditions:
+      - condition: trigger
+        id: midday_check
+      - condition: state
+        entity_id: binary_sensor.fresh_element_solo_feeding
+        for:
+          minutes: 5
+        state: 'off'
+      sequence:
+      - action: notify.send_message
+        data:
+          message: The 12:00 PM feeding does not appear to have dispensed. Check the
+            feeder.
+          title: ⚠️ Gracie's Feeder — Midday Feed Missed
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: Evening feed watchdog at 18:05
+      conditions:
+      - condition: trigger
+        id: evening_check
+      - condition: state
+        entity_id: binary_sensor.fresh_element_solo_feeding
+        for:
+          minutes: 5
+        state: 'off'
+      sequence:
+      - action: notify.send_message
+        data:
+          message: The 6:00 PM feeding does not appear to have dispensed. Check the
+            feeder.
+          title: ⚠️ Gracie's Feeder — Evening Feed Missed
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: USB power lost, now on battery backup
+      conditions:
+      - condition: trigger
+        id: running_on_battery
+      sequence:
+      - action: notify.send_message
+        data:
+          message: 'The Fresh Element Solo has lost USB power and is now running on
+            battery backup. Current battery level: {{ states(''sensor.fresh_element_solo_battery_level'')
+            }}'
+          title: ⚠️ Gracie's Feeder — USB Power Lost
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: Backup batteries removed
+      conditions:
+      - condition: trigger
+        id: battery_removed
+      sequence:
+      - action: notify.send_message
+        data:
+          message: The backup batteries have been removed from the Fresh Element Solo.
+            The feeder has no backup power if USB is disconnected.
+          title: ⚠️ Gracie's Feeder — Battery Removed
+        target:
+          entity_id: notify.scott_s_phone
+    - alias: USB power restored
+      conditions:
+      - condition: trigger
+        id: usb_restored
+      sequence:
+      - action: notify.send_message
+        data:
+          message: The Fresh Element Solo is back on USB power. Battery backup is
+            standby.
+          title: ✅ Gracie's Feeder — USB Power Restored
+        target:
+          entity_id: notify.scott_s_phone
+  max: 10
+  mode: parallel

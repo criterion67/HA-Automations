@@ -5,17 +5,17 @@
   - entity_id:
     - lock.front_door_deadbolt
     - alarm_control_panel.ring_alarm_base_station
-    platform: state
+    trigger: state
   - entity_id:
     - input_boolean.vacation
     - input_boolean.vacation_alarm_disable
-    platform: state
+    trigger: state
   - minutes: /10
     id: heartbeat
-    platform: time_pattern
+    trigger: time_pattern
   - at: 02:00:00
     id: nightly_reset
-    platform: time
+    trigger: time
   conditions:
   - condition: state
     entity_id: input_boolean.vacation
@@ -28,6 +28,7 @@
           \ %}\n  {{ is_state('lock.front_door_deadbolt', 'unlocked') }}\n{% else\
           \ %}\n  {{ is_state('alarm_control_panel.ring_alarm_base_station','disarmed')\n\
           \     and is_state('lock.front_door_deadbolt','unlocked') }}\n{% endif %}\n"
+        enabled: false
       sequence:
       - action: valve.open_valve
         target:
@@ -60,6 +61,7 @@
           \ %}\n  {{ is_state('lock.front_door_deadbolt', 'locked') }}\n{% else %}\n\
           \  (\n    is_state('lock.front_door_deadbolt','locked')\n    and is_state('alarm_control_panel.ring_alarm_base_station','armed_away')\n\
           \  )\n  or\n  (trigger.id == 'nightly_reset')\n{% endif %}\n"
+        enabled: false
       sequence:
       - action: valve.close_valve
         target:

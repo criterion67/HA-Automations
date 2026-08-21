@@ -1,74 +1,83 @@
 - id: '1772667751581'
   alias: Levoit Air Purifier Filter Below 10% Notification
-  description: Sends a daily notification when the Levoit filter life drops below
-    10%, with snooze and dismiss actions.
+  description: Notifies when the bedroom Levoit air purifier filter life drops below
+    10 percent. Fires on the threshold crossing and again daily at 09:00 while still
+    low. Snooze pushes the next reminder to 08:00 tomorrow, Dismiss suppresses reminders
+    until midnight tomorrow. Notification action names are namespaced (LEVOIT_FILTER_SNOOZE
+    and LEVOIT_FILTER_DISMISS) so they cannot collide with other automations handling
+    mobile notification actions. Suppression windows are compared using each input_datetime
+    timestamp attribute rather than strptime, which previously raised a naive versus
+    aware datetime error on every evaluation. Trigger threshold was 20 while the condition
+    required below 10, so the threshold crossing never produced a notification; both
+    are now 10.
   triggers:
-  - entity_id:
-    - sensor.bedroom_air_purifier_filter_life
-    below: 20
+  - below: 10
+    entity_id: sensor.bedroom_air_purifier_filter_life
+    id: filter_low
     trigger: numeric_state
   - at: 09:00:00
+    id: daily_check
     trigger: time
-  - event_type: mobile_app_notification_action
-    event_data:
-      action: SNOOZE
+  - event_data:
+      action: LEVOIT_FILTER_SNOOZE
+    event_type: mobile_app_notification_action
+    id: snooze
     trigger: event
-  - event_type: mobile_app_notification_action
-    event_data:
-      action: DISMISS
+  - event_data:
+      action: LEVOIT_FILTER_DISMISS
+    event_type: mobile_app_notification_action
+    id: dismiss
     trigger: event
-  conditions:
-  - condition: numeric_state
-    entity_id: sensor.bedroom_air_purifier_filter_life
-    below: 10
-  - condition: or
-    conditions:
-    - condition: template
-      value_template: '{{ trigger.platform == ''numeric_state'' }}'
-    - condition: template
-      value_template: "{{ trigger.platform == 'time' and \n   now().strftime('%Y-%m-%dT%H:%M:%S')\
-        \ >= \n   states('input_datetime.air_purifier_filter_reminder_snooze_time')\
-        \ }}"
-  - condition: template
-    value_template: '{{ now() >= strptime(states(''input_datetime.air_purifier_filter_dismiss_until''),
-      ''%Y-%m-%d %H:%M:%S'') }}'
+  conditions: []
   actions:
   - choose:
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.platform == ''event'' and trigger.event.data.action
-          == ''SNOOZE'' }}'
+    - alias: Snooze until 08:00 tomorrow
+      conditions:
+      - condition: trigger
+        id: snooze
       sequence:
-      - target:
-          entity_id: input_datetime.air_purifier_filter_reminder_snooze_time
+      - action: input_datetime.set_datetime
         data:
           date: '{{ (now() + timedelta(days=1)).date() }}'
           time: 08:00:00
-        action: input_datetime.set_datetime
-    - conditions:
-      - condition: template
-        value_template: '{{ trigger.platform == ''event'' and trigger.event.data.action
-          == ''DISMISS'' }}'
+        target:
+          entity_id: input_datetime.air_purifier_filter_reminder_snooze_time
+    - alias: Dismiss until midnight tomorrow
+      conditions:
+      - condition: trigger
+        id: dismiss
       sequence:
-      - target:
-          entity_id: input_datetime.air_purifier_filter_dismiss_until
+      - action: input_datetime.set_datetime
         data:
           date: '{{ (now() + timedelta(days=1)).date() }}'
           time: 00:00:00
-        action: input_datetime.set_datetime
-  - choose:
-    - conditions:
+        target:
+          entity_id: input_datetime.air_purifier_filter_dismiss_until
+    - alias: Send filter change notification
+      conditions:
+      - condition: trigger
+        id:
+        - filter_low
+        - daily_check
+      - below: 10
+        condition: numeric_state
+        entity_id: sensor.bedroom_air_purifier_filter_life
       - condition: template
-        value_template: '{{ trigger.platform in [''numeric_state'', ''time''] }}'
+        value_template: '{{ as_timestamp(now()) >= (state_attr(''input_datetime.air_purifier_filter_reminder_snooze_time'',''timestamp'')
+          | float(0)) }}'
+      - condition: template
+        value_template: '{{ as_timestamp(now()) >= (state_attr(''input_datetime.air_purifier_filter_dismiss_until'',''timestamp'')
+          | float(0)) }}'
       sequence:
-      - data:
-          title: Filter Change Needed
-          message: Time to clean or replace the Levoit air purifier filter.
+      - action: notify.mobile_app_pixel_9
+        data:
           data:
             actions:
-            - action: SNOOZE
+            - action: LEVOIT_FILTER_SNOOZE
               title: Snooze
-            - action: DISMISS
+            - action: LEVOIT_FILTER_DISMISS
               title: Dismiss
-        action: notify.mobile_app_pixel_9
+          message: Bedroom Levoit air purifier filter is at {{ states('sensor.bedroom_air_purifier_filter_life')
+            }} percent. Time to clean or replace it.
+          title: Filter Change Needed
   mode: single

@@ -1,0 +1,273 @@
+- id: '1787269725649'
+  alias: Kitchen Fridge Alerts (Consolidated)
+  description: 'Single handler for all kitchen refrigerator and freezer alerting,
+    replacing three automations: Temperature and Sensor, Low Battery, and No Power
+    Draw. Every trigger has a unique id and its own choose branch, so no branch can
+    be shadowed by the first-match behavior of choose.
+
+
+    Mode is parallel with max 10, inherited from the Temperature and Sensor automation,
+    which was already parallel. The Low Battery and No Power Draw automations were
+    mode single. Parallel is the correct choice for the merged version because these
+    are independent notification paths that must not block one another: a battery
+    alert should never be dropped because a temperature alert is mid-flight. Since
+    every branch only sends a push notification and holds no state, there is no re-entrancy
+    risk in running several at once.
+
+
+    Thresholds are carried over unchanged and are based on 7 day historical data plus
+    FDA food safety guidance.
+
+    Fridge (sensor.temp_sensor_main_fridge): normal 35 to 39F. Early warning above
+    43F for 10 min. Ceiling alert above 45F for 20 min. Runaway cold below 33F for
+    20 min.
+
+    Freezer (sensor.inkbird_kitchen_freezer_temperature): 0F target. Early warning
+    above 10F for 10 min. Ceiling alert above 15F for 20 min. Runaway cold below -10F
+    for 20 min.
+
+    Sensor offline: unavailable or unknown for 30 min on either sensor indicates battery
+    failure or a Zigbee drop, which leaves temperature monitoring blind.
+
+    Batteries (sensor.battery_sensor_main_fridge, sensor.inkbird_temperature_sensor_battery):
+    below 10 percent. The low threshold is intentional because these small batteries
+    fall off quickly once past 20 percent.
+
+    Power (sensor.kitchen_fridge): below 1W for 10 min. A fridge idles at 2.5 to 8W
+    between compressor cycles and spikes to 75 to 330W during a run, so it never reads
+    0W in normal operation. Sustained zero means an unplugged cord, a tripped GFCI
+    or breaker, a failed smart plug, or a fridge power fault. This stays a distinct
+    branch because a power loss may not trigger a temperature alert for some time
+    if the box was recently cooled.
+
+
+    All branches send a high priority push to notify.mobile_app_pixel_9 with the current
+    reading included.'
+  triggers:
+  - above: 45
+    entity_id: sensor.temp_sensor_main_fridge
+    for:
+      minutes: 20
+    id: fridge_high
+    trigger: numeric_state
+  - above: 15
+    entity_id: sensor.inkbird_kitchen_freezer_temperature
+    for:
+      minutes: 20
+    id: freezer_high
+    trigger: numeric_state
+  - above: 43
+    entity_id: sensor.temp_sensor_main_fridge
+    for:
+      minutes: 10
+    id: fridge_rising
+    trigger: numeric_state
+  - above: 10
+    entity_id: sensor.inkbird_kitchen_freezer_temperature
+    for:
+      minutes: 10
+    id: freezer_rising
+    trigger: numeric_state
+  - below: 33
+    entity_id: sensor.temp_sensor_main_fridge
+    for:
+      minutes: 20
+    id: fridge_low
+    trigger: numeric_state
+  - below: -10
+    entity_id: sensor.inkbird_kitchen_freezer_temperature
+    for:
+      minutes: 20
+    id: freezer_low
+    trigger: numeric_state
+  - entity_id: sensor.temp_sensor_main_fridge
+    for:
+      minutes: 30
+    id: fridge_unavail
+    to: unavailable
+    trigger: state
+  - entity_id: sensor.temp_sensor_main_fridge
+    for:
+      minutes: 30
+    id: fridge_unknown
+    to: unknown
+    trigger: state
+  - entity_id: sensor.inkbird_kitchen_freezer_temperature
+    for:
+      minutes: 30
+    id: freezer_unavail
+    to: unavailable
+    trigger: state
+  - entity_id: sensor.inkbird_kitchen_freezer_temperature
+    for:
+      minutes: 30
+    id: freezer_unknown
+    to: unknown
+    trigger: state
+  - below: 10
+    entity_id: sensor.battery_sensor_main_fridge
+    id: fridge_batt
+    trigger: numeric_state
+  - below: 10
+    entity_id: sensor.inkbird_temperature_sensor_battery
+    id: freezer_batt
+    trigger: numeric_state
+  - below: 1
+    entity_id: sensor.kitchen_fridge
+    for:
+      minutes: 10
+    id: no_power
+    trigger: numeric_state
+  actions:
+  - choose:
+    - alias: Fridge above 45F for 20 min
+      conditions:
+      - condition: trigger
+        id: fridge_high
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Refrigerator has been above 45°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_main_fridge'')
+            | round(1) }}°F. Check the door or compressor.'
+          title: 🌡️ Fridge Too Warm
+    - alias: Freezer above 15F for 20 min
+      conditions:
+      - condition: trigger
+        id: freezer_high
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Freezer has been above 15°F for 20 minutes. Current: {{ states(''sensor.inkbird_kitchen_freezer_temperature'')
+            | round(1) }}°F. Check the door or compressor.'
+          title: 🌡️ Freezer Too Warm
+    - alias: Fridge above 43F for 10 min
+      conditions:
+      - condition: trigger
+        id: fridge_rising
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Refrigerator has been above 43°F for 10 minutes and still rising.
+            Current: {{ states(''sensor.temp_sensor_main_fridge'') | round(1) }}°F.'
+          title: ⚠️ Fridge Temp Climbing
+    - alias: Freezer above 10F for 10 min
+      conditions:
+      - condition: trigger
+        id: freezer_rising
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Freezer has been above 10°F for 10 minutes and still rising. Current:
+            {{ states(''sensor.inkbird_kitchen_freezer_temperature'') | round(1) }}°F.'
+          title: ⚠️ Freezer Temp Climbing
+    - alias: Fridge below 33F for 20 min
+      conditions:
+      - condition: trigger
+        id: fridge_low
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Refrigerator has been below 33°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_main_fridge'')
+            | round(1) }}°F. Risk of food freezing.'
+          title: 🧊 Fridge Too Cold
+    - alias: Freezer below -10F for 20 min
+      conditions:
+      - condition: trigger
+        id: freezer_low
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Freezer has been below -10°F for 20 minutes. Current: {{ states(''sensor.inkbird_kitchen_freezer_temperature'')
+            | round(1) }}°F. Check thermostat.'
+          title: 🧊 Freezer Runaway Cold
+    - alias: Fridge temp sensor offline 30 min
+      conditions:
+      - condition: trigger
+        id:
+        - fridge_unavail
+        - fridge_unknown
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: Fridge temperature sensor has been unavailable for 30 minutes.
+            Check battery or Zigbee connection.
+          title: 📵 Fridge Sensor Offline
+    - alias: Freezer temp sensor offline 30 min
+      conditions:
+      - condition: trigger
+        id:
+        - freezer_unavail
+        - freezer_unknown
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: Freezer temperature sensor has been unavailable for 30 minutes.
+            Check battery or Zigbee connection.
+          title: 📵 Freezer Sensor Offline
+    - alias: Fridge sensor battery below 10 percent
+      conditions:
+      - condition: trigger
+        id: fridge_batt
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: Main fridge temperature sensor battery is at {{ states('sensor.battery_sensor_main_fridge')
+            }}%. Replace soon to avoid sensor loss.
+          title: 🔋 Fridge Sensor Battery Low
+    - alias: Freezer sensor battery below 10 percent
+      conditions:
+      - condition: trigger
+        id: freezer_batt
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: Freezer temperature sensor battery is at {{ states('sensor.inkbird_temperature_sensor_battery')
+            }}%. Replace soon to avoid sensor loss.
+          title: 🔋 Freezer Sensor Battery Low
+    - alias: Fridge drawing no power for 10 min
+      conditions:
+      - condition: trigger
+        id: no_power
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            priority: high
+            ttl: 0
+          message: 'Kitchen fridge energy monitor has shown 0W for over 10 minutes.
+            The fridge may be unplugged, a GFCI or breaker may have tripped, or the
+            smart plug may have failed. Current: {{ states(''sensor.kitchen_fridge'')
+            }}W'
+          title: ⚡ Fridge No Power Detected
+  max: 10
+  mode: parallel

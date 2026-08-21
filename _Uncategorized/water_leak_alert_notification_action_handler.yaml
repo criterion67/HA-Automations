@@ -1,0 +1,65 @@
+- id: '1787269760086'
+  alias: Water Leak Alert - Notification Action Handler
+  description: 'Handles the Snooze and Dismiss buttons on the water leak notification
+    sent by automation.water_leak_alert_1_triggered_response. Replaces the two separate
+    handler automations, Water Leak Alert 2 - Snooze Handler and Water Leak Alert
+    3 - Dismiss Handler.
+
+
+    SNOOZE_LEAK turns input_boolean.leak_alert_snoozed on. DISMISS_LEAK turns it off.
+    Behavior is carried over exactly unchanged from the two originals.
+
+
+    Mode is parallel with max 10 so a button press is always handled immediately even
+    while another press is in flight. Both originals were mode single; since each
+    branch is a single instant boolean write with no waiting, parallel cannot cause
+    a race.
+
+
+    WHY THE ALERTING AUTOMATION IS NOT MERGED IN HERE: automation.water_leak_alert_1_triggered_response
+    is mode restart and runs a long repeat loop that sounds the siren and re-notifies
+    every 5 minutes. Merging these event triggers into it would mean that pressing
+    Snooze or Dismiss restarts the automation and kills the running alert loop outright,
+    silently changing what those buttons do. Merging the other direction, under mode
+    parallel, would let a second leak sensor start a second concurrent siren loop
+    instead of restarting the first. Neither is acceptable for a leak alarm, so the
+    alerting automation stays standalone with its own mode restart.
+
+
+    KNOWN DEFECT IN THE ALERTING AUTOMATION, NOT CHANGED HERE: its repeat while condition
+    is or(any sensor on, leak_alert_snoozed on). Because leak_alert_snoozed is ORed
+    in rather than negated and ANDed, pressing Snooze does not suppress anything;
+    it makes the loop continue even after every leak sensor has cleared, until Dismiss
+    is pressed. The intended logic is almost certainly and(any sensor on, not snoozed).
+    Flagged to Scott 2026-08-20, left untouched pending his decision.'
+  triggers:
+  - event_data:
+      action: SNOOZE_LEAK
+    event_type: mobile_app_notification_action
+    id: snooze
+    trigger: event
+  - event_data:
+      action: DISMISS_LEAK
+    event_type: mobile_app_notification_action
+    id: dismiss
+    trigger: event
+  actions:
+  - choose:
+    - alias: Snooze pressed sets the snooze flag on
+      conditions:
+      - condition: trigger
+        id: snooze
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.leak_alert_snoozed
+    - alias: Dismiss pressed clears the snooze flag
+      conditions:
+      - condition: trigger
+        id: dismiss
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.leak_alert_snoozed
+  max: 10
+  mode: parallel

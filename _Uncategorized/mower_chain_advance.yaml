@@ -1,0 +1,366 @@
+- id: mower_chain_advance
+  alias: Mower Chain Advance
+  description: 'Drives the chained whole-yard run. script.mower_full_yard_chain starts
+    leg one, the rear yard; this automation owns everything after that. It reads input_select.mower_chain_leg
+    to know where the chain is and advances rear to front to side, each leg being
+    its own single-zone session ending in a normal return and dock.
+
+
+    WHY THIS EXISTS: a single multi-zone job with zone_ids [3, 1, 2] failed on 2026-08-18,
+    2026-08-19 and 2026-08-20. The 2026-08-20 run was fully clean, with Zone mode
+    held all the way through and no restarts, and the mower still finished the rear
+    yard, drove to the shut garage door as if to dock, then went to the side yard
+    and reported Some zones unreachable. Multi-zone chaining inside the mower does
+    not work, so the chain lives in Home Assistant instead.
+
+
+    WHY THE THREE MINUTE HOLD ON THE DOCKED TRIGGER: two reasons, both load bearing.
+    First, binary_sensor.jason_momower_docked flickers ON mid return, once for 33.5
+    seconds, so a bare trigger would fire while the mower is still outside. Second,
+    automation.mower_garage_return waits 30 seconds after docking, rechecks, closes
+    the door and only then clears input_boolean.mower_cycle_active, which on 2026-08-20
+    took until 50 seconds after the dock. Starting the next leg before that finishes
+    would send open_cover into a closing door, and on this pulse opener that REVERSES
+    it. Three minutes clears both with margin. Do not shorten it.
+
+
+    WHY THE HEALTH CONDITIONS: every advancing branch requires status notice Mowing
+    task completed, error none, cycle flag off, garage door closed, and the mower
+    actually charging. On 2026-08-20 the failed run docked reporting Some zones unreachable,
+    so it would have failed this test and stopped the chain instead of advancing over
+    a skipped zone. That is the whole point of the design.
+
+
+    GATE HANDLING: only the rear yard needs the gate open and only the side yard is
+    obstructed by it, which is Scott''s call. So the close-the-gate prompt fires when
+    leg one DOCKS, a real event with no time pressure, rather than mid-mow off sensor.jason_momower_current_zone.
+    That sensor has falsely reported Front Yard (#1) twice while the mower was physically
+    heading elsewhere, for 98 seconds on 2026-08-18 and 84 seconds on 2026-08-20.
+    The front leg runs regardless of gate state. The side leg requires the gate to
+    read exactly off, so unavailable and unknown both hold the chain rather than risking
+    it, and the chain parks at Waiting For Gate and resumes by itself when the sensor
+    reports closed.
+
+
+    DOES NOT USE input_boolean.mower_full_yard_cycle. That marker enables the old
+    mid-mow gate prompts and is deliberately left alone here.'
+  triggers:
+  - entity_id: binary_sensor.jason_momower_docked
+    for: 00:03:00
+    id: leg_docked
+    note: Three minute hold is deliberate and is explained in the description. It
+      filters the documented docked flicker AND gives automation.mower_garage_return
+      time to close the door and clear the cycle flag.
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.rear_yard_gate
+    id: gate_now_closed
+    note: Only acted on when the chain is parked at Waiting For Gate. Lets the side
+      yard leg start by itself once Scott shuts the gate, with no further action from
+      him. Gate reads on = OPEN, so off means closed.
+    to: 'off'
+    trigger: state
+  actions:
+  - alias: Decide what the chain does next
+    choose:
+    - alias: Gate finally closed while the chain was waiting, run the side yard
+      conditions:
+      - condition: trigger
+        id: gate_now_closed
+      - condition: state
+        entity_id: input_select.mower_chain_leg
+        state: Waiting For Gate
+      sequence:
+      - action: input_select.select_option
+        data:
+          option: Side Yard
+        target:
+          entity_id: input_select.mower_chain_leg
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:gate
+            priority: high
+            tag: mower_chain
+            ttl: 0
+          message: Gate is confirmed closed. Starting the final leg, the side yard.
+            Battery is {{ states('sensor.jason_momower_battery') }} percent.
+          title: Chain Resuming, Side Yard
+      - action: script.mower_zone_cycle
+        data:
+          zone_ids:
+          - 2
+    - alias: Leg one done, advance to the front yard and ask Scott to shut the gate
+      conditions:
+      - condition: trigger
+        id: leg_docked
+      - condition: state
+        entity_id: input_select.mower_chain_leg
+        state: Rear Yard
+      - condition: state
+        entity_id: sensor.jason_momower_status_notice
+        state: Mowing task completed
+      - condition: state
+        entity_id: sensor.jason_momower_error
+        state: none
+      - condition: state
+        entity_id: input_boolean.mower_cycle_active
+        state: 'off'
+      - condition: state
+        entity_id: cover.garage_door
+        state: closed
+      - condition: state
+        entity_id: sensor.jason_momower_state_name
+        state:
+        - charging
+        - charging_completed
+      sequence:
+      - action: input_select.select_option
+        data:
+          option: Front Yard
+        target:
+          entity_id: input_select.mower_chain_leg
+      - action: notify.mobile_app_pixel_9
+        alias: The gate prompt, now fired off a real dock instead of a lying zone
+          sensor
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:gate-arrow-right
+            priority: high
+            sticky: true
+            tag: mower_gate
+            ttl: 0
+          message: Rear yard is finished and Jason MoMower has docked. Go close the
+            side gate now. The front yard leg is starting and takes about 55 minutes,
+            so there is no rush, but the gate must be shut before the side yard leg
+            begins. Battery is {{ states('sensor.jason_momower_battery') }} percent.
+          title: Rear Yard Done, Close The Side Gate
+      - action: tts.speak
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: Rear yard is finished and the mower has docked. Please go close
+            the side gate. The front yard is starting now.
+        target:
+          entity_id: tts.home_assistant_cloud
+      - action: script.mower_zone_cycle
+        data:
+          zone_ids:
+          - 1
+    - alias: Leg two done and gate confirmed shut, advance to the side yard
+      conditions:
+      - condition: trigger
+        id: leg_docked
+      - condition: state
+        entity_id: input_select.mower_chain_leg
+        state: Front Yard
+      - condition: state
+        entity_id: sensor.jason_momower_status_notice
+        state: Mowing task completed
+      - condition: state
+        entity_id: sensor.jason_momower_error
+        state: none
+      - condition: state
+        entity_id: input_boolean.mower_cycle_active
+        state: 'off'
+      - condition: state
+        entity_id: cover.garage_door
+        state: closed
+      - condition: state
+        entity_id: sensor.jason_momower_state_name
+        state:
+        - charging
+        - charging_completed
+      - alias: Gate reads exactly off, meaning confirmed CLOSED
+        condition: state
+        entity_id: binary_sensor.rear_yard_gate
+        state: 'off'
+      sequence:
+      - action: input_select.select_option
+        data:
+          option: Side Yard
+        target:
+          entity_id: input_select.mower_chain_leg
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:robot-mower
+            priority: high
+            tag: mower_chain
+            ttl: 0
+          message: Front yard is finished and the gate is confirmed closed. Starting
+            the final leg, the side yard. Battery is {{ states('sensor.jason_momower_battery')
+            }} percent.
+          title: Front Yard Done, Starting Side Yard
+      - action: script.mower_zone_cycle
+        data:
+          zone_ids:
+          - 2
+    - alias: Leg two done but the gate is not confirmed shut, hold the chain
+      conditions:
+      - condition: trigger
+        id: leg_docked
+      - condition: state
+        entity_id: input_select.mower_chain_leg
+        state: Front Yard
+      - condition: state
+        entity_id: sensor.jason_momower_status_notice
+        state: Mowing task completed
+      - condition: state
+        entity_id: sensor.jason_momower_error
+        state: none
+      - condition: state
+        entity_id: input_boolean.mower_cycle_active
+        state: 'off'
+      - condition: state
+        entity_id: cover.garage_door
+        state: closed
+      - condition: state
+        entity_id: sensor.jason_momower_state_name
+        state:
+        - charging
+        - charging_completed
+      sequence:
+      - action: input_select.select_option
+        data:
+          option: Waiting For Gate
+        target:
+          entity_id: input_select.mower_chain_leg
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:gate-alert
+            priority: high
+            sticky: true
+            tag: mower_gate
+            ttl: 0
+          message: Front yard is finished and the mower is docked, but the rear yard
+            gate reads {{ states('binary_sensor.rear_yard_gate') }} rather than closed.
+            The side yard leg is ON HOLD and will start automatically the moment the
+            gate sensor reports closed. Nothing is running until then.
+          title: Chain Held, Gate Not Confirmed Closed
+      - action: tts.speak
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: Front yard is finished. The side yard leg is on hold because the
+            rear yard gate is not confirmed closed. It will start by itself once the
+            gate reads closed.
+        target:
+          entity_id: tts.home_assistant_cloud
+    - alias: Final leg done, whole yard complete
+      conditions:
+      - condition: trigger
+        id: leg_docked
+      - condition: state
+        entity_id: input_select.mower_chain_leg
+        state: Side Yard
+      - condition: state
+        entity_id: sensor.jason_momower_status_notice
+        state: Mowing task completed
+      - condition: state
+        entity_id: sensor.jason_momower_error
+        state: none
+      - condition: state
+        entity_id: input_boolean.mower_cycle_active
+        state: 'off'
+      - condition: state
+        entity_id: cover.garage_door
+        state: closed
+      - condition: state
+        entity_id: sensor.jason_momower_state_name
+        state:
+        - charging
+        - charging_completed
+      sequence:
+      - action: input_select.select_option
+        data:
+          option: Idle
+        target:
+          entity_id: input_select.mower_chain_leg
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:check-decagram
+            priority: high
+            tag: mower_chain
+            ttl: 0
+          message: All three legs finished and reported the task complete. Rear, front
+            and side are all mowed and Jason MoMower is docked and charging on {{
+            states('sensor.jason_momower_battery') }} percent. The chain is back to
+            Idle.
+          title: Whole Yard Complete
+      - action: tts.speak
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: The whole yard is finished. Rear, front and side are all mowed
+            and the mower is docked and charging.
+        target:
+          entity_id: tts.home_assistant_cloud
+    - alias: FALLBACK, a leg ended without a clean completion, stop the chain
+      conditions:
+      - condition: trigger
+        id: leg_docked
+      - alias: A chain is genuinely in progress
+        condition: not
+        conditions:
+        - condition: state
+          entity_id: input_select.mower_chain_leg
+          state: Idle
+      - alias: Not the legitimate parked state waiting on the gate
+        condition: not
+        conditions:
+        - condition: state
+          entity_id: input_select.mower_chain_leg
+          state: Waiting For Gate
+      note: Reached only when a leg docked but one of the health conditions above
+        failed, because choose takes the FIRST matching branch and every advancing
+        branch is listed before this one. This is what stops the chain silently advancing
+        over a failed leg, which is exactly what would have happened on 2026-08-20
+        when the mower docked reporting Some zones unreachable rather than Mowing
+        task completed. It sets the pointer back to Idle so nothing further fires,
+        and reports which specific readings failed.
+      sequence:
+      - action: input_select.select_option
+        data:
+          option: Idle
+        target:
+          entity_id: input_select.mower_chain_leg
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:alert-octagon
+            priority: high
+            sticky: true
+            tag: mower_chain
+            ttl: 0
+          message: A mowing leg ended without a clean completion, so the chain has
+            STOPPED rather than starting the next leg. Status notice reads {{ states('sensor.jason_momower_status_notice')
+            }}, error reads {{ states('sensor.jason_momower_error') }}, cycle flag
+            reads {{ states('input_boolean.mower_cycle_active') }}, garage door reads
+            {{ states('cover.garage_door') }}, mower state reads {{ states('sensor.jason_momower_state_name')
+            }}. Battery is {{ states('sensor.jason_momower_battery') }} percent. Check
+            what got skipped before assuming the yard is done.
+          title: Chain Stopped, Leg Did Not Complete
+      - action: tts.speak
+        data:
+          cache: false
+          media_player_entity_id: media_player.bedroom_group
+          message: A mowing leg ended without reporting completion, so the chain has
+            stopped. Please check the mower.
+        target:
+          entity_id: tts.home_assistant_cloud
+  mode: single

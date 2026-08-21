@@ -1,0 +1,144 @@
+- id: '1787232090375'
+  alias: Mower Restart Recovery
+  description: 'Fires when Home Assistant finishes starting while input_boolean.mower_cycle_active
+    is still ON, which means a restart or an integration reload landed in the middle
+    of a mowing cycle.
+
+
+    WHAT IT FIXES: an integration reload resets select.jason_momower_mowing_action
+    back to All area. Confirmed twice, at 08:25:30 on 2026-08-19 and again mid job
+    at 12:36:31. A mower left in All area silently ignores any zone list, so the remainder
+    of the job runs the mower''s own whole map plan. This automation sets Zone again,
+    reads it back, and tells Scott either way.
+
+
+    WHAT IT CANNOT FIX, AND SCOTT SHOULD NOT EXPECT IT TO: a restart KILLS the running
+    script.mower_zone_cycle. Every remaining step in that script, including the wait
+    for undock, the 120 second clearance delay and the garage door close, is gone
+    and will never execute. No helper and no automation can resume a killed script.
+    The garage door may therefore be sitting open with nothing scheduled to close
+    it, which is why both notification branches report the live door state and tell
+    Scott to check it himself.
+
+
+    WHY IT WAITS: after a restart the mower entities come back as unavailable for
+    a while. Writing to the select before it is available would fail. The wait_template
+    holds until the select reports a real value, then a 5 second settle, then the
+    write.
+
+
+    WHY IT READS BACK: this integration can return success on a write that never reached
+    the mower. Verified 2026-08-18, where an unverified select.select_option showed
+    Zone optimistically in HA and a later device poll corrected it to All area. The
+    read back after 6 seconds is the only trustworthy confirmation, and it is the
+    same pattern already proven inside script.mower_zone_cycle.
+
+
+    This automation does NOT touch the garage door, does NOT restart the mow, and
+    does NOT clear any flag. It only restores the mode and reports. Anything beyond
+    that is Scott''s call with eyes on the mower.'
+  triggers:
+  - event: start
+    id: ha_started
+    note: Fires once when HA finishes starting. Also covers the reload case indirectly,
+      since Scott's reloads have accompanied full restarts.
+    trigger: homeassistant
+  conditions:
+  - alias: Only if a mowing cycle was in progress when HA went down
+    condition: state
+    entity_id: input_boolean.mower_cycle_active
+    note: This helper is restore-on-restart and was confirmed to survive both restarts
+      on 2026-08-19, so it is a reliable marker that a cycle was live. If it is off,
+      there is nothing to recover and the automation stays silent.
+    state: 'on'
+  actions:
+  - alias: Hold until the mower entities come back from the restart
+    continue_on_timeout: false
+    note: wait_template rather than wait_for_trigger on purpose. wait_for_trigger
+      only fires on a CHANGE, so if the select were already available when this runs
+      it would hang until the timeout. wait_template passes immediately when the condition
+      is already true, which is exactly the behaviour needed here. continue_on_timeout
+      false means a mower that never comes back produces no misleading success message.
+    timeout: 00:05:00
+    wait_template: '{{ states(''select.jason_momower_mowing_action'') not in [''unavailable'',
+      ''unknown''] }}'
+  - alias: Let the first poll settle before writing
+    delay: 00:00:05
+  - action: select.select_option
+    alias: Set mowing action back to Zone
+    data:
+      option: Zone
+    target:
+      entity_id: select.jason_momower_mowing_action
+  - alias: Settle before reading back
+    delay: 00:00:06
+    note: '6 seconds, matching the proven pre-flight inside script.mower_zone_cycle.
+      Load bearing, not padding: the write can report success without reaching the
+      mower, so the read back needs time for a real device poll to land.'
+  - alias: Report whether the mode was actually restored
+    else:
+    - action: notify.mobile_app_pixel_9
+      alias: Mode restore FAILED, hard alert
+      data:
+        data:
+          channel: alarm_stream
+          importance: high
+          notification_icon: mdi:alert-octagon
+          persistent: true
+          priority: high
+          sticky: true
+          tag: mower_restart_recovery
+          ttl: 0
+        message: Home Assistant restarted while a mowing cycle was active and the
+          attempt to set mowing action back to Zone did not take. It reads {{ states('select.jason_momower_mowing_action')
+          }}. Any remaining zone list will be ignored and the mower will run its own
+          whole map plan. The garage door reads {{ states('cover.garage_door') }}
+          and the mower reads {{ states('sensor.jason_momower_state_name') }}. The
+          cycle script was also killed, so nothing will close the door.
+        title: Restart Landed Mid Mow, Zone Mode NOT Restored
+    - action: tts.speak
+      alias: Spoken alert, any hour
+      data:
+        cache: false
+        media_player_entity_id: media_player.bedroom_group
+        message: Home Assistant restarted during a mowing cycle and zone mode could
+          not be restored. The mower may run the whole map. Please check the mower
+          and the garage door.
+      target:
+        entity_id: tts.home_assistant_cloud
+    if:
+    - alias: Reads exactly Zone
+      condition: state
+      entity_id: select.jason_momower_mowing_action
+      state: Zone
+    then:
+    - action: notify.mobile_app_pixel_9
+      alias: Recovered, but warn about the killed script
+      data:
+        data:
+          channel: alarm_stream
+          importance: high
+          notification_icon: mdi:restart-alert
+          persistent: true
+          priority: high
+          sticky: true
+          tag: mower_restart_recovery
+          ttl: 0
+        message: 'Home Assistant restarted while a mowing cycle was active. Mowing
+          action has been set back to Zone and verified. WARNING: the running cycle
+          script was killed by the restart, so the garage door close and the clearance
+          delay will never run. The garage door currently reads {{ states(''cover.garage_door'')
+          }} and the mower reads {{ states(''sensor.jason_momower_state_name'') }}.
+          Check the door yourself.'
+        title: Restart Landed Mid Mow, Zone Mode Restored
+    - action: tts.speak
+      alias: Spoken alert, any hour
+      data:
+        cache: false
+        media_player_entity_id: media_player.bedroom_group
+        message: Home Assistant restarted during a mowing cycle. Zone mode has been
+          restored, but the cycle script was killed and the garage door will not close
+          on its own. Please check the garage door.
+      target:
+        entity_id: tts.home_assistant_cloud
+  mode: single

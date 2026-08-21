@@ -1,100 +1,111 @@
 - id: '1777675226974'
   alias: V2.3 Garage Presence Lighting Control
   description: 'Controls garage ceiling lights (switch.garage_lights) and workbench
-    light (switch.workbench_light) using layered presence and human-confirmation logic
+    light (switch.workbench_light) using layered presence and human confirmation logic
     to filter out pet false triggers (Rudy). Human presence is confirmed via any of:
-    PIR motion (binary_sensor.pir_ms_1_occupancy), garage door opening (binary_sensor.garage_door_position),
-    laundry room door opening (binary_sensor.laundry_room_door), rear door opening
-    (binary_sensor.rear_door). Confirmed human presence sets input_boolean.human_in_garage
-    which guards ceiling and workbench light activation. mmWave (sensor.garage_presence_target_count)
+    PIR motion (binary_sensor.pir_ms_1_occupancy), garage door opening, laundry room
+    door opening, rear door opening. Confirmed presence sets input_boolean.human_in_garage
+    which gates ceiling and workbench light activation. mmWave (sensor.garage_presence_target_count)
     holds lights on while present. Lights turn off 60 seconds after mmWave clears.
-    Workbench light turns on with ceiling lights when human confirmed and PIR active,
-    turns off 5 minutes after PIR clears. David Mowie guard (input_boolean.david_mowie_mowing)
-    prevents garage door open events from confirming human presence during mowing
-    cycles. input_boolean.human_in_garage resets 30 minutes after last confirming
-    event if mmWave also clear. Manual override (input_boolean.garage_presence_override)
-    bypasses all automatic logic and resets at 6:00am daily. Helpers used: input_boolean.human_in_garage,
-    input_boolean.workbench_occupied, input_boolean.garage_presence_override. Replaces
-    V2.2 (disabled, preserved for rollback).'
+    Workbench light turns on with PIR motion and off 5 minutes after PIR clears. Mower
+    guard (input_boolean.mower_cycle_active) prevents garage door open events from
+    confirming human presence during mowing cycles. This guard previously pointed
+    at input_boolean.david_mowie_mowing, which is a legacy orphaned helper that nothing
+    writes to; it had restored stuck on since 2026-08-15, which silently disabled
+    all garage-door human confirmation. Corrected 2026-08-20 to the live flag used
+    by the 8 mower automations and 2 mower scripts. Manual override (input_boolean.garage_presence_override)
+    bypasses all automatic logic and resets at 06:00 daily.
+
+
+    Three defects fixed in this revision. First, the human_in_garage reset was a 30
+    minute inline delay inside a parallel automation, which held an execution slot
+    open for half an hour per confirming event and produced repeated Maximum number
+    of runs exceeded warnings; it is now a dedicated numeric_state trigger with for
+    30 minutes. Second, workbench_motion_on appeared in the first choose branch, and
+    because choose stops at the first match the dedicated workbench branch never executed,
+    so PIR motion never actually turned the workbench light on; the two are now separate.
+    Third, the reset condition compared sensor.garage_presence_target_count against
+    the string 0 while the sensor reports 0.0, so it never matched; it is now a numeric_state
+    condition.'
   triggers:
   - above: 0
     entity_id: sensor.garage_presence_target_count
     id: presence_detected
-    platform: numeric_state
+    trigger: numeric_state
   - below: 1
     entity_id: sensor.garage_presence_target_count
     for:
       seconds: 60
     id: no_presence
-    platform: numeric_state
+    trigger: numeric_state
+  - below: 1
+    entity_id: sensor.garage_presence_target_count
+    for:
+      minutes: 30
+    id: human_reset
+    trigger: numeric_state
   - entity_id: binary_sensor.pir_ms_1_occupancy
     id: workbench_motion_on
-    platform: state
     to: 'on'
+    trigger: state
   - entity_id: binary_sensor.pir_ms_1_occupancy
     for:
       minutes: 5
     id: workbench_motion_off
-    platform: state
     to: 'off'
+    trigger: state
   - entity_id: binary_sensor.garage_door_position
     from: 'off'
     id: garage_door_opened
-    platform: state
     to: 'on'
+    trigger: state
   - entity_id: binary_sensor.laundry_room_door
     from: 'off'
     id: laundry_door_opened
-    platform: state
     to: 'on'
+    trigger: state
   - entity_id: binary_sensor.rear_door
     from: 'off'
     id: rear_door_opened
-    platform: state
     to: 'on'
+    trigger: state
   - at: 06:00:00
     id: reset_override
-    platform: time
+    trigger: time
   conditions:
   - condition: state
     entity_id: input_boolean.garage_presence_override
     state: 'off'
   actions:
   - choose:
-    - conditions:
+    - alias: Door opening confirms a human entered
+      conditions:
       - condition: trigger
         id:
         - garage_door_opened
         - laundry_door_opened
         - rear_door_opened
-        - workbench_motion_on
       sequence:
-      - if:
+      - alias: Ignore garage door opening while the mower is out
+        if:
         - condition: trigger
           id: garage_door_opened
         - condition: state
-          entity_id: input_boolean.david_mowie_mowing
+          entity_id: input_boolean.mower_cycle_active
           state: 'on'
         then:
-        - stop: David Mowie is mowing, garage door open is not a human entry event
+        - stop: Mower cycle is active, garage door open is not a human entry event
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.human_in_garage
-      - delay:
-          minutes: 30
-      - condition: state
-        entity_id: sensor.garage_presence_target_count
-        state: '0'
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.human_in_garage
-    - conditions:
+    - alias: mmWave presence with human confirmed turns on lights
+      conditions:
       - condition: trigger
         id: presence_detected
-      sequence:
       - condition: state
         entity_id: input_boolean.human_in_garage
         state: 'on'
+      sequence:
       - action: switch.turn_on
         target:
           entity_id: switch.garage_lights
@@ -109,13 +120,14 @@
         - action: input_boolean.turn_on
           target:
             entity_id: input_boolean.workbench_occupied
-    - conditions:
+    - alias: mmWave clear for 60 seconds turns off lights
+      conditions:
       - condition: trigger
         id: no_presence
-      sequence:
       - condition: state
         entity_id: input_boolean.workbench_occupied
         state: 'off'
+      sequence:
       - action: switch.turn_off
         target:
           entity_id:
@@ -124,28 +136,23 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.human_in_garage
-    - conditions:
+    - alias: PIR motion confirms a human and lights the workbench
+      conditions:
       - condition: trigger
         id: workbench_motion_on
       sequence:
       - action: input_boolean.turn_on
         target:
-          entity_id: input_boolean.workbench_occupied
+          entity_id:
+          - input_boolean.human_in_garage
+          - input_boolean.workbench_occupied
       - action: switch.turn_on
         target:
-          entity_id: switch.workbench_light
-      - if:
-        - condition: state
-          entity_id: switch.garage_lights
-          state: 'off'
-        - condition: state
-          entity_id: input_boolean.human_in_garage
-          state: 'on'
-        then:
-        - action: switch.turn_on
-          target:
-            entity_id: switch.garage_lights
-    - conditions:
+          entity_id:
+          - switch.workbench_light
+          - switch.garage_lights
+    - alias: PIR clear for 5 minutes turns off the workbench light
+      conditions:
       - condition: trigger
         id: workbench_motion_off
       sequence:
@@ -155,7 +162,16 @@
       - action: switch.turn_off
         target:
           entity_id: switch.workbench_light
-    - conditions:
+    - alias: mmWave clear for 30 minutes clears human confirmation
+      conditions:
+      - condition: trigger
+        id: human_reset
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.human_in_garage
+    - alias: Daily override reset
+      conditions:
       - condition: trigger
         id: reset_override
       sequence:
