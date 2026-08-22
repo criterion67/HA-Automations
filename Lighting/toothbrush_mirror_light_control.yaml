@@ -3,16 +3,16 @@
   description: Turns bathroom mirror light on when toothbrush is running, off when
     idle.
   triggers:
-  - platform: state
-    entity_id:
-    - sensor.io_series_6_7_fb9f_state
+  - entity_id:
+    - sensor.bathroom_oral_b_toothbrush
     to: running
     id: Running
-  - platform: state
-    entity_id:
-    - sensor.io_series_6_7_fb9f_state
+    trigger: state
+  - entity_id:
+    - sensor.bathroom_oral_b_toothbrush
     to: idle
     id: Idle
+    trigger: state
   conditions: []
   actions:
   - choose:

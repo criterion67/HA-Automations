@@ -1,8 +1,9 @@
 - id: '1787255046492'
   alias: Master Updates Notification
   description: 'Notifies when any update entity becomes available or is completed,
-    using a green light flash for critical infrastructure (HA Core, OS, Supervisor,
-    Apps, UniFi gear) and royalblue for everything else.
+    and uses the IKEA Fado lamp in the bedroom as a visual pending indicator: green
+    while a critical infrastructure update is outstanding (HA Core, OS, Supervisor,
+    Apps, UniFi gear), royalblue for everything else, and off once nothing is pending.
 
 
     Replaces the two prior automations, Master Critical System Updates Notification
@@ -21,15 +22,30 @@
     system.
 
 
+    LAMP OWNERSHIP. Neither of the old automations ever turned the lamp off, so a
+    completed update simply relit it. This version tracks ownership with input_boolean.fado_update_indicator_active,
+    which is set on whenever this automation lights the lamp. When the pending count
+    reaches zero the lamp is turned off ONLY if that flag is on, so a lamp Scott turned
+    on himself for normal bedroom use is never switched off by an update completing.
+    A second trigger watches the lamp for any transition to off (manual, a scene such
+    as the 11 PM Lights Off scene, or this automation itself) and clears the flag,
+    so ownership is released as soon as anyone else takes the lamp.
+
+
     The changed entity is identified as the update entity with the most recent last_changed,
     which is sound because last_changed only advances on an actual on/off transition,
     not on attribute updates. Limitation worth knowing: if two update entities flip
     in opposite directions within the same instant the count is unchanged and no notification
     fires, and if two flip the same direction at once only the most recent is named.
-    Both are rare. The startup guard skips the unavailable-to-value transition after
+    Both are rare. The startup guard skips the unavailable to value transition after
     a restart so a reboot does not produce a spurious notification.'
   triggers:
   - entity_id: sensor.pending_updates
+    id: updates_changed
+    trigger: state
+  - entity_id: light.bedroom_fado_lamp
+    id: lamp_turned_off
+    to: 'off'
     trigger: state
   conditions:
   - alias: Skip startup and unavailable transitions
@@ -39,8 +55,41 @@
       not in [''unknown'',''unavailable''] }}'
   actions:
   - choose:
+    - alias: Lamp turned off by anyone, release ownership
+      conditions:
+      - condition: trigger
+        id: lamp_turned_off
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.fado_update_indicator_active
+    - alias: No updates left pending, clear the indicator
+      conditions:
+      - condition: trigger
+        id: updates_changed
+      - condition: state
+        entity_id: sensor.pending_updates
+        state: '0'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          message: '{{ title_word }} for {{ clean_name }}'
+          title: Update {{ title_word }}
+      - if:
+        - condition: state
+          entity_id: input_boolean.fado_update_indicator_active
+          state: 'on'
+        then:
+        - action: light.turn_off
+          target:
+            entity_id: light.bedroom_fado_lamp
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.fado_update_indicator_active
     - alias: Critical infrastructure update
       conditions:
+      - condition: trigger
+        id: updates_changed
       - condition: template
         value_template: '{% set critical = [''update.home_assistant_operating_system_update'',''update.home_assistant_supervisor_update'',''update.home_assistant_core_update'',''update.esphome_update'',''update.matter_server_update'',''update.openthread_border_router_update'',''update.zigbee2mqtt_update'',''update.z_wave_js_ui_update'',''update.mosquitto_broker_update'',''update.studio_code_server_update'',''update.terminal_ssh_update'',''update.file_editor_update'',''update.samba_share_update'',''update.advanced_ssh_web_terminal_update'',''update.home_assistant_mcp_server_update'',''update.music_assistant_server_update'',''update.ring_mqtt_with_video_streaming_update'',''update.usw_flex_mini'',''update.usw_pro_max_24_poe'',''update.living_room_usw_flex_mini'',''update.bedroom_usw_flex_mini'',''update.office_usw_flex_mini'',''update.usw_aggregation'',''update.usp_pdu_pro'',''update.udm_pro'',''update.usw_flex_2_5g_5'',''update.garage_ap_u6_lite'',''update.living_room_ap_u6_lite'',''update.cloud_gateway_ultra_2'']
           %}{{ changed_entity in critical }}'
@@ -57,6 +106,9 @@
           - 0
         target:
           entity_id: light.bedroom_fado_lamp
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.fado_update_indicator_active
     default:
     - action: notify.mobile_app_pixel_9
       data:
@@ -67,6 +119,9 @@
         color_name: royalblue
       target:
         entity_id: light.bedroom_fado_lamp
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.fado_update_indicator_active
   max: 20
   mode: queued
   variables:
@@ -74,8 +129,8 @@
       }}'
     changed_state: '{{ (states.update | sort(attribute=''last_changed'') | last).state
       }}'
-    title_word: '{{ ''Available'' if changed_state == ''on'' else ''Completed'' }}'
     clean_name: '{% set n = state_attr(changed_entity, ''friendly_name'') | default('''',
       true) %}{% set n = n | regex_replace(find=''(?i)update'', replace='''') %}{%
       set n = n | regex_replace(find=''(?i)firmware'', replace='''') %}{% set n =
       n | regex_replace(find=''\s+'', replace='' '') %}{{ n.strip().title() }}'
+    title_word: '{{ ''Available'' if changed_state == ''on'' else ''Completed'' }}'
