@@ -1,14 +1,59 @@
 - id: '1770834155909'
   alias: GitHub Backup - Daily
-  description: Automatically backup Home Assistant configuration and automations to
-    GitHub daily at 3 AM
+  description: Runs both GitHub backup scripts at 03:00 and alerts on failure. github_backup.sh
+    pushes the whole /config repo; automations_backup.sh pushes automations.yaml plus
+    the per category split files to HA-Automations. Both exit codes are captured with
+    response_variable so a failure raises a phone alert instead of only a log line.
+    This matters because automations_backup.sh failed silently for roughly five months
+    and 295 commits were stranded locally before anyone noticed.
   triggers:
   - at: 03:00:00
+    id: daily_0300
     trigger: time
   conditions: []
   actions:
-  - data: {}
-    action: shell_command.github_backup
-  - data: {}
-    action: shell_command.automations_backup
+  - action: shell_command.github_backup
+    data: {}
+    note: Pushes the /config repo. Exit code captured rather than assumed successful.
+    response_variable: config_result
+  - action: shell_command.automations_backup
+    data: {}
+    note: Pushes the HA-Automations repo. Exit 2 means setup is missing, exit 4 means
+      a git or python step failed.
+    response_variable: automations_result
+  - note: Pulls any line containing ERROR out of the script output so the notification
+      carries the real cause instead of only an exit number.
+    variables:
+      automations_err: '{{ ((automations_result.stdout | default('''', true)) ~ ''
+
+        '' ~ (automations_result.stderr | default('''', true))).split(''
+
+        '') | select(''search'', ''ERROR'') | list | join('' '') | truncate(180) }}'
+      config_err: '{{ ((config_result.stdout | default('''', true)) ~ ''
+
+        '' ~ (config_result.stderr | default('''', true))).split(''
+
+        '') | select(''search'', ''ERROR'') | list | join('' '') | truncate(180) }}'
+  - if:
+    - condition: template
+      note: Template is intentional. Compares a response_variable returned by shell_command,
+        which has no native condition equivalent. Do not convert.
+      value_template: '{{ config_result.returncode != 0 or automations_result.returncode
+        != 0 }}'
+    note: Fires only when at least one script returned nonzero. The tag means a repeat
+      failure replaces the previous alert rather than stacking.
+    then:
+    - action: script.notify_alert
+      data:
+        importance: high
+        message: '{% if config_result.returncode != 0 %}Config repo failed, exit {{
+          config_result.returncode }}. {{ config_err if config_err else ''No ERROR
+          line in output, check the HA log.'' }} {% endif %}{% if automations_result.returncode
+          != 0 %}Automations repo failed, exit {{ automations_result.returncode }}.
+          {{ automations_err if automations_err else ''No ERROR line in output, check
+          the HA log.'' }}{% endif %}'
+        priority: high
+        tag: github_backup_failure
+        title: GitHub Backup Failed
+        ttl: 0
   mode: single
