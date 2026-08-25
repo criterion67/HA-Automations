@@ -4,7 +4,7 @@
   triggers:
   - trigger: mqtt
     topic: zigbee2mqtt/lumi_remote_b1
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: single
     id: Bedside Button
   - trigger: state

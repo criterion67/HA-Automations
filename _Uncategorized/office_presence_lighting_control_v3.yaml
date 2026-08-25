@@ -4,15 +4,15 @@
     them off after 5 min of no presence, restores prior fan and ceiling light state
     on re-entry, and resets manual override.
   triggers:
-  - platform: state
-    entity_id: binary_sensor.office_presence_radar_target
+  - entity_id: binary_sensor.office_presence_radar_target
     to: 'on'
     id: detected
-  - platform: state
-    entity_id: binary_sensor.office_presence_radar_target
+    trigger: state
+  - entity_id: binary_sensor.office_presence_radar_target
     to: 'off'
     for: 00:05:00
     id: cleared
+    trigger: state
   conditions: []
   actions:
   - choose:
@@ -37,10 +37,16 @@
               seconds: 0
           sequence: []
         default:
-        - action: scene.turn_on
-          target:
-            entity_id: scene.office_fan_temp_scene
-          data: {}
+        - if:
+          - condition: template
+            value_template: '{{ has_value(''scene.office_fan_temp_scene'') }}'
+          then:
+          - action: scene.turn_on
+            target:
+              entity_id: scene.office_fan_temp_scene
+            data: {}
+          note: The scene is created on the fly by the cleared branch and does not
+            survive a restart, so only restore it when it actually exists.
     - conditions:
       - condition: trigger
         id: cleared

@@ -112,4 +112,5 @@
               entity_id: fan.bathroom_1_bathroom_exhaust_fan
             action: fan.turn_off
             data: {}
-  mode: single
+  mode: queued
+  max: 10
