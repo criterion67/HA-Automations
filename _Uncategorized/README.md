@@ -1,6 +1,6 @@
 # _Uncategorized
 
-43 automation(s) in this category.
+44 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -133,6 +133,15 @@ WHAT IT DOES
 Both replies reuse the notification tag mower_error so they replace the original alert on the phone rather than stacking up.
 
 CONTEXT: this replaced a time based watchdog that automatically closed the door after 15 minutes open during a cycle. Scott removed that on 2026-08-12 because it could shut the door on him while he was working in the garage, and it could not distinguish a stalled mower from a slow return. The tradeoff is that a silent stall with no error raised will leave the door open until Scott notices. |
+| Mower Outbound Door Close | Closes the garage door after the mower leaves on an outbound leg. This is the outbound counterpart to automation.mower_garage_return, which owns the return leg.
+
+WHY THIS IS AN AUTOMATION AND NOT PART OF THE SCRIPT. script.mower_zone_cycle used to own this close, and it kept losing it. On 2026-08-25 the chain ran twice and both times dreame_lawn_mower.start_zone_mowing RAISED an exception AFTER the mower had genuinely started, which aborted the script at that step and took the wait for undock, the 120 second delay and the door close with it. The garage was left standing open with the mower out on the lawn, at 08:11 and again at 09:37, and Scott had to close it by hand both times. continue_on_error was tried first and does NOT help: Home Assistant only suppresses errors an integration raises as HomeAssistantError, and this one raises an unexpected exception, which is deliberately not suppressed. A state triggered automation cannot be killed by a script dying, and it also survives a Home Assistant restart, which is the same reasoning that put the return leg in an automation.
+
+THE MOWER DOES START. To be clear about what the raise means: it is a false positive from the integration's verification window closing too early. On 2026-08-25 it raised at 09:37:55 while the status notice read "Mowing task started" at 09:37:56 and the docked flag cleared at 09:37:58. Reported upstream as issue #166 on EvotecIT/homeassistant-dreamelawnmower.
+
+WHAT IT DOES. Fires when the docked flag has been off for 20 seconds, waits out the remaining 100 seconds of the calibrated 120 second exit window, then closes the door if and only if it reads exactly open.
+
+WHAT IT DOES NOT COVER. If the mower never undocks at all, this automation never fires, because there is no undock to trigger it. In that case the door close falls to the fail-safe branch still inside script.mower_zone_cycle, which only runs if the script survived long enough to reach it. A job that both fails to start the mower AND raises early would leave the door open with nothing to close it. The mower is not outside in that scenario, so it is a security gap rather than a safety one, but it is a real gap and worth closing later. |
 | Mower Restart Recovery | Fires when Home Assistant finishes starting while input_boolean.mower_cycle_active is still ON, which means a restart or an integration reload landed in the middle of a mowing cycle.
 
 WHAT IT FIXES: an integration reload resets select.jason_momower_mowing_action back to All area. Confirmed twice, at 08:25:30 on 2026-08-19 and again mid job at 12:36:31. A mower left in All area silently ignores any zone list, so the remainder of the job runs the mower's own whole map plan. This automation sets Zone again, reads it back, and tells Scott either way.

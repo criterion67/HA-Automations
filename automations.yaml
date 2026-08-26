@@ -11903,3 +11903,109 @@
           entity_id: notify.scott_s_phone
   max: 10
   mode: parallel
+- id: mower_outbound_door_close
+  alias: Mower Outbound Door Close
+  description: 'Closes the garage door after the mower leaves on an outbound leg.
+    This is the outbound counterpart to automation.mower_garage_return, which owns
+    the return leg.
+
+
+    WHY THIS IS AN AUTOMATION AND NOT PART OF THE SCRIPT. script.mower_zone_cycle
+    used to own this close, and it kept losing it. On 2026-08-25 the chain ran twice
+    and both times dreame_lawn_mower.start_zone_mowing RAISED an exception AFTER the
+    mower had genuinely started, which aborted the script at that step and took the
+    wait for undock, the 120 second delay and the door close with it. The garage was
+    left standing open with the mower out on the lawn, at 08:11 and again at 09:37,
+    and Scott had to close it by hand both times. continue_on_error was tried first
+    and does NOT help: Home Assistant only suppresses errors an integration raises
+    as HomeAssistantError, and this one raises an unexpected exception, which is deliberately
+    not suppressed. A state triggered automation cannot be killed by a script dying,
+    and it also survives a Home Assistant restart, which is the same reasoning that
+    put the return leg in an automation.
+
+
+    THE MOWER DOES START. To be clear about what the raise means: it is a false positive
+    from the integration''s verification window closing too early. On 2026-08-25 it
+    raised at 09:37:55 while the status notice read "Mowing task started" at 09:37:56
+    and the docked flag cleared at 09:37:58. Reported upstream as issue #166 on EvotecIT/homeassistant-dreamelawnmower.
+
+
+    WHAT IT DOES. Fires when the docked flag has been off for 20 seconds, waits out
+    the remaining 100 seconds of the calibrated 120 second exit window, then closes
+    the door if and only if it reads exactly open.
+
+
+    WHAT IT DOES NOT COVER. If the mower never undocks at all, this automation never
+    fires, because there is no undock to trigger it. In that case the door close falls
+    to the fail-safe branch still inside script.mower_zone_cycle, which only runs
+    if the script survived long enough to reach it. A job that both fails to start
+    the mower AND raises early would leave the door open with nothing to close it.
+    The mower is not outside in that scenario, so it is a security gap rather than
+    a safety one, but it is a real gap and worth closing later.'
+  triggers:
+  - entity_id: binary_sensor.jason_momower_docked
+    for:
+      seconds: 20
+    id: mower_left_dock
+    note: 20 second hold filters the documented docked-flag flicker, which has been
+      seen holding a false reading for up to 33.5 seconds on the ON side. On the OFF
+      side the risk is far lower, and 20 seconds also feeds the discriminator in the
+      condition below. The mower spends roughly 60 seconds positioning after undocking,
+      so waiting 20 seconds costs nothing.
+    to: 'off'
+    trigger: state
+  conditions:
+  - alias: A Home Assistant started cycle, and the flag was raised well before this
+      undock
+    condition: state
+    entity_id: input_boolean.mower_cycle_active
+    for:
+      seconds: 25
+    note: THE 25 SECOND HOLD IS THE DISCRIMINATOR AGAINST automation.mower_unattended_start,
+      not padding. Both automations trigger on the same undock. In a Home Assistant
+      started cycle script.mower_zone_cycle raises this flag roughly 9 seconds BEFORE
+      the mower undocks, so by the time this trigger has held 20 seconds the flag
+      has been on for about 29 seconds and this passes. In an unattended start the
+      flag is off at undock and mower_unattended_start raises it about 10 seconds
+      later, so at the same moment it has only been on for about 10 seconds and this
+      correctly does NOT fire. That matters because mower_unattended_start closes
+      the door itself, and two close pulses on this opener would drive the door back
+      open.
+    state: 'on'
+  actions:
+  - alias: Finish out the 120 second exit window measured from the undock
+    delay:
+      seconds: 100
+    note: 'The trigger already held for 20 seconds after the docked flag cleared,
+      so 100 more gives the calibrated 120 seconds total from undock. Measured 2026-08-12:
+      the mower backs out in about 5 seconds, spends roughly 60 seconds turning and
+      positioning, then takes about 10 seconds to actually leave, so it is clear at
+      about 75 seconds. 120 leaves roughly 45 seconds of margin. The earlier 60 second
+      value closed the door on the mower. Do not shorten this.'
+  - alias: Close the door, but only if it is actually open
+    else:
+    - action: notify.mobile_app_pixel_9
+      alias: Door was already shut, say so rather than pulsing it
+      data:
+        data:
+          notification_icon: mdi:garage-alert
+          tag: mower_outbound_close
+        message: The outbound door close ran but the garage door already read {{ states('cover.garage_door')
+          }}, so no pulse was sent. If it reads unavailable the opener has dropped
+          off the network and the door may still be open.
+        title: Outbound Close Skipped
+    if:
+    - alias: Door reads exactly open
+      condition: state
+      entity_id: cover.garage_door
+      state: open
+    note: GUARDED DELIBERATELY. This is a PULSE opener with no position control, so
+      cover.close_cover sent to a door that is already closed can drive it back open.
+      Checking for exactly 'open' also means an 'unavailable' reading blocks the pulse
+      rather than firing blind at an opener that is off the network.
+    then:
+    - action: cover.close_cover
+      alias: Close the garage door behind the mower
+      target:
+        entity_id: cover.garage_door
+  mode: single
