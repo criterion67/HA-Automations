@@ -45,18 +45,46 @@
     40 seconds) at full volume with an 8 second duration per pulse, keeping the original
     three-pulse 8-on 12-off rhythm. Scott''s stated preference is to go back to the
     Ring siren, so when a Ring siren entity reappears, replace this whole fallback
-    block and delete these two paragraphs.'
+    block and delete these two paragraphs.
+
+
+    YOLINK LOCAL MIGRATION, 2026-08-26. All nine leak sensors moved off the YoLink
+    cloud integration onto the YoLink Local (yolocal) HACS integration, which talks
+    straight to the YS1606-UC Local Hub at 192.168.30.11 over HTTP 1080 and MQTT 18080.
+    Every entity_id in this automation changed as a result; old ids such as binary_sensor.leak_sensor_1_moisture_2
+    and binary_sensor.hvac_condensate_pan_sensor_9 no longer exist. The nine sensors
+    are now named for their location. The trigger list is deliberately explicit rather
+    than label driven: HA state triggers cannot resolve entity_id from a template,
+    and a label driven list would silently pull in the gate and mailbox door sensors,
+    which carry the same Yolink Local and LoRa labels. triggered_sensor still resolves
+    from trigger.to_state.name, so the TTS announcement and the actionable push both
+    continue to name the specific sensor that tripped.
+
+
+    CLOSE WATER BUTTON ADDED 2026-08-26. The actionable push now carries three buttons:
+    Close Water, Snooze, Dismiss. Close Water is listed FIRST so it is the one reachable
+    without expanding the notification, since it is the only one that stops the damage.
+    It fires the CLOSE_WATER action, handled by automation.water_leak_alert_notification_action_handler,
+    which closes valve.main_water_valve, waits up to 30 seconds for confirmation,
+    and pushes back either success or a warning to check the valve manually.
+
+
+    This automation still does NOT close the valve on its own, by deliberate choice.
+    Automatic unconditional shutoff would mean a single false positive cuts the water
+    while Scott is away. The shutoff stays human-in-the-loop here, with YoLink Control-D2D
+    providing the unattended failsafe at the radio level for the power-out and internet-out
+    case.'
   triggers:
   - entity_id:
-    - binary_sensor.leak_sensor_1_moisture_2
-    - binary_sensor.kitchen_leak_sensor_2_moisture
-    - binary_sensor.leak_sensor_3_moisture
-    - binary_sensor.leak_sensor_4_moisture
-    - binary_sensor.bathroom_leak_sensor_5_moisture
-    - binary_sensor.bathroom_leak_sensor_6_moisture
-    - binary_sensor.bathroom_2_leak_sensor_7_moisture
-    - binary_sensor.bathroom_2_leak_sensor_8_moisture
-    - binary_sensor.hvac_condensate_pan_sensor_9
+    - binary_sensor.dishwasher_leak_sensor_1
+    - binary_sensor.kitchen_sink_leak_sensor_2
+    - binary_sensor.refrigerator_leak_sensor_3
+    - binary_sensor.laundry_leak_sensor_4
+    - binary_sensor.bathroom_toilet_leak_sensor_5
+    - binary_sensor.bathroom_sink_leak_sensor_6
+    - binary_sensor.bathroom_2_toilet_leak_sensor_7
+    - binary_sensor.bathroom_2_sink_leak_sensor_8
+    - binary_sensor.hvac_condensate_leak_sensor_9
     to:
     - 'on'
     trigger: state
@@ -70,31 +98,31 @@
         - condition: or
           conditions:
           - condition: state
-            entity_id: binary_sensor.leak_sensor_1_moisture_2
+            entity_id: binary_sensor.dishwasher_leak_sensor_1
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.kitchen_leak_sensor_2_moisture
+            entity_id: binary_sensor.kitchen_sink_leak_sensor_2
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.leak_sensor_3_moisture
+            entity_id: binary_sensor.refrigerator_leak_sensor_3
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.leak_sensor_4_moisture
+            entity_id: binary_sensor.laundry_leak_sensor_4
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_leak_sensor_5_moisture
+            entity_id: binary_sensor.bathroom_toilet_leak_sensor_5
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_leak_sensor_6_moisture
+            entity_id: binary_sensor.bathroom_sink_leak_sensor_6
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_2_leak_sensor_7_moisture
+            entity_id: binary_sensor.bathroom_2_toilet_leak_sensor_7
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_2_leak_sensor_8_moisture
+            entity_id: binary_sensor.bathroom_2_sink_leak_sensor_8
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.hvac_condensate_pan_sensor_9
+            entity_id: binary_sensor.hvac_condensate_leak_sensor_9
             state: 'on'
         - condition: not
           conditions:
@@ -113,9 +141,12 @@
         action: media_player.play_media
       - data:
           title: 🚨 URGENT - Water Leak Detected!
-          message: Leak detected at {{ triggered_sensor }}. Tap to respond.
+          message: Leak detected at {{ triggered_sensor }}. Tap Close Water to shut
+            off the main valve.
           data:
             actions:
+            - action: CLOSE_WATER
+              title: Close Water
             - action: SNOOZE_LEAK
               title: Snooze
             - action: DISMISS_LEAK

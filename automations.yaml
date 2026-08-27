@@ -2146,18 +2146,46 @@
     40 seconds) at full volume with an 8 second duration per pulse, keeping the original
     three-pulse 8-on 12-off rhythm. Scott''s stated preference is to go back to the
     Ring siren, so when a Ring siren entity reappears, replace this whole fallback
-    block and delete these two paragraphs.'
+    block and delete these two paragraphs.
+
+
+    YOLINK LOCAL MIGRATION, 2026-08-26. All nine leak sensors moved off the YoLink
+    cloud integration onto the YoLink Local (yolocal) HACS integration, which talks
+    straight to the YS1606-UC Local Hub at 192.168.30.11 over HTTP 1080 and MQTT 18080.
+    Every entity_id in this automation changed as a result; old ids such as binary_sensor.leak_sensor_1_moisture_2
+    and binary_sensor.hvac_condensate_pan_sensor_9 no longer exist. The nine sensors
+    are now named for their location. The trigger list is deliberately explicit rather
+    than label driven: HA state triggers cannot resolve entity_id from a template,
+    and a label driven list would silently pull in the gate and mailbox door sensors,
+    which carry the same Yolink Local and LoRa labels. triggered_sensor still resolves
+    from trigger.to_state.name, so the TTS announcement and the actionable push both
+    continue to name the specific sensor that tripped.
+
+
+    CLOSE WATER BUTTON ADDED 2026-08-26. The actionable push now carries three buttons:
+    Close Water, Snooze, Dismiss. Close Water is listed FIRST so it is the one reachable
+    without expanding the notification, since it is the only one that stops the damage.
+    It fires the CLOSE_WATER action, handled by automation.water_leak_alert_notification_action_handler,
+    which closes valve.main_water_valve, waits up to 30 seconds for confirmation,
+    and pushes back either success or a warning to check the valve manually.
+
+
+    This automation still does NOT close the valve on its own, by deliberate choice.
+    Automatic unconditional shutoff would mean a single false positive cuts the water
+    while Scott is away. The shutoff stays human-in-the-loop here, with YoLink Control-D2D
+    providing the unattended failsafe at the radio level for the power-out and internet-out
+    case.'
   triggers:
   - entity_id:
-    - binary_sensor.leak_sensor_1_moisture_2
-    - binary_sensor.kitchen_leak_sensor_2_moisture
-    - binary_sensor.leak_sensor_3_moisture
-    - binary_sensor.leak_sensor_4_moisture
-    - binary_sensor.bathroom_leak_sensor_5_moisture
-    - binary_sensor.bathroom_leak_sensor_6_moisture
-    - binary_sensor.bathroom_2_leak_sensor_7_moisture
-    - binary_sensor.bathroom_2_leak_sensor_8_moisture
-    - binary_sensor.hvac_condensate_pan_sensor_9
+    - binary_sensor.dishwasher_leak_sensor_1
+    - binary_sensor.kitchen_sink_leak_sensor_2
+    - binary_sensor.refrigerator_leak_sensor_3
+    - binary_sensor.laundry_leak_sensor_4
+    - binary_sensor.bathroom_toilet_leak_sensor_5
+    - binary_sensor.bathroom_sink_leak_sensor_6
+    - binary_sensor.bathroom_2_toilet_leak_sensor_7
+    - binary_sensor.bathroom_2_sink_leak_sensor_8
+    - binary_sensor.hvac_condensate_leak_sensor_9
     to:
     - 'on'
     trigger: state
@@ -2171,31 +2199,31 @@
         - condition: or
           conditions:
           - condition: state
-            entity_id: binary_sensor.leak_sensor_1_moisture_2
+            entity_id: binary_sensor.dishwasher_leak_sensor_1
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.kitchen_leak_sensor_2_moisture
+            entity_id: binary_sensor.kitchen_sink_leak_sensor_2
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.leak_sensor_3_moisture
+            entity_id: binary_sensor.refrigerator_leak_sensor_3
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.leak_sensor_4_moisture
+            entity_id: binary_sensor.laundry_leak_sensor_4
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_leak_sensor_5_moisture
+            entity_id: binary_sensor.bathroom_toilet_leak_sensor_5
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_leak_sensor_6_moisture
+            entity_id: binary_sensor.bathroom_sink_leak_sensor_6
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_2_leak_sensor_7_moisture
+            entity_id: binary_sensor.bathroom_2_toilet_leak_sensor_7
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.bathroom_2_leak_sensor_8_moisture
+            entity_id: binary_sensor.bathroom_2_sink_leak_sensor_8
             state: 'on'
           - condition: state
-            entity_id: binary_sensor.hvac_condensate_pan_sensor_9
+            entity_id: binary_sensor.hvac_condensate_leak_sensor_9
             state: 'on'
         - condition: not
           conditions:
@@ -2214,9 +2242,12 @@
         action: media_player.play_media
       - data:
           title: "\U0001F6A8 URGENT - Water Leak Detected!"
-          message: Leak detected at {{ triggered_sensor }}. Tap to respond.
+          message: Leak detected at {{ triggered_sensor }}. Tap Close Water to shut
+            off the main valve.
           data:
             actions:
+            - action: CLOSE_WATER
+              title: Close Water
             - action: SNOOZE_LEAK
               title: Snooze
             - action: DISMISS_LEAK
@@ -4799,7 +4830,81 @@
   mode: single
 - id: '1764114845569'
   alias: Vacation Water and Light Control
-  description: ''
+  description: 'Controls the main water valve and four lights while vacation mode
+    is active. Opens the water and turns the lights on when someone is genuinely home
+    (deadbolt unlocked, and alarm disarmed unless the alarm check is bypassed). Closes
+    the water and turns the lights off when the house is secured, and as a nightly
+    backstop at 02:00.
+
+
+    A 10 minute heartbeat re-asserts the intended state so a missed event cannot leave
+    the water in the wrong position. Push notifications are suppressed on heartbeat
+    runs to avoid spamming, and are also suppressed for the nightly reset on the open
+    branch.
+
+
+    input_boolean.vacation is the master gate; nothing here runs unless it is on.
+    input_boolean.vacation_alarm_disable drops the Ring alarm state out of both decisions,
+    for when the alarm is unavailable or not being armed.
+
+
+    TWO DEFECTS FIXED 2026-08-26.
+
+
+    FIRST: both choose branches carried enabled: false on their only condition. Home
+    Assistant SKIPS a disabled condition rather than failing it, so each branch was
+    left with no conditions at all and evaluated as unconditionally true. With mode:
+    single the first branch always won, meaning that while vacation mode was on, every
+    trigger including the 10 minute heartbeat and the 02:00 nightly reset opened the
+    water valve and turned the lights on. The close branch was unreachable. Vacation
+    mode therefore meant the water was permanently ON, the exact opposite of its purpose.
+    Both conditions are now enabled.
+
+
+    SECOND: the close branch''s else clause was missing its Jinja delimiters. The
+    expression sat as bare text between {% else %} and {% endif %} instead of inside
+    {{ }}, so it rendered as a literal string rather than a boolean. Home Assistant
+    treats a non-truthy string as false, so even with the condition enabled the close
+    branch could never fire whenever vacation_alarm_disable was off, and the water
+    would still never shut off. The open branch was written correctly, which is why
+    the bug was easy to miss on a visual comparison. Now wrapped correctly.
+
+
+    DESIGN DECISION 2026-08-26: the nightly_reset escape now applies in BOTH modes.
+    Previously it only existed in the else path, so with vacation_alarm_disable ON
+    the 02:00 reset could not close the valve and only the deadbolt being locked could.
+    That asymmetry is a poor failure mode for a water valve, where the safe direction
+    is closed. Scott did not recall the original intent and asked for a judgement
+    call; revisit before the next trip if a different behaviour is wanted.
+
+
+    DISABLED 2026-08-26 at Scott''s request. He wants no automated control of the
+    main water valve at all unless he deliberately turns this back on for a trip.
+    Turning on input_boolean.vacation alone will NOT arm it while the automation itself
+    is off. Re-enable this automation AND set the vacation boolean before leaving.
+
+
+    ORIGINAL INTENT, recalled by Scott 2026-08-26. This exists for when a family member
+    comes by to feed and water the dogs while Scott is away. That person can be forgetful
+    about switching things off, so the automation does it for them. The front deadbolt
+    is the presence proxy: unlocking it means the carer has arrived, so water and
+    lights come on; locking it means they have left, so water and lights go off. The
+    10 minute heartbeat catches any missed lock or unlock event. input_boolean.vacation_alarm_disable
+    exists because the carer will not be arming the Ring alarm, so the alarm state
+    has to drop out of the decision.
+
+
+    That makes the alarm-disabled path the carer''s normal path, which is exactly
+    why the 02:00 nightly reset now applies there too. Under the old code, if the
+    carer forgot to lock the deadbolt on their way out, the water stayed on all night
+    with nobody in the house, and the nightly backstop could not close it in that
+    mode. This is the single most likely real-world failure this automation is meant
+    to prevent.
+
+
+    The disabled conditions were most likely a deliberate override during a four day
+    trip, to force the water to stay on regardless of state, and were never re-enabled
+    afterwards.'
   triggers:
   - entity_id:
     - lock.front_door_deadbolt
@@ -4827,7 +4932,6 @@
           %}\n  {{ is_state('lock.front_door_deadbolt', 'unlocked') }}\n{% else %}\n
           \ {{ is_state('alarm_control_panel.ring_alarm_base_station','disarmed')\n
           \    and is_state('lock.front_door_deadbolt','unlocked') }}\n{% endif %}\n"
-        enabled: false
       sequence:
       - action: valve.open_valve
         target:
@@ -4857,10 +4961,10 @@
     - conditions:
       - condition: template
         value_template: "{% if is_state('input_boolean.vacation_alarm_disable', 'on')
-          %}\n  {{ is_state('lock.front_door_deadbolt', 'locked') }}\n{% else %}\n
-          \ (\n    is_state('lock.front_door_deadbolt','locked')\n    and is_state('alarm_control_panel.ring_alarm_base_station','armed_away')\n
-          \ )\n  or\n  (trigger.id == 'nightly_reset')\n{% endif %}\n"
-        enabled: false
+          %}\n  {{ is_state('lock.front_door_deadbolt', 'locked') or trigger.id ==
+          'nightly_reset' }}\n{% else %}\n  {{ (is_state('lock.front_door_deadbolt',
+          'locked')\n      and is_state('alarm_control_panel.ring_alarm_base_station',
+          'armed_away'))\n     or trigger.id == 'nightly_reset' }}\n{% endif %}\n"
       sequence:
       - action: valve.close_valve
         target:
@@ -6879,7 +6983,11 @@
     it disagrees with the porch view, and to stop requiring signs of recent activity,
     since the package detection path often snapshots an empty frame after the courier
     has already left. A package now counts on presence alone, and resident_retrieving
-    requires a person to actually be visible.'
+    requires a person to actually be visible. YOLINK LOCAL MIGRATION, 2026-08-26:
+    the mailbox trigger entity changed from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor
+    when the sensor moved from the YoLink cloud integration to the YoLink Local (yolocal)
+    integration on the YS1606-UC Local Hub. Behaviour is unchanged; the local integration
+    simply names the primary entity after the device, dropping the _door suffix.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     for:
@@ -6887,7 +6995,7 @@
     id: driveway
     to: 'on'
     trigger: state
-  - entity_id: binary_sensor.mailbox_sensor_door
+  - entity_id: binary_sensor.mailbox_sensor
     id: mailbox
     to: 'on'
     trigger: state
@@ -9905,7 +10013,7 @@
   mode: parallel
 - id: '1786996147942'
   alias: Mailbox delivery notification, 5 p.m. reminder & reset
-  description: Notifies when mail is delivered on the first mailbox opening of the
+  description: 'Notifies when mail is delivered on the first mailbox opening of the
     day, then records a genuine second opening (mail collected) only when the delivery
     notification has already been standing for 30 minutes, so the door sensor bouncing
     during a single delivery does not falsely count as collection. Resets the notification
@@ -9914,10 +10022,16 @@
     Adds actionable notification buttons to reset or dismiss on Scott phone. Uses
     input_number.set_value rather than input_number.increment because Spook v5.0.0
     overrides the increment service and reads a private attribute that HA core 2026.8
-    renamed, which raises an error and aborts the run.
+    renamed, which raises an error and aborts the run. YOLINK LOCAL MIGRATION, 2026-08-26:
+    the mailbox door sensor moved from the YoLink cloud integration to the YoLink
+    Local (yolocal) integration on the YS1606-UC Local Hub. Its trigger entity changed
+    from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor. The local
+    integration names the primary entity after the device, so the _door suffix is
+    gone. Device class is still door, so the off to on transition still means the
+    mailbox was opened.'
   triggers:
   - id: mailbox_open
-    entity_id: binary_sensor.mailbox_sensor_door
+    entity_id: binary_sensor.mailbox_sensor
     from: 'off'
     to: 'on'
     trigger: state
@@ -11282,9 +11396,9 @@
     Thresholds are carried over unchanged and are based on 7 day historical data plus
     FDA food safety guidance.
 
-    Fridge (sensor.temp_sensor_main_fridge): normal 35 to 39F. Early warning above
-    43F for 10 min. Ceiling alert above 45F for 20 min. Runaway cold below 33F for
-    20 min.
+    Fridge (sensor.temp_sensor_fridge): normal 35 to 39F. Early warning above 43F
+    for 10 min. Ceiling alert above 45F for 20 min. Runaway cold below 33F for 20
+    min.
 
     Freezer (sensor.inkbird_kitchen_freezer_temperature): 0F target. Early warning
     above 10F for 10 min. Ceiling alert above 15F for 20 min. Runaway cold below -10F
@@ -11293,7 +11407,7 @@
     Sensor offline: unavailable or unknown for 30 min on either sensor indicates battery
     failure or a Zigbee drop, which leaves temperature monitoring blind.
 
-    Batteries (sensor.battery_sensor_main_fridge, sensor.inkbird_temperature_sensor_battery):
+    Batteries (sensor.battery_sensor_fridge, sensor.inkbird_temperature_sensor_battery):
     below 10 percent. The low threshold is intentional because these small batteries
     fall off quickly once past 20 percent.
 
@@ -11309,7 +11423,7 @@
     reading included.'
   triggers:
   - above: 45
-    entity_id: sensor.temp_sensor_main_fridge
+    entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 20
     id: fridge_high
@@ -11321,7 +11435,7 @@
     id: freezer_high
     trigger: numeric_state
   - above: 43
-    entity_id: sensor.temp_sensor_main_fridge
+    entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 10
     id: fridge_rising
@@ -11333,7 +11447,7 @@
     id: freezer_rising
     trigger: numeric_state
   - below: 33
-    entity_id: sensor.temp_sensor_main_fridge
+    entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 20
     id: fridge_low
@@ -11344,13 +11458,13 @@
       minutes: 20
     id: freezer_low
     trigger: numeric_state
-  - entity_id: sensor.temp_sensor_main_fridge
+  - entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 30
     id: fridge_unavail
     to: unavailable
     trigger: state
-  - entity_id: sensor.temp_sensor_main_fridge
+  - entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 30
     id: fridge_unknown
@@ -11369,7 +11483,7 @@
     to: unknown
     trigger: state
   - below: 10
-    entity_id: sensor.battery_sensor_main_fridge
+    entity_id: sensor.battery_sensor_fridge
     id: fridge_batt
     trigger: numeric_state
   - below: 10
@@ -11394,7 +11508,7 @@
           data:
             priority: high
             ttl: 0
-          message: 'Refrigerator has been above 45°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_main_fridge'')
+          message: 'Refrigerator has been above 45°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_fridge'')
             | round(1) }}°F. Check the door or compressor.'
           title: "\U0001F321️ Fridge Too Warm"
     - alias: Freezer above 15F for 20 min
@@ -11421,7 +11535,7 @@
             priority: high
             ttl: 0
           message: 'Refrigerator has been above 43°F for 10 minutes and still rising.
-            Current: {{ states(''sensor.temp_sensor_main_fridge'') | round(1) }}°F.'
+            Current: {{ states(''sensor.temp_sensor_fridge'') | round(1) }}°F.'
           title: ⚠️ Fridge Temp Climbing
     - alias: Freezer above 10F for 10 min
       conditions:
@@ -11446,7 +11560,7 @@
           data:
             priority: high
             ttl: 0
-          message: 'Refrigerator has been below 33°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_main_fridge'')
+          message: 'Refrigerator has been below 33°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_fridge'')
             | round(1) }}°F. Risk of food freezing.'
           title: "\U0001F9CA Fridge Too Cold"
     - alias: Freezer below -10F for 20 min
@@ -11502,7 +11616,7 @@
           data:
             priority: high
             ttl: 0
-          message: Main fridge temperature sensor battery is at {{ states('sensor.battery_sensor_main_fridge')
+          message: Main fridge temperature sensor battery is at {{ states('sensor.battery_sensor_fridge')
             }}%. Replace soon to avoid sensor loss.
           title: "\U0001F50B Fridge Sensor Battery Low"
     - alias: Freezer sensor battery below 10 percent
@@ -11568,7 +11682,31 @@
     in rather than negated and ANDed, pressing Snooze does not suppress anything;
     it makes the loop continue even after every leak sensor has cleared, until Dismiss
     is pressed. The intended logic is almost certainly and(any sensor on, not snoozed).
-    Flagged to Scott 2026-08-20, left untouched pending his decision.'
+    Flagged to Scott 2026-08-20, left untouched pending his decision.
+
+
+    CLOSE WATER BUTTON ADDED 2026-08-26. CLOSE_WATER calls valve.close_valve on valve.main_water_valve,
+    waits up to 30 seconds for the valve to report closed, then sends a high priority
+    confirmation push. If the valve does not confirm within 30 seconds the push instead
+    warns that it must be checked manually, so a silent failure of the shutoff is
+    never mistaken for success.
+
+
+    WHY THIS BUTTON EXISTS: Home Assistant had NO automatic water shutoff on a leak.
+    The alerting automation only announces, notifies and sirens; nothing in the entire
+    config closed the valve on a leak. Automatic shutoff was handled entirely by YoLink
+    Control-D2D pairings between each leak sensor and the valve, operating at the
+    radio level with no hub, internet or power required. On 2026-08-26 a wet sensor
+    8 failed to close the valve, indicating the local hub migration broke those D2D
+    bindings, which left the house with no automatic shutoff at all. Scott chose a
+    human-in-the-loop button over unconditional automatic shutoff so a false positive
+    cannot cut the water while he is away. That is a deliberate decision, not an oversight.
+    D2D remains the power-out and internet-out failsafe and is being re-paired separately
+    using the SET buttons on the devices.
+
+
+    The snooze defect described above was fixed in the alerting automation on 2026-08-20;
+    its repeat while condition is now and(any sensor on, not snoozed).'
   triggers:
   - event_data:
       action: SNOOZE_LEAK
@@ -11579,6 +11717,11 @@
       action: DISMISS_LEAK
     event_type: mobile_app_notification_action
     id: dismiss
+    trigger: event
+  - event_data:
+      action: CLOSE_WATER
+    event_type: mobile_app_notification_action
+    id: close_water
     trigger: event
   actions:
   - choose:
@@ -11598,6 +11741,32 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.leak_alert_snoozed
+    - alias: Close Water pressed shuts the main water valve
+      conditions:
+      - condition: trigger
+        id: close_water
+      sequence:
+      - action: valve.close_valve
+        target:
+          entity_id: valve.main_water_valve
+      - wait_for_trigger:
+        - trigger: state
+          entity_id: valve.main_water_valve
+          to: closed
+        timeout:
+          seconds: 30
+        continue_on_timeout: true
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Main Water Valve
+          message: '{{ ''Water shut off at the main valve.'' if wait.completed else
+            ''WARNING: the main valve did not confirm closed within 30 seconds. Check
+            it manually.'' }}'
+          data:
+            channel: alarm_stream
+            importance: high
+            ttl: 0
+            priority: high
   max: 10
   mode: parallel
 - id: '1787271796385'
@@ -12008,4 +12177,117 @@
       alias: Close the garage door behind the mower
       target:
         entity_id: cover.garage_door
+  mode: single
+- id: '1787788122890'
+  alias: Reminder - Re-pair YoLink D2D Leak Sensors to Water Valve
+  description: 'TEMPORARY REMINDER, created 2026-08-26. Delete or turn off this automation
+    once the D2D re-pairing is finished.
+
+
+    WHY THIS EXISTS: the YoLink local hub migration on 2026-08-26 appears to have
+    broken every Control-D2D binding between the nine water leak sensors and the main
+    water valve. A wet sensor 8 failed to close the valve, and the valve was verified
+    working minutes earlier by a manual test, which isolates the fault to the D2D
+    binding rather than the valve.
+
+
+    Until those bindings are rebuilt the house has NO unattended automatic water shutoff.
+    Home Assistant never closed the valve on a leak; it only announces, notifies and
+    sirens. D2D was the entire automatic shutoff mechanism, and it is the only one
+    that works with the power out and the internet down. A Close Water button was
+    added to the leak notification on 2026-08-26 as a stopgap, but that requires Scott
+    to see and tap a phone notification.
+
+
+    RE-PAIRING PROCEDURE, from YoLink''s YS7906-UC manual. No app and no internet
+    needed; it is all SET buttons on the devices.
+
+    1. Close the main water valve and confirm it reads closed. Do this ONCE. Nothing
+    reopens it on its own, so it stays closed through all nine pairings.
+
+    2. On the leak sensor, hold SET for 5 to 10 seconds until the green LED blinks
+    rapidly, then release.
+
+    3. On the valve controller, hold SET for 5 to 10 seconds until its green LED blinks
+    rapidly, then release.
+
+    4. Pairing is confirmed when the LED stops blinking, which may be after only two
+    or three blinks.
+
+    5. Repeat steps 2 and 3 for each of the nine sensors.
+
+    6. Open the valve when finished.
+
+
+    Test the FIRST pair before doing the other eight, so a broken procedure is not
+    repeated nine times. Do not hold SET for 20 to 30 seconds; that is a factory reset.
+
+
+    This reminder repeats daily at 9:00 AM on purpose rather than firing once, because
+    a single missed notification would leave a safety gap open indefinitely. Scott
+    turns it off himself when the work is done.'
+  triggers:
+  - at: 09:00:00
+    trigger: time
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      data:
+        channel: alarm_stream
+        importance: high
+        priority: high
+        ttl: 0
+      message: The water leak sensors are still not D2D paired to the main valve.
+        Until they are, there is no automatic water shutoff when the power or internet
+        is down. Close the valve first, then hold SET 5-10s on each sensor followed
+        by SET 5-10s on the valve. Nine sensors. Turn this reminder off when done.
+      title: Re-pair YoLink D2D Leak Sensors
+  - action: persistent_notification.create
+    data:
+      message: '**No unattended water shutoff until this is done.**
+
+
+        1. Close the main valve once and confirm closed
+
+        2. Hold SET on the leak sensor 5-10s until green LED blinks fast
+
+        3. Hold SET on the valve 5-10s until its LED blinks fast
+
+        4. LED stops blinking = paired
+
+        5. Repeat for all nine sensors
+
+        6. Open the valve when finished
+
+
+        Test the first pair before doing the rest. Do NOT hold SET for 20-30s, that
+        is a factory reset.
+
+
+        Turn off automation.reminder_re_pair_yolink_d2d_leak_sensors_to_water_valve
+        when complete.'
+      notification_id: yolink_d2d_repair_reminder
+      title: Re-pair YoLink D2D Leak Sensors to Water Valve
+  mode: single
+- id: '1787807305908'
+  alias: Fridge Filters Weekly Countdown
+  description: Decrements the fresh air filter and water filter week counters by one
+    every Monday morning. Each filter has a 26 week (6 month) service life, so the
+    counters run 26 down to 0 and stop at the input_number minimum of 0. The M3 Supply
+    Card on the Appliances view of the Mobile dashboard shows these as dots and its
+    Pack refilled button sets the counter back to 26 when a filter is physically changed.
+  triggers:
+  - at: 03:00:00
+    trigger: time
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+  actions:
+  - action: input_number.decrement
+    alias: Take one week off both fridge filter counters
+    target:
+      entity_id:
+      - input_number.fridge_air_filter_weeks_left
+      - input_number.fridge_water_filter_weeks_left
   mode: single

@@ -1,0 +1,91 @@
+- id: '1787788122890'
+  alias: Reminder - Re-pair YoLink D2D Leak Sensors to Water Valve
+  description: 'TEMPORARY REMINDER, created 2026-08-26. Delete or turn off this automation
+    once the D2D re-pairing is finished.
+
+
+    WHY THIS EXISTS: the YoLink local hub migration on 2026-08-26 appears to have
+    broken every Control-D2D binding between the nine water leak sensors and the main
+    water valve. A wet sensor 8 failed to close the valve, and the valve was verified
+    working minutes earlier by a manual test, which isolates the fault to the D2D
+    binding rather than the valve.
+
+
+    Until those bindings are rebuilt the house has NO unattended automatic water shutoff.
+    Home Assistant never closed the valve on a leak; it only announces, notifies and
+    sirens. D2D was the entire automatic shutoff mechanism, and it is the only one
+    that works with the power out and the internet down. A Close Water button was
+    added to the leak notification on 2026-08-26 as a stopgap, but that requires Scott
+    to see and tap a phone notification.
+
+
+    RE-PAIRING PROCEDURE, from YoLink''s YS7906-UC manual. No app and no internet
+    needed; it is all SET buttons on the devices.
+
+    1. Close the main water valve and confirm it reads closed. Do this ONCE. Nothing
+    reopens it on its own, so it stays closed through all nine pairings.
+
+    2. On the leak sensor, hold SET for 5 to 10 seconds until the green LED blinks
+    rapidly, then release.
+
+    3. On the valve controller, hold SET for 5 to 10 seconds until its green LED blinks
+    rapidly, then release.
+
+    4. Pairing is confirmed when the LED stops blinking, which may be after only two
+    or three blinks.
+
+    5. Repeat steps 2 and 3 for each of the nine sensors.
+
+    6. Open the valve when finished.
+
+
+    Test the FIRST pair before doing the other eight, so a broken procedure is not
+    repeated nine times. Do not hold SET for 20 to 30 seconds; that is a factory reset.
+
+
+    This reminder repeats daily at 9:00 AM on purpose rather than firing once, because
+    a single missed notification would leave a safety gap open indefinitely. Scott
+    turns it off himself when the work is done.'
+  triggers:
+  - at: 09:00:00
+    trigger: time
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      data:
+        channel: alarm_stream
+        importance: high
+        priority: high
+        ttl: 0
+      message: The water leak sensors are still not D2D paired to the main valve.
+        Until they are, there is no automatic water shutoff when the power or internet
+        is down. Close the valve first, then hold SET 5-10s on each sensor followed
+        by SET 5-10s on the valve. Nine sensors. Turn this reminder off when done.
+      title: Re-pair YoLink D2D Leak Sensors
+  - action: persistent_notification.create
+    data:
+      message: '**No unattended water shutoff until this is done.**
+
+
+        1. Close the main valve once and confirm closed
+
+        2. Hold SET on the leak sensor 5-10s until green LED blinks fast
+
+        3. Hold SET on the valve 5-10s until its LED blinks fast
+
+        4. LED stops blinking = paired
+
+        5. Repeat for all nine sensors
+
+        6. Open the valve when finished
+
+
+        Test the first pair before doing the rest. Do NOT hold SET for 20-30s, that
+        is a factory reset.
+
+
+        Turn off automation.reminder_re_pair_yolink_d2d_leak_sensors_to_water_valve
+        when complete.'
+      notification_id: yolink_d2d_repair_reminder
+      title: Re-pair YoLink D2D Leak Sensors to Water Valve
+  mode: single

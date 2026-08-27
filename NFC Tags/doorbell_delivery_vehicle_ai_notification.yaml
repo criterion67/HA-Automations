@@ -27,7 +27,11 @@
     it disagrees with the porch view, and to stop requiring signs of recent activity,
     since the package detection path often snapshots an empty frame after the courier
     has already left. A package now counts on presence alone, and resident_retrieving
-    requires a person to actually be visible.'
+    requires a person to actually be visible. YOLINK LOCAL MIGRATION, 2026-08-26:
+    the mailbox trigger entity changed from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor
+    when the sensor moved from the YoLink cloud integration to the YoLink Local (yolocal)
+    integration on the YS1606-UC Local Hub. Behaviour is unchanged; the local integration
+    simply names the primary entity after the device, dropping the _door suffix.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     for:
@@ -35,7 +39,7 @@
     id: driveway
     to: 'on'
     trigger: state
-  - entity_id: binary_sensor.mailbox_sensor_door
+  - entity_id: binary_sensor.mailbox_sensor
     id: mailbox
     to: 'on'
     trigger: state

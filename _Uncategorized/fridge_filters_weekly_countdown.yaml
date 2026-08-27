@@ -1,0 +1,22 @@
+- id: '1787807305908'
+  alias: Fridge Filters Weekly Countdown
+  description: Decrements the fresh air filter and water filter week counters by one
+    every Monday morning. Each filter has a 26 week (6 month) service life, so the
+    counters run 26 down to 0 and stop at the input_number minimum of 0. The M3 Supply
+    Card on the Appliances view of the Mobile dashboard shows these as dots and its
+    Pack refilled button sets the counter back to 26 when a filter is physically changed.
+  triggers:
+  - at: 03:00:00
+    trigger: time
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+  actions:
+  - action: input_number.decrement
+    alias: Take one week off both fridge filter counters
+    target:
+      entity_id:
+      - input_number.fridge_air_filter_weeks_left
+      - input_number.fridge_water_filter_weeks_left
+  mode: single

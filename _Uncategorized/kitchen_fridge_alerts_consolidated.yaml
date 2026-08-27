@@ -18,9 +18,9 @@
     Thresholds are carried over unchanged and are based on 7 day historical data plus
     FDA food safety guidance.
 
-    Fridge (sensor.temp_sensor_main_fridge): normal 35 to 39F. Early warning above
-    43F for 10 min. Ceiling alert above 45F for 20 min. Runaway cold below 33F for
-    20 min.
+    Fridge (sensor.temp_sensor_fridge): normal 35 to 39F. Early warning above 43F
+    for 10 min. Ceiling alert above 45F for 20 min. Runaway cold below 33F for 20
+    min.
 
     Freezer (sensor.inkbird_kitchen_freezer_temperature): 0F target. Early warning
     above 10F for 10 min. Ceiling alert above 15F for 20 min. Runaway cold below -10F
@@ -29,7 +29,7 @@
     Sensor offline: unavailable or unknown for 30 min on either sensor indicates battery
     failure or a Zigbee drop, which leaves temperature monitoring blind.
 
-    Batteries (sensor.battery_sensor_main_fridge, sensor.inkbird_temperature_sensor_battery):
+    Batteries (sensor.battery_sensor_fridge, sensor.inkbird_temperature_sensor_battery):
     below 10 percent. The low threshold is intentional because these small batteries
     fall off quickly once past 20 percent.
 
@@ -45,7 +45,7 @@
     reading included.'
   triggers:
   - above: 45
-    entity_id: sensor.temp_sensor_main_fridge
+    entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 20
     id: fridge_high
@@ -57,7 +57,7 @@
     id: freezer_high
     trigger: numeric_state
   - above: 43
-    entity_id: sensor.temp_sensor_main_fridge
+    entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 10
     id: fridge_rising
@@ -69,7 +69,7 @@
     id: freezer_rising
     trigger: numeric_state
   - below: 33
-    entity_id: sensor.temp_sensor_main_fridge
+    entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 20
     id: fridge_low
@@ -80,13 +80,13 @@
       minutes: 20
     id: freezer_low
     trigger: numeric_state
-  - entity_id: sensor.temp_sensor_main_fridge
+  - entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 30
     id: fridge_unavail
     to: unavailable
     trigger: state
-  - entity_id: sensor.temp_sensor_main_fridge
+  - entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 30
     id: fridge_unknown
@@ -105,7 +105,7 @@
     to: unknown
     trigger: state
   - below: 10
-    entity_id: sensor.battery_sensor_main_fridge
+    entity_id: sensor.battery_sensor_fridge
     id: fridge_batt
     trigger: numeric_state
   - below: 10
@@ -130,7 +130,7 @@
           data:
             priority: high
             ttl: 0
-          message: 'Refrigerator has been above 45°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_main_fridge'')
+          message: 'Refrigerator has been above 45°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_fridge'')
             | round(1) }}°F. Check the door or compressor.'
           title: 🌡️ Fridge Too Warm
     - alias: Freezer above 15F for 20 min
@@ -157,7 +157,7 @@
             priority: high
             ttl: 0
           message: 'Refrigerator has been above 43°F for 10 minutes and still rising.
-            Current: {{ states(''sensor.temp_sensor_main_fridge'') | round(1) }}°F.'
+            Current: {{ states(''sensor.temp_sensor_fridge'') | round(1) }}°F.'
           title: ⚠️ Fridge Temp Climbing
     - alias: Freezer above 10F for 10 min
       conditions:
@@ -182,7 +182,7 @@
           data:
             priority: high
             ttl: 0
-          message: 'Refrigerator has been below 33°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_main_fridge'')
+          message: 'Refrigerator has been below 33°F for 20 minutes. Current: {{ states(''sensor.temp_sensor_fridge'')
             | round(1) }}°F. Risk of food freezing.'
           title: 🧊 Fridge Too Cold
     - alias: Freezer below -10F for 20 min
@@ -238,7 +238,7 @@
           data:
             priority: high
             ttl: 0
-          message: Main fridge temperature sensor battery is at {{ states('sensor.battery_sensor_main_fridge')
+          message: Main fridge temperature sensor battery is at {{ states('sensor.battery_sensor_fridge')
             }}%. Replace soon to avoid sensor loss.
           title: 🔋 Fridge Sensor Battery Low
     - alias: Freezer sensor battery below 10 percent

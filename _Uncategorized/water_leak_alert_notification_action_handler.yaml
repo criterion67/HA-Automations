@@ -31,7 +31,31 @@
     in rather than negated and ANDed, pressing Snooze does not suppress anything;
     it makes the loop continue even after every leak sensor has cleared, until Dismiss
     is pressed. The intended logic is almost certainly and(any sensor on, not snoozed).
-    Flagged to Scott 2026-08-20, left untouched pending his decision.'
+    Flagged to Scott 2026-08-20, left untouched pending his decision.
+
+
+    CLOSE WATER BUTTON ADDED 2026-08-26. CLOSE_WATER calls valve.close_valve on valve.main_water_valve,
+    waits up to 30 seconds for the valve to report closed, then sends a high priority
+    confirmation push. If the valve does not confirm within 30 seconds the push instead
+    warns that it must be checked manually, so a silent failure of the shutoff is
+    never mistaken for success.
+
+
+    WHY THIS BUTTON EXISTS: Home Assistant had NO automatic water shutoff on a leak.
+    The alerting automation only announces, notifies and sirens; nothing in the entire
+    config closed the valve on a leak. Automatic shutoff was handled entirely by YoLink
+    Control-D2D pairings between each leak sensor and the valve, operating at the
+    radio level with no hub, internet or power required. On 2026-08-26 a wet sensor
+    8 failed to close the valve, indicating the local hub migration broke those D2D
+    bindings, which left the house with no automatic shutoff at all. Scott chose a
+    human-in-the-loop button over unconditional automatic shutoff so a false positive
+    cannot cut the water while he is away. That is a deliberate decision, not an oversight.
+    D2D remains the power-out and internet-out failsafe and is being re-paired separately
+    using the SET buttons on the devices.
+
+
+    The snooze defect described above was fixed in the alerting automation on 2026-08-20;
+    its repeat while condition is now and(any sensor on, not snoozed).'
   triggers:
   - event_data:
       action: SNOOZE_LEAK
@@ -42,6 +66,11 @@
       action: DISMISS_LEAK
     event_type: mobile_app_notification_action
     id: dismiss
+    trigger: event
+  - event_data:
+      action: CLOSE_WATER
+    event_type: mobile_app_notification_action
+    id: close_water
     trigger: event
   actions:
   - choose:
@@ -61,5 +90,31 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.leak_alert_snoozed
+    - alias: Close Water pressed shuts the main water valve
+      conditions:
+      - condition: trigger
+        id: close_water
+      sequence:
+      - action: valve.close_valve
+        target:
+          entity_id: valve.main_water_valve
+      - wait_for_trigger:
+        - trigger: state
+          entity_id: valve.main_water_valve
+          to: closed
+        timeout:
+          seconds: 30
+        continue_on_timeout: true
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Main Water Valve
+          message: '{{ ''Water shut off at the main valve.'' if wait.completed else
+            ''WARNING: the main valve did not confirm closed within 30 seconds. Check
+            it manually.'' }}'
+          data:
+            channel: alarm_stream
+            importance: high
+            ttl: 0
+            priority: high
   max: 10
   mode: parallel
