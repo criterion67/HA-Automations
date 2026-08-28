@@ -54,7 +54,17 @@
 
 
     The flag is deliberately left ON at the end. automation.mower_garage_return clears
-    it after the mower docks.'
+    it after the mower docks.
+
+
+    RETURN GUARD ADDED 2026-08-27. A condition now blocks this automation whenever
+    sensor.jason_momower_state_name reads returning, charging or charging_completed.
+    Without it, a 0.7 second flicker of the docked flag during a RETURN looked exactly
+    like a departure: this automation fired, opened the door, and then closed it 108
+    seconds later straight into the arriving mower, which reported "Return to station
+    failed" and was stranded outside for 40 minutes. Do not remove this guard. The
+    trigger hold alone cannot distinguish the two cases, because the flicker and the
+    real undock produce an identical off transition.'
   triggers:
   - entity_id: binary_sensor.jason_momower_docked
     for:
@@ -67,6 +77,27 @@
     condition: state
     entity_id: input_boolean.mower_cycle_active
     state: 'off'
+  - alias: Not a RETURN misread as a departure
+    condition: not
+    conditions:
+    - condition: state
+      entity_id: sensor.jason_momower_state_name
+      state:
+      - returning
+      - charging
+      - charging_completed
+    note: 'ADDED 2026-08-27 after this automation closed the garage door on the returning
+      mower. Sequence: at 18:13:14 binary_sensor.jason_momower_docked FLICKERED ON
+      for 0.7 seconds and went off again at 18:13:15 as the mower began its return.
+      That off transition is indistinguishable from a departure, so at 18:13:25 this
+      automation fired, raised the flag, opened the door at 18:13:26, ran its 108
+      second delay and CLOSED the door at 18:15:19, exactly as the mower was arriving.
+      The mower reported "Return to station failed" at 18:15:44 and sat outside for
+      40 minutes. A genuine unattended start never has state_name reading returning,
+      charging or charging_completed, so this condition blocks the misfire without
+      weakening real coverage. The 10 second hold on the trigger is NOT sufficient
+      on its own, because state_name had already read returning for 10 full seconds
+      when this ran.'
   actions:
   - action: input_boolean.turn_on
     alias: Raise the suppression flag so the return leg is handled normally

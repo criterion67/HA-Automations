@@ -170,7 +170,9 @@ HOW IT WORKS
 5. If it opened the door, it waits out the rest of the 120 second exit window and closes it. If the door was already open when the mower undocked, it leaves the door alone entirely, on the assumption Scott opened it on purpose.
 6. Notifies Scott's Pixel either way, since an unattended start is something he should know about.
 
-The flag is deliberately left ON at the end. automation.mower_garage_return clears it after the mower docks. |
+The flag is deliberately left ON at the end. automation.mower_garage_return clears it after the mower docks.
+
+RETURN GUARD ADDED 2026-08-27. A condition now blocks this automation whenever sensor.jason_momower_state_name reads returning, charging or charging_completed. Without it, a 0.7 second flicker of the docked flag during a RETURN looked exactly like a departure: this automation fired, opened the door, and then closed it 108 seconds later straight into the arriving mower, which reported "Return to station failed" and was stranded outside for 40 minutes. Do not remove this guard. The trigger hold alone cannot distinguish the two cases, because the flicker and the real undock produce an identical off transition. |
 | NFC Tag Actions (Consolidated) | Single handler for 11 NFC tags, replacing 11 separate automations. Each tag maps to its own trigger id and its own choose branch, so no two branches can ever match the same run and the first match behavior of choose cannot silently swallow a branch.
 
 Mode is parallel with max 10 so scanning one tag never blocks another. The old automations were each mode single but independent of one another, so a slow action in one could not delay the rest; parallel preserves that independence. The tradeoff is that a rapid double scan of the same tag now runs twice instead of dropping the second. For the lock toggles this is harmless because both runs read the same lock state and issue the same command.
