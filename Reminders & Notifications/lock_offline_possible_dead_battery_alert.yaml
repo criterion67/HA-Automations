@@ -1,19 +1,32 @@
 - id: '1773524065682'
   alias: 'Lock Offline: Possible Dead Battery Alert'
-  description: If any lock is unavailable for 2+ hours, send a notification with Snooze
-    24h and Replaced options. Uses the same snooze store as the low battery alert.
-    Replaced sets a 7-day snooze.
+  description: If any lock stays unavailable past its offline window, send a notification
+    with Snooze 24h and Replaced options. The four Z-Wave locks use a 2 hour window.
+    The bedroom closet Yale Bluetooth lock uses a 6 hour window because Bluetooth
+    dropouts are more frequent and normally self recovering. Uses the same snooze
+    store as the low battery alert. Replaced sets a 7 day snooze.
   triggers:
-  - entity_id:
+  - trigger: state
+    id: zwave_locks
+    entity_id:
     - lock.front_door_deadbolt
     - lock.rear_door_deadbolt
     - lock.sunroom_door_deadbolt
     - lock.laundry_room_door_deadbolt
-    - lock.bedroom_closet_door_deadbolt
     to: unavailable
     for:
       hours: 2
-    platform: state
+    note: Z-Wave locks recover within minutes when healthy, so 2 hours offline means
+      a real problem.
+  - trigger: state
+    id: yale_ble
+    entity_id:
+    - lock.bedroom_closet_door_deadbolt
+    to: unavailable
+    for:
+      hours: 6
+    note: Yale Bluetooth lock on yalexs_ble. Bluetooth dropouts are more frequent
+      and usually self recovering, so it gets a longer window than the Z-Wave locks.
   conditions:
   - condition: template
     value_template: "{% set key = trigger.entity_id %}\n{% set store = states('input_text.lock_battery_alert_snoozed_until')\
@@ -29,10 +42,13 @@
       store_raw: '{{ states(''input_text.lock_battery_alert_snoozed_until'') }}'
       store: "{% if store_raw in ['unknown','unavailable',''] %}\n  {}\n{% else %}\n\
         \  {{ store_raw | from_json }}\n{% endif %}"
+      offline_window: '{{ ''6 hours'' if trigger.id == ''yale_ble'' else ''2 hours''
+        }}'
   - action: notify.mobile_app_pixel_9
     data:
       title: Lock Offline - Possible Dead Battery
-      message: '{{ lock_name }} has been offline for 2+ hours. Battery may need replacing.'
+      message: '{{ lock_name }} has been offline for {{ offline_window }}. Battery
+        may need replacing.'
       data:
         tag: lock_offline_{{ lock_entity }}
         persistent: true
