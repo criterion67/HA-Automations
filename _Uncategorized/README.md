@@ -1,10 +1,10 @@
 # _Uncategorized
 
-46 automation(s) in this category.
+48 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
-| Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. |
+| Aqara 4 button remote | This automation configures actions for the Aqara 4-button remote (Opple wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer 4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium resolution channel (1440x1920) as the high resolution portrait stream (3024x4096) is not rendered correctly by Chromecast. TTS TARGET FIXED 2026-08-29: the garage door announcements targeted media_player.whole_house, a Music Assistant entity that no longer exists. They now use media_player.all_speakers, the house-wide Cast speaker group. |
 | Bathroom Vanity: Double Tap Full Bright with AL Override | Double tapping up on the Bathroom Light Switch marks the vanity group as manually controlled in Adaptive Lighting, then applies the daylight scene (full brightness, 6535K). Without the manual control mark, AL re-adapts brightness back down on its next 90 second cycle because detect_non_ha_changes is off and commands sent over the Zigbee group bind are invisible to it. When the vanity group turns off from any source (paddle, presence automation, dashboard), manual control is released so AL resumes adapting on the next turn on. Replaces the former 'Bathroom light switch daylight scene' automation, which used the same double tap trigger without the AL handling. |
 | Dashboard - Reset Dismissed Flags (Consolidated) | Clears the manual dismiss flags behind the conditional dashboard cards, so each alert card can appear again the next time its condition returns. Replaces six separate automations, one per flag.
 
@@ -44,8 +44,17 @@ Power (sensor.kitchen_fridge): below 1W for 10 min. A fridge idles at 2.5 to 8W 
 
 All branches send a high priority push to notify.mobile_app_pixel_9 with the current reading included. |
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
-| LibreLink - Sensor Expiration Notification | Sends mobile notifications and TTS announcements at 24 hours, 1 hour, and at the moment of Libre 3 sensor expiration. |
+| LibreLink - Sensor Expiration Notification | Sends mobile notifications and TTS announcements at 24 hours, 1 hour, and at the moment of Libre 3 sensor expiration. TTS is directed to the Bedroom Speaker Group. |
 | Living Room TV - Turn Off When Bill Leaves | When Bill has been away from home for 10 minutes, turn off the Living Room Chromecast. If Scott is home, send an actionable notification first asking whether to keep it on. If no response within 2 minutes, turn it off automatically. |
+| Low Battery Alert (All Battery Sensors) | Daily whole-house low battery check at 09:30, covering every sensor and binary sensor with the battery device class (about 140 percentage sensors plus 13 binary sensors as of 2026-08-30). Sends one push listing every device below 20 percent, rather than one notification per device.
+
+Built 2026-08-30. Until now every battery automation was device specific (locks, water valve, Ego, curtain motors, toothbrush, mower) and nothing watched the Zigbee temperature, door, window or leak sensors. Three Aqara temperature sensors died unnoticed as a result: Dining Room 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11.
+
+Threshold is 20 rather than 15 because the Foyer sensor stopped transmitting at 17 percent and would never have reached a 15 percent threshold.
+
+This uses the gmlupatelli/low_battery_notification blueprint, which was already imported but had never been used. Chosen over a native trigger because battery.level_crossed is rejected as an invalid trigger by HA Core 2026.8.3 on this instance, and battery.became_low only works on binary sensors, which would have covered 13 of 153 devices. The blueprint scans by device class, so newly added battery devices are covered automatically with no entity list to maintain.
+
+Pairs with automation.sensor_went_silent_alert, which catches the other failure mode: a sensor that stops reporting entirely while still showing a stale value. |
 | Mailbox delivery notification, 5 p.m. reminder & reset | Notifies when mail is delivered on the first mailbox opening of the day, then records a genuine second opening (mail collected) only when the delivery notification has already been standing for 30 minutes, so the door sensor bouncing during a single delivery does not falsely count as collection. Resets the notification flag daily at 6:00 AM, reminds to check the mail at 5:00 PM if the mailbox has not been opened a second time, and allows a manual reset using a dashboard button. Adds actionable notification buttons to reset or dismiss on Scott phone. Uses input_number.set_value rather than input_number.increment because Spook v5.0.0 overrides the increment service and reads a private attribute that HA core 2026.8 renamed, which raises an error and aborts the run. YOLINK LOCAL MIGRATION, 2026-08-26: the mailbox door sensor moved from the YoLink cloud integration to the YoLink Local (yolocal) integration on the YS1606-UC Local Hub. Its trigger entity changed from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor. The local integration names the primary entity after the device, so the _door suffix is gone. Device class is still door, so the off to on transition still means the mailbox was opened. |
 | Master Updates Notification | Notifies when any update entity becomes available or is completed, and uses the IKEA Fado lamp in the bedroom as a visual pending indicator: green while a critical infrastructure update is outstanding (HA Core, OS, Supervisor, Apps, UniFi gear), royalblue for everything else, and off once nothing is pending.
 
@@ -55,7 +64,9 @@ This version triggers only on sensor.pending_updates, a template helper whose st
 
 LAMP OWNERSHIP. Neither of the old automations ever turned the lamp off, so a completed update simply relit it. This version tracks ownership with input_boolean.fado_update_indicator_active, which is set on whenever this automation lights the lamp. When the pending count reaches zero the lamp is turned off ONLY if that flag is on, so a lamp Scott turned on himself for normal bedroom use is never switched off by an update completing. A second trigger watches the lamp for any transition to off (manual, a scene such as the 11 PM Lights Off scene, or this automation itself) and clears the flag, so ownership is released as soon as anyone else takes the lamp.
 
-The changed entity is identified as the update entity with the most recent last_changed, which is sound because last_changed only advances on an actual on/off transition, not on attribute updates. Limitation worth knowing: if two update entities flip in opposite directions within the same instant the count is unchanged and no notification fires, and if two flip the same direction at once only the most recent is named. Both are rare. The startup guard skips the unavailable to value transition after a restart so a reboot does not produce a spurious notification. |
+The changed entity is identified as the update entity with the most recent last_changed, which is sound because last_changed only advances on an actual on/off transition, not on attribute updates. Limitation worth knowing: if two update entities flip in opposite directions within the same instant the count is unchanged and no notification fires, and if two flip the same direction at once only the most recent is named. Both are rare. The startup guard skips the unavailable to value transition after a restart so a reboot does not produce a spurious notification.
+
+CRITICAL LIST PRUNED 2026-08-30: update.office_usw_flex_mini and update.cloud_gateway_ultra_2 were removed from the critical list. Both were stale UniFi registry entries with no integration behind them, deleted during the Spook 5.1.0 dead-entity cleanup. The live equivalents already in the list are update.usw_flex_mini (Office 2) and update.usw_flex_2_5g_5 (Office 1); the Cloud Gateway Ultra has no live update entity, so nothing replaced it. |
 | Medication Reminders - Handle Notification Actions | Handles taps on medication reminder notifications. Taken: dismisses the notification silently by clearing the tag. Snooze: turns on the corresponding snooze input_boolean which triggers the main reminder automation to wait 30 minutes and re-send. |
 | Monthly Valve Test | On the 1st of each month, cycles the main water valve closed then open to verify it is operational. Sends a mobile notification with results. On failure, sends a critical alert and creates a persistent dashboard notification. |
 | Mower Chain Advance | Drives the chained whole-yard run. script.mower_full_yard_chain starts leg one, the rear yard; this automation owns everything after that. It reads input_select.mower_chain_leg to know where the chain is and advances rear to front to side, each leg being its own single-zone session ending in a normal return and dock.
@@ -200,7 +211,26 @@ Battery semantics carried over unchanged: sensor.fresh_element_solo_battery_leve
 | Petkit - Feeding Schedule | Dispenses Gracie's three daily meals via the Fresh Element Solo and plays the 9000 Hz tone to call her. Schedule: 30g at 7:00 AM, 20g at 12:00 PM, 30g at 6:00 PM = 80g daily total. |
 | Pico 2 - Bedroom Ceiling Lights Control | Controls bedroom ceiling lights using the Lutron Pico 2 remote: on, off, raise brightness, lower brightness. |
 | Pico 2 - Bedroom: ON Button | Handles single, double, and hold for the Pico 2 ON button. Single=turn on, Hold=50% warm white, Double=100% warm white. |
-| Power Outage - Desktop Shutdown | Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host are handled separately by the EFR3P-2 automation. |
+| Power Outage - Desktop Shutdown | DISABLED 2026-08-30 - DOES NOT WORK. Do not re-enable until rebuilt for Linux.
+
+This automation depended entirely on HASS.Agent running on the Windows desktop, which published its entities over MQTT. Scott moved to the Linux Mint desktop as his main machine and HASS.Agent is Windows only, so every entity it provided is now unavailable:
+  button.scott_desktop_shutdown (the actual shutdown, and the reason this automation cannot work)
+  button.scott_desktop_restart
+  button.scott_desktop_sleep
+  sensor.scott_desktop_goldenmatebatterylevel (one of the two triggers)
+  sensor.scott_desktop_goldenmateruntimeremaining
+  sensor.scott_desktop_goldenmatestatus
+
+Left enabled it would fire its two notifications on a real outage and then press a button that does not exist, giving the appearance of protection while the desktop rode the UPS down to zero. Turned off so it stops presenting as working.
+
+ALSO AFFECTED, three template helpers read those dead sensors and now return defaults rather than errors: binary_sensor.goldenmate_ac_power currently reports NO AC POWER while grid power is fine, because its template is int(0) == 2 on an unavailable source. sensor.goldenmate_battery_level and sensor.goldenmate_runtime_remaining are the same shape. The pihole-ups dashboard has a Goldenmate - Desktop section showing all of it.
+
+REBUILD PLAN. Nothing here was deleted, because this is the skeleton of the replacement. Repoint rather than recreate:
+  1. Replace the button.press step with a shell_command that SSHes into the Linux desktop, matching the working pattern already in configuration.yaml for shutdown_unas_pro and shutdown_udm_pro_max, both using the key at /config/.ssh/id_ha_power.
+  2. Confirm whether the Linux desktop is physically on the Goldenmate at all. Scott was unsure as of 2026-08-30. If it is, HA needs a new way to read that UPS since the software that read it is gone. If it is not, drop the battery trigger and keep only the EFR3P-1 AC-offline trigger.
+  3. Repoint or retire the three Goldenmate template helpers and the pihole-ups dashboard section to match whatever step 2 decides.
+
+ORIGINAL PURPOSE, kept for reference: shut down SCOTT-DESKTOP when either EFR3P-1 AC had been offline for 10 minutes, or the Goldenmate battery dropped below 25 percent. Network gear and the HA host are handled separately by automation.power_outage_efr3p_2_network_ha_shutdown, which is unaffected by any of this. |
 | Power Outage - EFR3P-2 Network & HA Shutdown | When EFR3P-2 battery drops to 20% while AC is offline, sets outage flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and the HA host (Wyse 5070). HA will auto-restart when grid power is restored. |
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts. |
 | Reminder - Re-pair YoLink D2D Leak Sensors to Water Valve | TEMPORARY REMINDER, created 2026-08-26. Delete or turn off this automation once the D2D re-pairing is finished.
@@ -220,6 +250,15 @@ RE-PAIRING PROCEDURE, from YoLink's YS7906-UC manual. No app and no internet nee
 Test the FIRST pair before doing the other eight, so a broken procedure is not repeated nine times. Do not hold SET for 20 to 30 seconds; that is a factory reset.
 
 This reminder repeats daily at 9:00 AM on purpose rather than firing once, because a single missed notification would leave a safety gap open indefinitely. Scott turns it off himself when the work is done. |
+| Sensor Went Silent Alert | Fires when a battery-powered sensor stops reporting altogether while still showing a healthy-looking value.
+
+Built 2026-08-30 after three Aqara temperature sensors failed unnoticed: Dining Room went quiet 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11. Nothing in the system watched for this. The Foyer case is why this exists: it is on Zigbee2MQTT, MQTT retains the last published value, so when the device stopped transmitting at 17 percent battery the entity kept serving 74.606 degrees every day for five and a half weeks. It never went unavailable, and it silently skewed sensor.average_indoor_temperature the whole time.
+
+Uses the spook.stale trigger from Spook 5.1.0. Targets are labels rather than areas so a sensor moved between rooms stays covered without editing this automation. Six hours is well beyond the normal reporting interval of these Zigbee sensors, so a routine missed report will not fire it.
+
+KNOWN LIMITATION, by design in Spook: entities that were already silent when this automation loaded are left alone. It only reports silence that begins while it is running. So it will NOT alert on the Foyer sensor, which is frozen right now. Spook does this deliberately so that reloading automations does not replay every sensor that has ever gone quiet.
+
+A companion low-battery automation is still outstanding. The native battery.level_crossed trigger was rejected as invalid by HA Core 2026.8.3 on this instance. |
 | Tablet Nightly Maintenance | Every evening at 19:00, clears the browser cache on both Galaxy Tab A9+ tablets, then performs a full device restart. After the restart delay, loads the start URL on both tablets. The bedroom tablet (A9+ 1) and office tablet (A9+ 2) run in parallel. |
 | Unlock Front Door: UniFi Access Granted | When UniFi Access grants entry at the front door via any authentication method (PIN, NFC, face unlock, mobile app, or remote), unlock the front door deadbolt via Z-Wave. Triggered by the hass-unifi-access integration event entity via local WebSocket — no cloud dependency. |
 | V2.2 Garage Presence Lighting Control | Controls garage ceiling lights and workbench light based on presence and PIR motion detection. Replaces V2.1 (disabled, preserved for rollback). Ceiling lights turn on when garage_presence_target_count > 0, and turn off after 60 seconds of no presence UNLESS input_boolean.workbench_occupied is on (meaning the workbench PIR sensor still detects activity). Workbench light (switch.workbench_light) turns on when binary_sensor.pir_ms_1_occupancy detects motion and turns off 5 minutes after motion clears; it also sets/clears input_boolean.workbench_occupied to prevent the ceiling lights from shutting off while someone is at the workbench. Night-time block (11:00pm-6:00am) applies to ceiling lights only, bypassed by input_boolean.garage_light_time_override. Time override resets at 6:00am daily. Manual override (input_boolean.garage_presence_override) bypasses the entire automation. |

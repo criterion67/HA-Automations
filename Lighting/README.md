@@ -19,7 +19,7 @@
 | Living Room TV - Control TV Backlighting | Turns the Living Room TV backlight on or off based on the TV's power state. Includes a 3-second retry for turn-off if the light fails to respond. |
 | Lutron Aurora: Living Room Floor Lamps v2.5 (Performance Edition) | Ultra-responsive control with true off, daylight toggle, and stabilized dimming. |
 | Pantry Door: Light On/Off | This automation controls the pantry light based on the door's status. It turns the light on when the door is opened, turns it off when the door is closed, and automatically turns it off if the door is left open for more than 5 minutes. |
-| Philips Tap Dial Switch- Bedroom | Rotary dimmer and button 1 controls the bedside lights, button 2 controls TV lights and underbed light, button 4 initiates Bill's bedtime scene. |
+| Philips Tap Dial Switch- Bedroom | Rotary dimmer and button 1 controls the bedside lights, button 2 controls TV lights and underbed light, button 4 initiates Bill's bedtime scene. TTS/chime target fixed 2026-08-29: button 2 cast to media_player.whole_house, a Music Assistant entity that no longer exists. It now uses media_player.all_speakers, the house-wide Cast speaker group. |
 | Shower Light Switch |  |
 | Sunroom Lights: Lamp - on/off | When ceiling light wall switch is turned on or off, sunroom lamp will also turn on or off as well. |
 | Toothbrush: Mirror Light Control | Turns bathroom mirror light on when toothbrush is running, off when idle. |

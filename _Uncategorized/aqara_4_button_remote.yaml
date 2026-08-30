@@ -1,10 +1,13 @@
 - id: '1777519968143'
   alias: Aqara 4 button remote
-  description: This automation configures actions for the Aqara 4-button remote (Opple
+  description: 'This automation configures actions for the Aqara 4-button remote (Opple
     wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer
     4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium
     resolution channel (1440x1920) as the high resolution portrait stream (3024x4096)
-    is not rendered correctly by Chromecast.
+    is not rendered correctly by Chromecast. TTS TARGET FIXED 2026-08-29: the garage
+    door announcements targeted media_player.whole_house, a Music Assistant entity
+    that no longer exists. They now use media_player.all_speakers, the house-wide
+    Cast speaker group.'
   triggers:
   - topic: zigbee2mqtt/Aqara 4 button remote
     value_template: '{{ value_json.action }}'
@@ -117,7 +120,7 @@
             action: light.turn_off
         - sequence:
           - target:
-              entity_id: media_player.whole_house
+              entity_id: media_player.all_speakers
             data:
               cache: true
               message: The garage door has been closed
@@ -151,7 +154,7 @@
             action: light.turn_on
         - sequence:
           - target:
-              entity_id: media_player.whole_house
+              entity_id: media_player.all_speakers
             data:
               cache: true
               message: The garage door has been opened

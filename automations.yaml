@@ -135,8 +135,11 @@
   mode: single
 - id: '1700846828462'
   alias: Philips Tap Dial Switch- Bedroom
-  description: Rotary dimmer and button 1 controls the bedside lights, button 2 controls
-    TV lights and underbed light, button 4 initiates Bill's bedtime scene.
+  description: 'Rotary dimmer and button 1 controls the bedside lights, button 2 controls
+    TV lights and underbed light, button 4 initiates Bill''s bedtime scene. TTS/chime
+    target fixed 2026-08-29: button 2 cast to media_player.whole_house, a Music Assistant
+    entity that no longer exists. It now uses media_player.all_speakers, the house-wide
+    Cast speaker group.'
   use_blueprint:
     path: nnmalex/philips_tap_dial_switch.yaml
     input:
@@ -154,7 +157,7 @@
         data:
           volume: 0.6
           media_file:
-            entity_id: media_player.whole_house
+            entity_id: media_player.all_speakers
             media_content_id: media-source://media_source/local/Doorbell_1.mp3
             media_content_type: audio/mpeg
             metadata:
@@ -470,27 +473,6 @@
           - switch.attic_garage_light
         data: {}
         action: switch.turn_off
-  mode: single
-- id: '1719247743911'
-  alias: Away Mode Button
-  description: The laundry room button will activate away mode and turn off everything
-    and said house in a way mode when Laundry room button is double pressed.
-  trigger:
-  - device_id: 0692e92c3a10fc27e64992758dbd5f9f
-    domain: zha
-    platform: device
-    type: remote_button_double_press
-    subtype: remote_button_double_press
-  - platform: state
-    entity_id:
-    - input_boolean.shut_down_house
-    to: 'on'
-  condition: []
-  action:
-  - service: scene.turn_on
-    metadata: {}
-    target:
-      entity_id: scene.away_mode_everything_off
   mode: single
 - id: '1720565781972'
   alias: Garage AC Power Loss Notification
@@ -1807,16 +1789,21 @@
   mode: single
 - id: '1747090407891'
   alias: Watch charging notifications
-  description: ''
+  description: 'Chimes and announces on the bedroom speaker when the watch starts
+    charging, and again when it reaches full, with a push on the full event.
+
+
+    ENTITY RENAME 2026-08-30: sensor.galaxy_watch7_904t_battery_state became sensor.scott_s_watch_battery_state.
+    The watch entities were renamed off the model number so a future watch upgrade
+    drops straight in without editing automations.'
   triggers:
   - entity_id:
-    - sensor.galaxy_watch7_904t_battery_state
+    - sensor.scott_s_watch_battery_state
     to:
     - charging
     id: Charging
     trigger: state
-  - entity_id:
-    - sensor.galaxy_watch7_904t_battery_state
+  - entity_id: sensor.scott_s_watch_battery_state
     to: full
     id: Full
     trigger: state
@@ -2101,7 +2088,7 @@
   mode: single
 - id: '1751428822023'
   alias: Water Leak Alert 1 - Triggered Response
-  description: 'Sounds the alarm for a detected water leak: TTS announcement on media_player.whole_house
+  description: 'Sounds the alarm for a detected water leak: TTS announcement on media_player.all_speakers
     naming the sensor, a high priority actionable push with Snooze and Dismiss, then
     three siren pulses on switch.ring_alarm_siren, repeating every 5 minutes until
     the leak clears or the alert is snoozed.
@@ -2124,29 +2111,18 @@
     the boolean) before this alarm can sound again.
 
 
-    TEMPORARY SIREN FALLBACK, APPLIED 2026-08-21 - REVERT THIS WHEN THE RING SIREN
-    RETURNS.
-
-
-    This automation used to pulse switch.ring_alarm_siren three times. That entity
-    no longer exists. The Ring Alarm security panel device (Ring zid 6f3a0b61-64c5-4b2d-b835-68d429ad00a0),
-    which carried BOTH the alarm_control_panel and the siren switch, stopped being
-    published by the ring-mqtt add-on around 2026-08-15. Ruled out as causes: authentication,
-    the add-on state file, the add-on version (5.9.3 is latest), and the HA entity
-    registry. A complete uninstall, reinstall and re-authentication of ring-mqtt on
-    2026-08-21 rediscovered from scratch and still returned only three devices - Base
-    Station (ece94eb9-b82f-4452-a387-3c64368ff224), Keypad 1 (2a6309f1-76c2-431c-a3c7-d77b2dbff9f6)
-    and Keypad 2 (f6129287-6437-4ced-a2d0-16925827a75b). The alarm itself is healthy
-    and arms and disarms normally from the Ring phone app, so the panel exists on
-    the Ring account and ring-mqtt is simply not being given it. Open with the ring-mqtt
-    maintainer.
-
-
-    UNTIL THEN the siren step uses siren.chime_play_tone, the Ring Chime, tone 3 (siren2.mp3,
-    40 seconds) at full volume with an 8 second duration per pulse, keeping the original
-    three-pulse 8-on 12-off rhythm. Scott''s stated preference is to go back to the
-    Ring siren, so when a Ring siren entity reappears, replace this whole fallback
-    block and delete these two paragraphs.
+    SIREN RESTORED 2026-08-30. From 2026-08-21 this automation used a temporary Ring
+    Chime fallback because switch.ring_alarm_siren had disappeared. ROOT CAUSE, now
+    confirmed: Scott had excluded all of his Z-Wave contact sensors from the Ring
+    base station and paired them directly to Home Assistant. With no sensors enrolled,
+    Ring stops returning the security-panel device in its API, so ring-mqtt never
+    publishes the alarm_control_panel or the siren switch. This matches ring-mqtt
+    discussion #1073, where another user hit the same thing and resolved it the same
+    way. Re-enrolling a single contact sensor in the Ring app on 2026-08-30 brought
+    the security-panel device back within seconds, and ring-mqtt rebuilt both entities
+    on their original entity_ids automatically. The siren step pulses switch.ring_alarm_siren
+    again. KEEP AT LEAST ONE SENSOR ENROLLED IN THE RING APP, or the panel and siren
+    will vanish again.
 
 
     YOLINK LOCAL MIGRATION, 2026-08-26. All nine leak sensors moved off the YoLink
@@ -2174,7 +2150,14 @@
     Automatic unconditional shutoff would mean a single false positive cuts the water
     while Scott is away. The shutoff stays human-in-the-loop here, with YoLink Control-D2D
     providing the unattended failsafe at the radio level for the power-out and internet-out
-    case.'
+    case.
+
+
+    TTS TARGET FIXED 2026-08-29. The announcement step targeted media_player.whole_house,
+    a Music Assistant entity that no longer exists, so the spoken leak warning could
+    not play. It now targets media_player.all_speakers, the house-wide Cast speaker
+    group. Note that Music Assistant duplicates of these speaker groups carry a _2
+    suffix and are NOT valid TTS targets.'
   triggers:
   - entity_id:
     - binary_sensor.dishwasher_leak_sensor_1
@@ -2238,8 +2221,11 @@
             media_content_type: provider
             metadata: {}
         target:
-          entity_id: media_player.whole_house
+          entity_id: media_player.all_speakers
         action: media_player.play_media
+        note: House-wide Cast speaker group. Replaced media_player.whole_house on
+          2026-08-29 after that Music Assistant entity was found dead, which had silenced
+          this announcement.
       - data:
           title: "\U0001F6A8 URGENT - Water Leak Detected!"
           message: Leak detected at {{ triggered_sensor }}. Tap Close Water to shut
@@ -2258,22 +2244,21 @@
             priority: high
         action: notify.mobile_app_pixel_9
       - delay: 00:00:10
-      - alias: TEMPORARY FALLBACK SIREN - revert to the Ring siren when it returns
+      - alias: Three siren pulses on the Ring Alarm siren
         repeat:
           count: 3
           sequence:
-          - action: siren.turn_on
+          - action: switch.turn_on
             target:
-              entity_id: siren.chime_play_tone
-            data:
-              tone: '3'
-              volume_level: 1.0
-              duration: 8
+              entity_id: switch.ring_alarm_siren
           - delay: 00:00:08
-          - action: siren.turn_off
+          - action: switch.turn_off
             target:
-              entity_id: siren.chime_play_tone
+              entity_id: switch.ring_alarm_siren
           - delay: 00:00:12
+        note: Restored 2026-08-30. Three pulses of 8 seconds on, 12 seconds off, matching
+          the original rhythm. Replaced the Ring Chime fallback that ran from 2026-08-21
+          while switch.ring_alarm_siren did not exist.
       - delay: 00:05:00
   mode: restart
 - id: '1751596353822'
@@ -2352,11 +2337,11 @@
   mode: restart
 - id: '1751772259530'
   alias: Washer/Dryer Status Management
-  description: 'This automation monitors the washer and dryer''s status, providing
-    voice notifications for each cycle change. It also uses light color changes and
-    mobile notifications to alert when cycles start or finish.
-
-    '
+  description: This automation monitors the washer and dryer's status, providing voice
+    notifications for each cycle change. It also uses light color changes and mobile
+    notifications to alert when cycles start or finish. The bedroom ceiling light
+    state is snapshotted at the start of each run and restored at the end, so the
+    notification flash never leaves the light in the wrong state.
   triggers:
   - entity_id: sensor.machine_state_machine_status
     to: Run
@@ -2405,6 +2390,13 @@
     trigger: state
   conditions: []
   actions:
+  - action: scene.create
+    data:
+      scene_id: downlightsbefore
+      snapshot_entities:
+      - light.bedroom_ceiling_lights
+    note: Capture the bedroom ceiling light state at the start of every run so the
+      final step can put it back exactly as it was before the notification flash.
   - choose:
     - conditions:
       - condition: trigger
@@ -2585,6 +2577,8 @@
   - target:
       entity_id: scene.downlightsbefore
     action: scene.turn_on
+    note: Restore the bedroom ceiling light to the state captured by the snapshot
+      step at the start of this run.
   mode: single
 - id: '1752868210354'
   alias: Parcel box delivery notification
@@ -6358,7 +6352,7 @@
   mode: single
 - id: '1772667751581'
   alias: Levoit Air Purifier Filter Below 10% Notification
-  description: Notifies when the bedroom Levoit air purifier filter life drops below
+  description: 'Notifies when the bedroom Levoit air purifier filter life drops below
     10 percent. Fires on the threshold crossing and again daily at 09:00 while still
     low. Snooze pushes the next reminder to 08:00 tomorrow, Dismiss suppresses reminders
     until midnight tomorrow. Notification action names are namespaced (LEVOIT_FILTER_SNOOZE
@@ -6367,10 +6361,21 @@
     timestamp attribute rather than strptime, which previously raised a naive versus
     aware datetime error on every evaluation. Trigger threshold was 20 while the condition
     required below 10, so the threshold crossing never produced a notification; both
-    are now 10.
+    are now 10. REPOINTED 2026-08-29: this automation previously watched sensor.bedroom_air_purifier_filter_life,
+    which is a dead entity and, despite its entity_id, actually belonged to the Office
+    purifier rather than the Bedroom one. It now reads sensor.bedroom_vital_200s_1_filter_lifetime,
+    the live Bedroom Vital 200S filter sensor. EXTENDED 2026-08-29 to cover BOTH live
+    purifiers: the Bedroom Vital 200S and the Living Room unit. The notification names
+    whichever unit tripped, via trigger.to_state.name. KNOWN LIMITATION: Snooze and
+    Dismiss write to the two shared input_datetime helpers, so snoozing one purifier
+    snoozes both. Because the two filters sit only a few percent apart they are likely
+    to go low around the same time; if that becomes annoying, give each unit its own
+    pair of snooze/dismiss helpers.'
   triggers:
   - below: 10
-    entity_id: sensor.bedroom_air_purifier_filter_life
+    entity_id:
+    - sensor.bedroom_vital_200s_1_filter_lifetime
+    - sensor.living_room_air_purifier_filter_lifetime
     id: filter_low
     trigger: numeric_state
   - at: 09:00:00
@@ -6419,7 +6424,12 @@
         - daily_check
       - below: 10
         condition: numeric_state
-        entity_id: sensor.bedroom_air_purifier_filter_life
+        entity_id:
+        - sensor.bedroom_vital_200s_1_filter_lifetime
+        - sensor.living_room_air_purifier_filter_lifetime
+        note: numeric_state with two entity_ids passes when ANY listed sensor is below
+          the threshold, so the daily 09:00 re-check still fires for whichever unit
+          is low.
       - condition: template
         value_template: '{{ as_timestamp(now()) >= (state_attr(''input_datetime.air_purifier_filter_reminder_snooze_time'',''timestamp'')
           | float(0)) }}'
@@ -6435,9 +6445,11 @@
               title: Snooze
             - action: LEVOIT_FILTER_DISMISS
               title: Dismiss
-          message: Bedroom Levoit air purifier filter is at {{ states('sensor.bedroom_air_purifier_filter_life')
-            }} percent. Time to clean or replace it.
+          message: '{{ trigger.to_state.name if trigger.to_state is defined else ''An
+            air purifier'' }} is low. Time to clean or replace the filter.'
           title: Filter Change Needed
+        note: Message names the unit from the trigger, so one automation covers both
+          purifiers.
   mode: single
 - id: '1772667760179'
   alias: Scent Diffuser - Scheduled 10 Minute Cycle
@@ -7668,21 +7680,22 @@
 - id: '1774893025511'
   alias: LibreLink - Sensor Expiration Notification
   description: Sends mobile notifications and TTS announcements at 24 hours, 1 hour,
-    and at the moment of Libre 3 sensor expiration.
+    and at the moment of Libre 3 sensor expiration. TTS is directed to the Bedroom
+    Speaker Group.
   triggers:
-  - platform: template
-    value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
+  - value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=24)) and now() < (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=23)) }}'
     id: warning_24h
-  - platform: template
-    value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
+    trigger: template
+  - value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=1)) and now() < as_datetime(states(''sensor.librelink_expiration_timestamp''))
       }}'
     id: warning_1h
-  - platform: time
-    at: sensor.librelink_expiration_timestamp
+    trigger: template
+  - at: sensor.librelink_expiration_timestamp
     id: expired
+    trigger: time
   actions:
   - choose:
     - conditions:
@@ -7711,7 +7724,7 @@
             channel: Glucose Monitor
       - action: tts.cloud_say
         target:
-          entity_id: media_player.living_room_chromecast
+          entity_id: media_player.bedroom_group
         data:
           message: Attention. Your Libre 3 glucose sensor will expire in one hour.
             Please prepare a replacement sensor.
@@ -7729,7 +7742,7 @@
             channel: Glucose Monitor
       - action: tts.cloud_say
         target:
-          entity_id: media_player.living_room_chromecast
+          entity_id: media_player.bedroom_group
         data:
           message: Alert. Your Libre 3 glucose sensor has expired. Readings are no
             longer accurate. Please apply a new sensor now.
@@ -7876,18 +7889,44 @@
   mode: single
 - id: '1776226412089'
   alias: Power Outage - Desktop Shutdown
-  description: 'Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline
-    for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure
-    a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host
-    are handled separately by the EFR3P-2 automation.'
+  description: "DISABLED 2026-08-30 - DOES NOT WORK. Do not re-enable until rebuilt
+    for Linux.\n\nThis automation depended entirely on HASS.Agent running on the Windows
+    desktop, which published its entities over MQTT. Scott moved to the Linux Mint
+    desktop as his main machine and HASS.Agent is Windows only, so every entity it
+    provided is now unavailable:\n  button.scott_desktop_shutdown (the actual shutdown,
+    and the reason this automation cannot work)\n  button.scott_desktop_restart\n
+    \ button.scott_desktop_sleep\n  sensor.scott_desktop_goldenmatebatterylevel (one
+    of the two triggers)\n  sensor.scott_desktop_goldenmateruntimeremaining\n  sensor.scott_desktop_goldenmatestatus\n\nLeft
+    enabled it would fire its two notifications on a real outage and then press a
+    button that does not exist, giving the appearance of protection while the desktop
+    rode the UPS down to zero. Turned off so it stops presenting as working.\n\nALSO
+    AFFECTED, three template helpers read those dead sensors and now return defaults
+    rather than errors: binary_sensor.goldenmate_ac_power currently reports NO AC
+    POWER while grid power is fine, because its template is int(0) == 2 on an unavailable
+    source. sensor.goldenmate_battery_level and sensor.goldenmate_runtime_remaining
+    are the same shape. The pihole-ups dashboard has a Goldenmate - Desktop section
+    showing all of it.\n\nREBUILD PLAN. Nothing here was deleted, because this is
+    the skeleton of the replacement. Repoint rather than recreate:\n  1. Replace the
+    button.press step with a shell_command that SSHes into the Linux desktop, matching
+    the working pattern already in configuration.yaml for shutdown_unas_pro and shutdown_udm_pro_max,
+    both using the key at /config/.ssh/id_ha_power.\n  2. Confirm whether the Linux
+    desktop is physically on the Goldenmate at all. Scott was unsure as of 2026-08-30.
+    If it is, HA needs a new way to read that UPS since the software that read it
+    is gone. If it is not, drop the battery trigger and keep only the EFR3P-1 AC-offline
+    trigger.\n  3. Repoint or retire the three Goldenmate template helpers and the
+    pihole-ups dashboard section to match whatever step 2 decides.\n\nORIGINAL PURPOSE,
+    kept for reference: shut down SCOTT-DESKTOP when either EFR3P-1 AC had been offline
+    for 10 minutes, or the Goldenmate battery dropped below 25 percent. Network gear
+    and the HA host are handled separately by automation.power_outage_efr3p_2_network_ha_shutdown,
+    which is unaffected by any of this."
   triggers:
-  - platform: state
-    entity_id: binary_sensor.ef_r30118_ac_plugged_in
+  - entity_id: binary_sensor.ef_r30118_ac_plugged_in
     to: 'off'
     for: 00:10:00
-  - platform: numeric_state
-    entity_id: sensor.scott_desktop_goldenmatebatterylevel
+    trigger: state
+  - entity_id: sensor.scott_desktop_goldenmatebatterylevel
     below: 25
+    trigger: numeric_state
   conditions: []
   actions:
   - alias: 'Notify: dashboard alert'
@@ -8113,11 +8152,14 @@
   mode: single
 - id: '1777519968143'
   alias: Aqara 4 button remote
-  description: This automation configures actions for the Aqara 4-button remote (Opple
+  description: 'This automation configures actions for the Aqara 4-button remote (Opple
     wireless switch, now on Zigbee2MQTT). Camera streaming uses Google TV Streamer
     4K via Cast (media_player.bedroom_tv_chromecast). G6 Pro Doorbell uses medium
     resolution channel (1440x1920) as the high resolution portrait stream (3024x4096)
-    is not rendered correctly by Chromecast.
+    is not rendered correctly by Chromecast. TTS TARGET FIXED 2026-08-29: the garage
+    door announcements targeted media_player.whole_house, a Music Assistant entity
+    that no longer exists. They now use media_player.all_speakers, the house-wide
+    Cast speaker group.'
   triggers:
   - topic: zigbee2mqtt/Aqara 4 button remote
     value_template: '{{ value_json.action }}'
@@ -8230,7 +8272,7 @@
             action: light.turn_off
         - sequence:
           - target:
-              entity_id: media_player.whole_house
+              entity_id: media_player.all_speakers
             data:
               cache: true
               message: The garage door has been closed
@@ -8264,7 +8306,7 @@
             action: light.turn_on
         - sequence:
           - target:
-              entity_id: media_player.whole_house
+              entity_id: media_player.all_speakers
             data:
               cache: true
               message: The garage door has been opened
@@ -11096,7 +11138,15 @@
     in opposite directions within the same instant the count is unchanged and no notification
     fires, and if two flip the same direction at once only the most recent is named.
     Both are rare. The startup guard skips the unavailable to value transition after
-    a restart so a reboot does not produce a spurious notification.'
+    a restart so a reboot does not produce a spurious notification.
+
+
+    CRITICAL LIST PRUNED 2026-08-30: update.office_usw_flex_mini and update.cloud_gateway_ultra_2
+    were removed from the critical list. Both were stale UniFi registry entries with
+    no integration behind them, deleted during the Spook 5.1.0 dead-entity cleanup.
+    The live equivalents already in the list are update.usw_flex_mini (Office 2) and
+    update.usw_flex_2_5g_5 (Office 1); the Cloud Gateway Ultra has no live update
+    entity, so nothing replaced it.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -11149,7 +11199,7 @@
       - condition: trigger
         id: updates_changed
       - condition: template
-        value_template: '{% set critical = [''update.home_assistant_operating_system_update'',''update.home_assistant_supervisor_update'',''update.home_assistant_core_update'',''update.esphome_update'',''update.matter_server_update'',''update.openthread_border_router_update'',''update.zigbee2mqtt_update'',''update.z_wave_js_ui_update'',''update.mosquitto_broker_update'',''update.studio_code_server_update'',''update.terminal_ssh_update'',''update.file_editor_update'',''update.samba_share_update'',''update.advanced_ssh_web_terminal_update'',''update.home_assistant_mcp_server_update'',''update.music_assistant_server_update'',''update.ring_mqtt_with_video_streaming_update'',''update.usw_flex_mini'',''update.usw_pro_max_24_poe'',''update.living_room_usw_flex_mini'',''update.bedroom_usw_flex_mini'',''update.office_usw_flex_mini'',''update.usw_aggregation'',''update.usp_pdu_pro'',''update.udm_pro'',''update.usw_flex_2_5g_5'',''update.garage_ap_u6_lite'',''update.living_room_ap_u6_lite'',''update.cloud_gateway_ultra_2'']
+        value_template: '{% set critical = [''update.home_assistant_operating_system_update'',''update.home_assistant_supervisor_update'',''update.home_assistant_core_update'',''update.esphome_update'',''update.matter_server_update'',''update.openthread_border_router_update'',''update.zigbee2mqtt_update'',''update.z_wave_js_ui_update'',''update.mosquitto_broker_update'',''update.studio_code_server_update'',''update.terminal_ssh_update'',''update.file_editor_update'',''update.samba_share_update'',''update.advanced_ssh_web_terminal_update'',''update.home_assistant_mcp_server_update'',''update.music_assistant_server_update'',''update.ring_mqtt_with_video_streaming_update'',''update.usw_flex_mini'',''update.usw_pro_max_24_poe'',''update.living_room_usw_flex_mini'',''update.bedroom_usw_flex_mini'',''update.usw_aggregation'',''update.usp_pdu_pro'',''update.udm_pro'',''update.usw_flex_2_5g_5'',''update.garage_ap_u6_lite'',''update.living_room_ap_u6_lite'']
           %}{{ changed_entity in critical }}'
       sequence:
       - action: notify.mobile_app_pixel_9
@@ -12338,3 +12388,103 @@
       - input_number.fridge_air_filter_weeks_left
       - input_number.fridge_water_filter_weeks_left
   mode: single
+- id: '1788062432208'
+  alias: Sensor Went Silent Alert
+  description: 'Fires when a battery-powered sensor stops reporting altogether while
+    still showing a healthy-looking value.
+
+
+    Built 2026-08-30 after three Aqara temperature sensors failed unnoticed: Dining
+    Room went quiet 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11. Nothing
+    in the system watched for this. The Foyer case is why this exists: it is on Zigbee2MQTT,
+    MQTT retains the last published value, so when the device stopped transmitting
+    at 17 percent battery the entity kept serving 74.606 degrees every day for five
+    and a half weeks. It never went unavailable, and it silently skewed sensor.average_indoor_temperature
+    the whole time.
+
+
+    Uses the spook.stale trigger from Spook 5.1.0. Targets are labels rather than
+    areas so a sensor moved between rooms stays covered without editing this automation.
+    Six hours is well beyond the normal reporting interval of these Zigbee sensors,
+    so a routine missed report will not fire it.
+
+
+    KNOWN LIMITATION, by design in Spook: entities that were already silent when this
+    automation loaded are left alone. It only reports silence that begins while it
+    is running. So it will NOT alert on the Foyer sensor, which is frozen right now.
+    Spook does this deliberately so that reloading automations does not replay every
+    sensor that has ever gone quiet.
+
+
+    A companion low-battery automation is still outstanding. The native battery.level_crossed
+    trigger was rejected as invalid by HA Core 2026.8.3 on this instance.'
+  triggers:
+  - id: sensor_silent
+    options:
+      for: 06:00:00
+    target:
+      label_id:
+      - temperature_humidity
+      - leak_sensor
+      - door_window_sensors
+    trigger: spook.stale
+  conditions: []
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      data:
+        channel: alarm_stream
+        importance: high
+        notification_icon: mdi:timer-alert-outline
+        tag: sensor_silent_{{ trigger.entity_id }}
+      message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
+        true) }} has reported nothing since {{ trigger.last_reported | as_local }}.
+        It may still be showing a value, but that value is stale. Check its battery.'
+      title: Sensor Went Silent
+    note: Names the entity, says when it last spoke, and points at the battery as
+      the usual cause.
+  max: 20
+  mode: parallel
+- id: '1788062748656'
+  alias: Low Battery Alert (All Battery Sensors)
+  description: 'Daily whole-house low battery check at 09:30, covering every sensor
+    and binary sensor with the battery device class (about 140 percentage sensors
+    plus 13 binary sensors as of 2026-08-30). Sends one push listing every device
+    below 20 percent, rather than one notification per device.
+
+
+    Built 2026-08-30. Until now every battery automation was device specific (locks,
+    water valve, Ego, curtain motors, toothbrush, mower) and nothing watched the Zigbee
+    temperature, door, window or leak sensors. Three Aqara temperature sensors died
+    unnoticed as a result: Dining Room 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11.
+
+
+    Threshold is 20 rather than 15 because the Foyer sensor stopped transmitting at
+    17 percent and would never have reached a 15 percent threshold.
+
+
+    This uses the gmlupatelli/low_battery_notification blueprint, which was already
+    imported but had never been used. Chosen over a native trigger because battery.level_crossed
+    is rejected as an invalid trigger by HA Core 2026.8.3 on this instance, and battery.became_low
+    only works on binary sensors, which would have covered 13 of 153 devices. The
+    blueprint scans by device class, so newly added battery devices are covered automatically
+    with no entity list to maintain.
+
+
+    Pairs with automation.sensor_went_silent_alert, which catches the other failure
+    mode: a sensor that stops reporting entirely while still showing a stale value.'
+  use_blueprint:
+    input:
+      actions:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:battery-alert
+            tag: low_battery_daily
+          message: 'These devices are below 20 percent: {{ sensors }}'
+          title: Low Battery
+      threshold: 20
+      time: 09:30:00
+    path: gmlupatelli/low_battery_notification.yaml

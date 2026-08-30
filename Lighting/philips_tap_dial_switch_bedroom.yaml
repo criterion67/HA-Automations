@@ -1,7 +1,10 @@
 - id: '1700846828462'
   alias: Philips Tap Dial Switch- Bedroom
-  description: Rotary dimmer and button 1 controls the bedside lights, button 2 controls
-    TV lights and underbed light, button 4 initiates Bill's bedtime scene.
+  description: 'Rotary dimmer and button 1 controls the bedside lights, button 2 controls
+    TV lights and underbed light, button 4 initiates Bill''s bedtime scene. TTS/chime
+    target fixed 2026-08-29: button 2 cast to media_player.whole_house, a Music Assistant
+    entity that no longer exists. It now uses media_player.all_speakers, the house-wide
+    Cast speaker group.'
   use_blueprint:
     path: nnmalex/philips_tap_dial_switch.yaml
     input:
@@ -19,7 +22,7 @@
         data:
           volume: 0.6
           media_file:
-            entity_id: media_player.whole_house
+            entity_id: media_player.all_speakers
             media_content_id: media-source://media_source/local/Doorbell_1.mp3
             media_content_type: audio/mpeg
             metadata:

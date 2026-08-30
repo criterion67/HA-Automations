@@ -1,0 +1,43 @@
+- id: '1788062748656'
+  alias: Low Battery Alert (All Battery Sensors)
+  description: 'Daily whole-house low battery check at 09:30, covering every sensor
+    and binary sensor with the battery device class (about 140 percentage sensors
+    plus 13 binary sensors as of 2026-08-30). Sends one push listing every device
+    below 20 percent, rather than one notification per device.
+
+
+    Built 2026-08-30. Until now every battery automation was device specific (locks,
+    water valve, Ego, curtain motors, toothbrush, mower) and nothing watched the Zigbee
+    temperature, door, window or leak sensors. Three Aqara temperature sensors died
+    unnoticed as a result: Dining Room 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11.
+
+
+    Threshold is 20 rather than 15 because the Foyer sensor stopped transmitting at
+    17 percent and would never have reached a 15 percent threshold.
+
+
+    This uses the gmlupatelli/low_battery_notification blueprint, which was already
+    imported but had never been used. Chosen over a native trigger because battery.level_crossed
+    is rejected as an invalid trigger by HA Core 2026.8.3 on this instance, and battery.became_low
+    only works on binary sensors, which would have covered 13 of 153 devices. The
+    blueprint scans by device class, so newly added battery devices are covered automatically
+    with no entity list to maintain.
+
+
+    Pairs with automation.sensor_went_silent_alert, which catches the other failure
+    mode: a sensor that stops reporting entirely while still showing a stale value.'
+  use_blueprint:
+    input:
+      actions:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: alarm_stream
+            importance: high
+            notification_icon: mdi:battery-alert
+            tag: low_battery_daily
+          message: 'These devices are below 20 percent: {{ sensors }}'
+          title: Low Battery
+      threshold: 20
+      time: 09:30:00
+    path: gmlupatelli/low_battery_notification.yaml

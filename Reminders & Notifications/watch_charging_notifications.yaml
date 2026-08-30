@@ -1,15 +1,20 @@
 - id: '1747090407891'
   alias: Watch charging notifications
-  description: ''
+  description: 'Chimes and announces on the bedroom speaker when the watch starts
+    charging, and again when it reaches full, with a push on the full event.
+
+
+    ENTITY RENAME 2026-08-30: sensor.galaxy_watch7_904t_battery_state became sensor.scott_s_watch_battery_state.
+    The watch entities were renamed off the model number so a future watch upgrade
+    drops straight in without editing automations.'
   triggers:
   - entity_id:
-    - sensor.galaxy_watch7_904t_battery_state
+    - sensor.scott_s_watch_battery_state
     to:
     - charging
     id: Charging
     trigger: state
-  - entity_id:
-    - sensor.galaxy_watch7_904t_battery_state
+  - entity_id: sensor.scott_s_watch_battery_state
     to: full
     id: Full
     trigger: state

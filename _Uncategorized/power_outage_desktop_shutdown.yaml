@@ -1,17 +1,44 @@
 - id: '1776226412089'
   alias: Power Outage - Desktop Shutdown
-  description: 'Shuts down SCOTT-DESKTOP when either: (1) EFR3P-1 AC has been offline
-    for 10 minutes, or (2) Goldenmate battery drops below 25%. Both conditions ensure
-    a graceful shutdown well before the Goldenmate runs dry. Network gear and HA host
-    are handled separately by the EFR3P-2 automation.'
+  description: "DISABLED 2026-08-30 - DOES NOT WORK. Do not re-enable until rebuilt\
+    \ for Linux.\n\nThis automation depended entirely on HASS.Agent running on the\
+    \ Windows desktop, which published its entities over MQTT. Scott moved to the\
+    \ Linux Mint desktop as his main machine and HASS.Agent is Windows only, so every\
+    \ entity it provided is now unavailable:\n  button.scott_desktop_shutdown (the\
+    \ actual shutdown, and the reason this automation cannot work)\n  button.scott_desktop_restart\n\
+    \  button.scott_desktop_sleep\n  sensor.scott_desktop_goldenmatebatterylevel (one\
+    \ of the two triggers)\n  sensor.scott_desktop_goldenmateruntimeremaining\n  sensor.scott_desktop_goldenmatestatus\n\
+    \nLeft enabled it would fire its two notifications on a real outage and then press\
+    \ a button that does not exist, giving the appearance of protection while the\
+    \ desktop rode the UPS down to zero. Turned off so it stops presenting as working.\n\
+    \nALSO AFFECTED, three template helpers read those dead sensors and now return\
+    \ defaults rather than errors: binary_sensor.goldenmate_ac_power currently reports\
+    \ NO AC POWER while grid power is fine, because its template is int(0) == 2 on\
+    \ an unavailable source. sensor.goldenmate_battery_level and sensor.goldenmate_runtime_remaining\
+    \ are the same shape. The pihole-ups dashboard has a Goldenmate - Desktop section\
+    \ showing all of it.\n\nREBUILD PLAN. Nothing here was deleted, because this is\
+    \ the skeleton of the replacement. Repoint rather than recreate:\n  1. Replace\
+    \ the button.press step with a shell_command that SSHes into the Linux desktop,\
+    \ matching the working pattern already in configuration.yaml for shutdown_unas_pro\
+    \ and shutdown_udm_pro_max, both using the key at /config/.ssh/id_ha_power.\n\
+    \  2. Confirm whether the Linux desktop is physically on the Goldenmate at all.\
+    \ Scott was unsure as of 2026-08-30. If it is, HA needs a new way to read that\
+    \ UPS since the software that read it is gone. If it is not, drop the battery\
+    \ trigger and keep only the EFR3P-1 AC-offline trigger.\n  3. Repoint or retire\
+    \ the three Goldenmate template helpers and the pihole-ups dashboard section to\
+    \ match whatever step 2 decides.\n\nORIGINAL PURPOSE, kept for reference: shut\
+    \ down SCOTT-DESKTOP when either EFR3P-1 AC had been offline for 10 minutes, or\
+    \ the Goldenmate battery dropped below 25 percent. Network gear and the HA host\
+    \ are handled separately by automation.power_outage_efr3p_2_network_ha_shutdown,\
+    \ which is unaffected by any of this."
   triggers:
-  - platform: state
-    entity_id: binary_sensor.ef_r30118_ac_plugged_in
+  - entity_id: binary_sensor.ef_r30118_ac_plugged_in
     to: 'off'
     for: 00:10:00
-  - platform: numeric_state
-    entity_id: sensor.scott_desktop_goldenmatebatterylevel
+    trigger: state
+  - entity_id: sensor.scott_desktop_goldenmatebatterylevel
     below: 25
+    trigger: numeric_state
   conditions: []
   actions:
   - alias: 'Notify: dashboard alert'

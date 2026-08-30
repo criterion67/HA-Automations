@@ -1,21 +1,22 @@
 - id: '1774893025511'
   alias: LibreLink - Sensor Expiration Notification
   description: Sends mobile notifications and TTS announcements at 24 hours, 1 hour,
-    and at the moment of Libre 3 sensor expiration.
+    and at the moment of Libre 3 sensor expiration. TTS is directed to the Bedroom
+    Speaker Group.
   triggers:
-  - platform: template
-    value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
+  - value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=24)) and now() < (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=23)) }}'
     id: warning_24h
-  - platform: template
-    value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
+    trigger: template
+  - value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=1)) and now() < as_datetime(states(''sensor.librelink_expiration_timestamp''))
       }}'
     id: warning_1h
-  - platform: time
-    at: sensor.librelink_expiration_timestamp
+    trigger: template
+  - at: sensor.librelink_expiration_timestamp
     id: expired
+    trigger: time
   actions:
   - choose:
     - conditions:
@@ -44,7 +45,7 @@
             channel: Glucose Monitor
       - action: tts.cloud_say
         target:
-          entity_id: media_player.living_room_chromecast
+          entity_id: media_player.bedroom_group
         data:
           message: Attention. Your Libre 3 glucose sensor will expire in one hour.
             Please prepare a replacement sensor.
@@ -62,7 +63,7 @@
             channel: Glucose Monitor
       - action: tts.cloud_say
         target:
-          entity_id: media_player.living_room_chromecast
+          entity_id: media_player.bedroom_group
         data:
           message: Alert. Your Libre 3 glucose sensor has expired. Readings are no
             longer accurate. Please apply a new sensor now.

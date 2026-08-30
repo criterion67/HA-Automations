@@ -1,10 +1,10 @@
 - id: '1751772259530'
   alias: Washer/Dryer Status Management
-  description: 'This automation monitors the washer and dryer''s status, providing
-    voice notifications for each cycle change. It also uses light color changes and
-    mobile notifications to alert when cycles start or finish.
-
-    '
+  description: This automation monitors the washer and dryer's status, providing voice
+    notifications for each cycle change. It also uses light color changes and mobile
+    notifications to alert when cycles start or finish. The bedroom ceiling light
+    state is snapshotted at the start of each run and restored at the end, so the
+    notification flash never leaves the light in the wrong state.
   triggers:
   - entity_id: sensor.machine_state_machine_status
     to: Run
@@ -53,6 +53,13 @@
     trigger: state
   conditions: []
   actions:
+  - action: scene.create
+    data:
+      scene_id: downlightsbefore
+      snapshot_entities:
+      - light.bedroom_ceiling_lights
+    note: Capture the bedroom ceiling light state at the start of every run so the
+      final step can put it back exactly as it was before the notification flash.
   - choose:
     - conditions:
       - condition: trigger
@@ -233,4 +240,6 @@
   - target:
       entity_id: scene.downlightsbefore
     action: scene.turn_on
+    note: Restore the bedroom ceiling light to the state captured by the snapshot
+      step at the start of this run.
   mode: single

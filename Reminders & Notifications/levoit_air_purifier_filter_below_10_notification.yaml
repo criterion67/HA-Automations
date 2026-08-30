@@ -1,6 +1,6 @@
 - id: '1772667751581'
   alias: Levoit Air Purifier Filter Below 10% Notification
-  description: Notifies when the bedroom Levoit air purifier filter life drops below
+  description: 'Notifies when the bedroom Levoit air purifier filter life drops below
     10 percent. Fires on the threshold crossing and again daily at 09:00 while still
     low. Snooze pushes the next reminder to 08:00 tomorrow, Dismiss suppresses reminders
     until midnight tomorrow. Notification action names are namespaced (LEVOIT_FILTER_SNOOZE
@@ -9,10 +9,21 @@
     timestamp attribute rather than strptime, which previously raised a naive versus
     aware datetime error on every evaluation. Trigger threshold was 20 while the condition
     required below 10, so the threshold crossing never produced a notification; both
-    are now 10.
+    are now 10. REPOINTED 2026-08-29: this automation previously watched sensor.bedroom_air_purifier_filter_life,
+    which is a dead entity and, despite its entity_id, actually belonged to the Office
+    purifier rather than the Bedroom one. It now reads sensor.bedroom_vital_200s_1_filter_lifetime,
+    the live Bedroom Vital 200S filter sensor. EXTENDED 2026-08-29 to cover BOTH live
+    purifiers: the Bedroom Vital 200S and the Living Room unit. The notification names
+    whichever unit tripped, via trigger.to_state.name. KNOWN LIMITATION: Snooze and
+    Dismiss write to the two shared input_datetime helpers, so snoozing one purifier
+    snoozes both. Because the two filters sit only a few percent apart they are likely
+    to go low around the same time; if that becomes annoying, give each unit its own
+    pair of snooze/dismiss helpers.'
   triggers:
   - below: 10
-    entity_id: sensor.bedroom_air_purifier_filter_life
+    entity_id:
+    - sensor.bedroom_vital_200s_1_filter_lifetime
+    - sensor.living_room_air_purifier_filter_lifetime
     id: filter_low
     trigger: numeric_state
   - at: 09:00:00
@@ -61,7 +72,12 @@
         - daily_check
       - below: 10
         condition: numeric_state
-        entity_id: sensor.bedroom_air_purifier_filter_life
+        entity_id:
+        - sensor.bedroom_vital_200s_1_filter_lifetime
+        - sensor.living_room_air_purifier_filter_lifetime
+        note: numeric_state with two entity_ids passes when ANY listed sensor is below
+          the threshold, so the daily 09:00 re-check still fires for whichever unit
+          is low.
       - condition: template
         value_template: '{{ as_timestamp(now()) >= (state_attr(''input_datetime.air_purifier_filter_reminder_snooze_time'',''timestamp'')
           | float(0)) }}'
@@ -77,7 +93,9 @@
               title: Snooze
             - action: LEVOIT_FILTER_DISMISS
               title: Dismiss
-          message: Bedroom Levoit air purifier filter is at {{ states('sensor.bedroom_air_purifier_filter_life')
-            }} percent. Time to clean or replace it.
+          message: '{{ trigger.to_state.name if trigger.to_state is defined else ''An
+            air purifier'' }} is low. Time to clean or replace the filter.'
           title: Filter Change Needed
+        note: Message names the unit from the trigger, so one automation covers both
+          purifiers.
   mode: single

@@ -1,0 +1,57 @@
+- id: '1788062432208'
+  alias: Sensor Went Silent Alert
+  description: 'Fires when a battery-powered sensor stops reporting altogether while
+    still showing a healthy-looking value.
+
+
+    Built 2026-08-30 after three Aqara temperature sensors failed unnoticed: Dining
+    Room went quiet 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11. Nothing
+    in the system watched for this. The Foyer case is why this exists: it is on Zigbee2MQTT,
+    MQTT retains the last published value, so when the device stopped transmitting
+    at 17 percent battery the entity kept serving 74.606 degrees every day for five
+    and a half weeks. It never went unavailable, and it silently skewed sensor.average_indoor_temperature
+    the whole time.
+
+
+    Uses the spook.stale trigger from Spook 5.1.0. Targets are labels rather than
+    areas so a sensor moved between rooms stays covered without editing this automation.
+    Six hours is well beyond the normal reporting interval of these Zigbee sensors,
+    so a routine missed report will not fire it.
+
+
+    KNOWN LIMITATION, by design in Spook: entities that were already silent when this
+    automation loaded are left alone. It only reports silence that begins while it
+    is running. So it will NOT alert on the Foyer sensor, which is frozen right now.
+    Spook does this deliberately so that reloading automations does not replay every
+    sensor that has ever gone quiet.
+
+
+    A companion low-battery automation is still outstanding. The native battery.level_crossed
+    trigger was rejected as invalid by HA Core 2026.8.3 on this instance.'
+  triggers:
+  - id: sensor_silent
+    options:
+      for: 06:00:00
+    target:
+      label_id:
+      - temperature_humidity
+      - leak_sensor
+      - door_window_sensors
+    trigger: spook.stale
+  conditions: []
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      data:
+        channel: alarm_stream
+        importance: high
+        notification_icon: mdi:timer-alert-outline
+        tag: sensor_silent_{{ trigger.entity_id }}
+      message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
+        true) }} has reported nothing since {{ trigger.last_reported | as_local }}.
+        It may still be showing a value, but that value is stale. Check its battery.'
+      title: Sensor Went Silent
+    note: Names the entity, says when it last spoke, and points at the battery as
+      the usual cause.
+  max: 20
+  mode: parallel
