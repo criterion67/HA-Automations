@@ -15,7 +15,24 @@
     from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor. The local
     integration names the primary entity after the device, so the _door suffix is
     gone. Device class is still door, so the off to on transition still means the
-    mailbox was opened.'
+    mailbox was opened. SPEAKER FAILURE HARDENING, 2026-08-30: the two input_boolean
+    flags now run immediately after the open count is set, and every media_player
+    step carries continue_on_error so a single speaker refusing a cast session cannot
+    abort the branch and skip the notifications and flags. The TTS engine was changed
+    from the legacy name cloud to the entity id tts.home_assistant_cloud. CAST PATH
+    TEST, 2026-08-30: the four speaker targets in this branch were switched from the
+    Music Assistant player entities to their native Cast counterparts, because the
+    2026-08-29 abort was a Music Assistant error about the Office Speaker refusing
+    to launch the cast app. TO REVERT, set the target entity_id list on the volume_set
+    step and all three play_media steps in this branch back to media_player.bedroom_speaker,
+    media_player.dining_room_speaker, media_player.office_speaker, media_player.sunroom_speaker.
+    SPEAKER SET REDUCED, 2026-08-30: announcements now go to the Bedroom and Dining
+    Room Cast speakers only, matching the parcel box automation. Casting to four individual
+    Cast devices played them slightly out of sync. Office and Sunroom were dropped.
+    TTS CONVERTED, 2026-08-30: the TTS step was changed from media_player.play_media
+    to tts.speak with cache true and preferred_sample_rate 44100, matching the parcel
+    box automation after that change was confirmed to stop the Cast speakers truncating
+    the sentence.'
   triggers:
   - id: mailbox_open
     entity_id: binary_sensor.mailbox_sensor
@@ -58,19 +75,25 @@
         action: input_number.set_value
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - input_boolean.mailbox_notified
+          - input_boolean.mail_dashboard_indicator
+        action: input_boolean.turn_on
+        note: Moved to the top of the branch. These flags gate the second opening
+          branch and the 5 PM reminder, so they must be set before any step that can
+          fail. On 2026-08-29 a speaker error aborted the run before this step, which
+          silently killed the reminder for the rest of the day.
+      - target:
+          entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           volume_level: 0.7
         action: media_player.volume_set
+        continue_on_error: true
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -86,14 +109,15 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
+        note: continue_on_error is set so one speaker refusing a cast session cannot
+          abort the run and skip the notifications.
       - delay:
           seconds: 3
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -109,19 +133,32 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
+        note: continue_on_error is set so one speaker refusing a cast session cannot
+          abort the run and skip the notifications.
       - delay:
           seconds: 3
-      - target:
-          entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+      - action: tts.speak
+        target:
+          entity_id: tts.home_assistant_cloud
         data:
-          media:
-            media_content_id: media-source://tts/cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=JennyNeural
-            media_content_type: provider
-        action: media_player.play_media
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
+          message: Mail has been delivered to the mailbox
+          cache: true
+          language: en-US
+          options:
+            voice: JennyNeural
+            preferred_sample_rate: 44100
+        continue_on_error: true
+        note: Converted from media_player.play_media with a media-source URL to tts.speak,
+          matching the parcel box automation. With the streamed media-source form
+          the Cast device reported a media_duration that grew while playing and cut
+          the sentence short; with cache true the file is complete before playback
+          and the duration is reported once as a fixed value. TO REVERT, restore a
+          media_player.play_media step with media_content_id media-source://tts/tts.home_assistant_cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=JennyNeural
+          and media_content_type provider.
       - data:
           title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
@@ -137,11 +174,6 @@
           title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
         action: notify.mobile_app_bills_phone
-      - target:
-          entity_id:
-          - input_boolean.mailbox_notified
-          - input_boolean.mail_dashboard_indicator
-        action: input_boolean.turn_on
     - conditions:
       - condition: trigger
         id: mailbox_open

@@ -1,50 +1,109 @@
-- id: '1788062432208'
+- id: '1788098971757'
   alias: Sensor Went Silent Alert
-  description: 'Fires when a battery-powered sensor stops reporting altogether while
-    still showing a healthy-looking value.
+  description: 'Alerts when a battery powered temperature, humidity or leak sensor
+    stops reporting altogether while still serving a healthy looking value.
 
 
-    Built 2026-08-30 after three Aqara temperature sensors failed unnoticed: Dining
-    Room went quiet 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11. Nothing
-    in the system watched for this. The Foyer case is why this exists: it is on Zigbee2MQTT,
-    MQTT retains the last published value, so when the device stopped transmitting
-    at 17 percent battery the entity kept serving 74.606 degrees every day for five
-    and a half weeks. It never went unavailable, and it silently skewed sensor.average_indoor_temperature
-    the whole time.
+    Built 2026-08-30 after Aqara temperature sensors failed unnoticed. The Foyer case
+    is the reason this exists: it is on Zigbee2MQTT, MQTT retains the last published
+    value, so when the device stopped transmitting the entity kept serving 74.606
+    degrees for weeks. It never went unavailable and it silently skewed the indoor
+    temperature average.
 
 
-    Uses the spook.stale trigger from Spook 5.1.0. Targets are labels rather than
-    areas so a sensor moved between rooms stays covered without editing this automation.
-    Six hours is well beyond the normal reporting interval of these Zigbee sensors,
-    so a routine missed report will not fire it.
+    VERSION 2, rebuilt 2026-08-30 after v1 fired 63 times between 03:23 and 04:17
+    and woke Scott repeatedly. Four defects in v1, all fixed here:
 
 
-    KNOWN LIMITATION, by design in Spook: entities that were already silent when this
-    automation loaded are left alone. It only reports silence that begins while it
-    is running. So it will NOT alert on the Foyer sensor, which is frozen right now.
-    Spook does this deliberately so that reloading automations does not replay every
-    sensor that has ever gone quiet.
+    1. v1 used channel alarm_stream with importance high. That is the Android alarm
+    channel, so it played at alarm volume and ignored Do Not Disturb. A stale sensor
+    is not a wake up event. This version uses a dedicated Sensor Health channel at
+    default importance so it can be muted independently of the smoke, leak and CGM
+    alerts that legitimately use alarm_stream.
 
 
-    A companion low-battery automation is still outstanding. The native battery.level_crossed
-    trigger was rejected as invalid by HA Core 2026.8.3 on this instance.'
+    2. v1 targeted the labels temperature_humidity, leak_sensor and door_window_sensors.
+    A label target expands to every entity on any device carrying the label, not just
+    the labelled entity. Only 13 entities carried those labels directly but the trigger
+    actually covered 530 entities across 68 devices, including magnetic_field_interference_detected
+    diagnostics, battery sensors, weather station illuminance and UV, and an automation
+    entity. This version uses an explicit entity_id list. That is a deliberate departure
+    from the usual preference for label targets: label expansion is precisely what
+    broke v1, so the list is intentionally hand maintained. Add new sensors here by
+    hand.
+
+
+    3. v1 included door, window and contact sensors. A closed door reports nothing
+    for hours by design, so those were guaranteed overnight false positives. They
+    are excluded entirely.
+
+
+    4. v1 used a 6 hour threshold. Home Assistant restarted at 21:23:54 on 2026-08-29
+    and Spook starts its stale clock at load, so at 03:23:54 every targeted entity
+    that had not reported since the restart came due in the same instant. 46 notifications
+    landed in 3.4 seconds. This version uses 12 hours and holds any alert raised outside
+    waking hours until 08:00, so a restart burst can no longer land in the middle
+    of the night. All monitored entities were measured reporting within 0.3 hours
+    when healthy, so 12 hours is far beyond any normal interval.
+
+
+    Uses the spook.stale trigger from Spook 5.1.0.
+
+
+    KNOWN LIMITATION, by design in Spook: entities already silent when this automation
+    loads are left alone. It only reports silence that begins while it is running.
+    So it will not alert on the Foyer temperature sensor or the two fridge humidity
+    sensors, which are frozen right now. Spook does this deliberately so reloading
+    automations does not replay every sensor that has ever gone quiet.'
   triggers:
   - id: sensor_silent
     options:
-      for: 06:00:00
+      for: '12:00:00'
     target:
-      label_id:
-      - temperature_humidity
-      - leak_sensor
-      - door_window_sensors
+      entity_id:
+      - sensor.temp_sensor_primary_bath_temperature
+      - sensor.temp_sensor_foyer_temperature
+      - sensor.temp_sensor_bedroom_temperature
+      - sensor.temp_sensor_living_room_temperature
+      - sensor.temp_sensor_outside_temperature
+      - sensor.temp_sensor_garage
+      - sensor.govee_bt_temp_sensor
+      - sensor.temp_sensor_fridge
+      - sensor.humidity_sensor_fridge
+      - sensor.bedroom_fridge_humidity
+      - binary_sensor.bathroom_sink_leak_sensor_6
+      - binary_sensor.bathroom_2_sink_leak_sensor_8
+      - binary_sensor.bathroom_2_toilet_leak_sensor_7
+      - binary_sensor.dishwasher_leak_sensor_1
+      - binary_sensor.refrigerator_leak_sensor_3
+      - binary_sensor.kitchen_sink_leak_sensor_2
+      - binary_sensor.laundry_leak_sensor_4
+      - binary_sensor.hvac_condensate_leak_sensor_9
+      - binary_sensor.bathroom_toilet_leak_sensor_5
     trigger: spook.stale
   conditions: []
   actions:
+  - alias: Hold until morning if raised outside waking hours
+    if:
+    - condition: not
+      conditions:
+      - after: 08:00:00
+        before: '21:00:00'
+        condition: time
+    note: Stale reporting is never urgent. If the alert lands between 21:00 and 08:00
+      the run parks on a time trigger and delivers at 08:00 instead. The timeout is
+      a safety valve so a run can never park forever.
+    then:
+    - continue_on_timeout: true
+      timeout: '13:00:00'
+      wait_for_trigger:
+      - at: 08:00:00
+        trigger: time
   - action: notify.mobile_app_pixel_9
+    alias: Notify on the Sensor Health channel
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Sensor Health
         notification_icon: mdi:timer-alert-outline
         tag: sensor_silent_{{ trigger.entity_id }}
       message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
@@ -52,6 +111,7 @@
         It may still be showing a value, but that value is stale. Check its battery.'
       title: Sensor Went Silent
     note: Names the entity, says when it last spoke, and points at the battery as
-      the usual cause.
-  max: 20
+      the usual cause. Deliberately NOT alarm_stream. Tag is per entity so a repeat
+      for the same sensor replaces the old notification instead of stacking.
+  max: 30
   mode: parallel

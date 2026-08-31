@@ -1,9 +1,24 @@
 - id: '1752868210354'
   alias: Parcel box delivery notification
-  description: Plays chime and TTS when a package is delivered to the parcel box.
+  description: 'Plays chime and TTS when a package is delivered to the parcel box.
     Prevents repeat alerts using a dashboard indicator boolean. Allows manual reset
     and auto-reset at 6:00 AM. Adds actionable notification buttons to reset or dismiss
-    on Scott's phone only.
+    on Scott''s phone only. CAST PATH AND FAILURE HARDENING, 2026-08-30: every parcel
+    box run that touched a speaker failed with a Music Assistant error about the Office
+    Speaker refusing to launch the cast app, aborting before the TTS, the flag, and
+    both notifications. The four speaker targets were switched from the Music Assistant
+    player entities to their native Cast counterparts, every media_player step now
+    carries continue_on_error, the dashboard indicator is set first, and the TTS media_content_type
+    was corrected from audio/mp3 to provider. TO REVERT THE TARGETS, set the entity_id
+    list on the volume_set step and all three play_media steps back to media_player.bedroom_speaker,
+    media_player.dining_room_speaker, media_player.office_speaker, media_player.sunroom_speaker.
+    SPEAKER SET REDUCED, 2026-08-30: announcements now go to the Bedroom and Dining
+    Room Cast speakers only. Casting to four individual Cast devices played them slightly
+    out of sync, which was confusing to listen to. Office and Sunroom were dropped.
+    TTS TRUNCATION TEST, 2026-08-30: the TTS step was converted from media_player.play_media
+    to tts.speak with cache true and preferred_sample_rate 44100, to test whether
+    the sample rate is why the Cast speakers cut the sentence short. If this does
+    not fix it, shorten the message instead.'
   triggers:
   - id: parcel_box_open
     entity_id: binary_sensor.parcel_box_contact
@@ -37,22 +52,26 @@
         state: 'off'
       sequence:
       - target:
+          entity_id: input_boolean.parcel_dashboard_indicator
+        action: input_boolean.turn_on
+        data: {}
+        note: Moved to the top of the branch. This flag suppresses repeat announcements,
+          so it must be set before any step that can fail. Runs on 2026-08-28 and
+          2026-08-30 aborted on a speaker error before reaching it.
+      - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           volume_level: 0.7
         action: media_player.volume_set
+        continue_on_error: true
       - delay:
           seconds: 4
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -68,14 +87,13 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
       - delay:
           seconds: 3
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -91,24 +109,31 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
       - delay:
           seconds: 3
-      - target:
-          entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+      - action: tts.speak
+        target:
+          entity_id: tts.home_assistant_cloud
         data:
-          media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=JennyNeural
-            media_content_type: audio/mp3
-            metadata: {}
-        action: media_player.play_media
-      - target:
-          entity_id: input_boolean.parcel_dashboard_indicator
-        action: input_boolean.turn_on
-        data: {}
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
+          message: A delivery has been made to the parcel box on the front porch
+          cache: true
+          language: en-US
+          options:
+            voice: JennyNeural
+            preferred_sample_rate: 44100
+        continue_on_error: true
+        note: Converted from media_player.play_media with a media-source URL to tts.speak
+          so the options field is available. On 2026-08-30 the Cast device reported
+          a media_duration that grew while streaming and stopped playback at 4.128
+          seconds, cutting the sentence after the word parcel. preferred_sample_rate
+          44100 is the documented fix for Cast devices reproducing partial audio,
+          and cache true has the file generated before playback. TO REVERT, restore
+          a media_player.play_media step with media_content_id media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=JennyNeural
+          and media_content_type provider.
       - data:
           title: Parcel Delivery
           message: A package was delivered to the front porch parcel box at {{ now().strftime('%I:%M

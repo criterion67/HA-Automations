@@ -1,0 +1,513 @@
+- id: '1788112636474'
+  alias: Meat Probe Cooking Monitor
+  description: 'Single consolidated monitor for the ThermoPro 1 Probe 1 meat thermometer.
+    Selecting a food in input_select.cook_food_type writes the USDA FSIS safe minimum
+    internal temperature into input_number.cook_target_temp. While input_boolean.cook_session_active
+    is on, it pushes Scott''s Pixel 9 and Galaxy Watch7 and speaks on the Bedroom
+    Speaker and Living Room Display when the probe nears the target, reaches it, or
+    overshoots it, and warns if the probe drops offline for 5 minutes or the probe
+    battery reads under 15 percent for a continuous 10 minutes. The 10 minute hold
+    exists because the TP970 emits one garbage battery packet on wake: on 2026-08-30
+    it reported 4.0 percent at 13:07:15 and 86.0 percent four seconds later, which
+    fired a false low battery alert. TTS uses the native Cast entities rather than
+    the Music Assistant ones, and carries cache true plus preferred_sample_rate 44100
+    with continue_on_error on every media step, matching the parcel box and mailbox
+    automations after Music Assistant errors aborted those runs and Cast truncation
+    cut their sentences short. Living room volume is set to 0.8 and bedroom to 0.7
+    before each announcement. Alerts share the Android notification tag cook_status
+    so each new one replaces the last, and the Pull it now and Overcooking alerts
+    carry a Done, stop alerts button that fires the COOK_DISARM action to turn the
+    session off and clear the notification. Two auto resets exist so a forgotten button
+    press cannot leave the monitor armed forever: the probe going offline for 30 minutes
+    while armed disarms it, and at midnight it disarms if the probe is offline or
+    already past target, which is why a cook running past midnight is never interrupted.
+    Measured on 2026-08-30: after the probe was seated in its charger the last advertisement
+    arrived at 13:30:01 and Home Assistant marked the entities unavailable at 13:38:22,
+    an 8 minute 20 second Bluetooth staleness timeout. The 5 and 30 minute for: clauses
+    only start counting after that, so real world latency is roughly 13 minutes to
+    the Probe lost alert and roughly 38 minutes to the auto disarm. Scott reviewed
+    these numbers on 2026-08-30 and chose to leave them unchanged, since the long
+    delay guarantees a brief Bluetooth dropout never raises a false alarm. The arm
+    switch exists so a probe sitting unused in a drawer never triggers alerts. Targets
+    sourced from USDA FSIS Safe Minimum Internal Temperature Chart: fully cooked ham
+    reheated 140 F, leftover or repackaged ham 165 F, fresh or uncooked ham 145 F,
+    whole muscle pork, beef, veal and lamb 145 F with a 3 minute rest, ground meats
+    160 F, all poultry 165 F, fish and shellfish 145 F, leftovers and casseroles 165
+    F. Two later additions: a stall alert fires when sensor.kitchen_thermopro_1_cook_rise_rate
+    stays under 0.2 F per minute for 20 minutes while the session is armed, the oven
+    side reads over 200 F and the internal temp is already over 60 F. The 60 F floor
+    exists because a cold ham genuinely sits flat for about twenty minutes at the
+    start of a cook, as observed on 2026-08-30 when internal held at 39.2 F from 18:40
+    to 19:00 with ambient already past 200 F. Fifteen minutes after any session ends,
+    if the oven side probe still reads over 200 F, it warns that the oven may have
+    been left on.'
+  triggers:
+  - entity_id: input_select.cook_food_type
+    id: food_selected
+    trigger: state
+  - entity_id: input_boolean.cook_session_active
+    id: session_started
+    to: 'on'
+    trigger: state
+  - entity_id: input_boolean.cook_session_active
+    from: 'on'
+    id: session_ended
+    to: 'off'
+    trigger: state
+  - id: approaching
+    trigger: template
+    value_template: '{{ has_value(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'')
+      and states(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'') | float(0)
+      >= states(''input_number.cook_target_temp'') | float(999) - 10 }}'
+  - above: input_number.cook_target_temp
+    entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    id: reached
+    trigger: numeric_state
+  - id: overshoot
+    trigger: template
+    value_template: '{{ has_value(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'')
+      and states(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'') | float(0)
+      >= states(''input_number.cook_target_temp'') | float(999) + 10 }}'
+  - entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    for:
+      minutes: 5
+    id: probe_lost
+    to:
+    - unavailable
+    - unknown
+    trigger: state
+  - entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    for:
+      minutes: 30
+    id: probe_gone
+    to:
+    - unavailable
+    - unknown
+    trigger: state
+  - at: 00:00:00
+    id: midnight_reset
+    trigger: time
+  - below: 15
+    entity_id: sensor.kitchen_thermopro_1_probe_1_battery
+    for:
+      minutes: 10
+    id: battery_low
+    trigger: numeric_state
+  - event_data:
+      action: COOK_DISARM
+    event_type: mobile_app_notification_action
+    id: disarm_tapped
+    trigger: event
+  - trigger: numeric_state
+    entity_id: sensor.kitchen_thermopro_1_cook_rise_rate
+    below: 0.2
+    for:
+      minutes: 20
+    id: stall
+  actions:
+  - choose:
+    - alias: Food selected, write the USDA target temperature
+      conditions:
+      - condition: trigger
+        id: food_selected
+      - condition: template
+        value_template: '{{ trigger.to_state.state in target_map }}'
+      sequence:
+      - action: input_number.set_value
+        data:
+          value: '{{ target_map[trigger.to_state.state] }}'
+        target:
+          entity_id: input_number.cook_target_temp
+    - alias: Session started, confirm the probe reading and target
+      conditions:
+      - condition: trigger
+        id: session_started
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            color: '#2196F3'
+            notification_icon: mdi:chef-hat
+            tag: cook_status
+          message: '{{ states(''input_select.cook_food_type'') }}. Target {{ states(''input_number.cook_target_temp'')
+            | int }} F. Probe now reads {{ states(probe) }} F, oven side {{ states(''sensor.kitchen_thermopro_1_probe_1_ambient_temperature'')
+            }} F.'
+          title: Cooking monitor started
+    - alias: Ten degrees from target
+      conditions:
+      - condition: trigger
+        id: approaching
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            color: '#FF9800'
+            importance: high
+            notification_icon: mdi:thermometer-chevron-up
+            priority: high
+            tag: cook_status
+            ttl: 0
+          message: '{{ states(probe) | int }} F internal, target {{ states(''input_number.cook_target_temp'')
+            | int }} F. Roughly 10 degrees to go.'
+          title: Almost there
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          data:
+            channel: Cooking
+            tag: cook_status
+          message: '{{ states(probe) | int }} F of {{ states(''input_number.cook_target_temp'')
+            | int }} F'
+          title: Almost there
+      - action: media_player.volume_set
+        alias: Set the bedroom speaker level
+        continue_on_error: true
+        data:
+          volume_level: 0.7
+        target:
+          entity_id: media_player.bedroom_speaker_cast
+      - action: media_player.volume_set
+        alias: Set the living room display level, louder than the bedroom at Scott's
+          request
+        continue_on_error: true
+        data:
+          volume_level: 0.8
+        target:
+          entity_id: media_player.living_room_display_cast
+      - action: tts.speak
+        alias: Announce that the probe is closing on the target
+        continue_on_error: true
+        data:
+          cache: true
+          language: en-US
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.living_room_display_cast
+          message: The probe is at {{ states(probe) | int }} degrees. Roughly ten
+            degrees to go.
+          options:
+            preferred_sample_rate: 44100
+            voice: JennyNeural
+        target:
+          entity_id: tts.home_assistant_cloud
+    - alias: Target reached, pull the meat
+      conditions:
+      - condition: trigger
+        id: reached
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            actions:
+            - action: COOK_DISARM
+              title: Done, stop alerts
+            channel: Cooking
+            color: '#4CAF50'
+            importance: high
+            notification_icon: mdi:thermometer-check
+            priority: high
+            sticky: true
+            tag: cook_status
+            ttl: 0
+          message: '{{ states(''input_select.cook_food_type'') }} hit {{ states(probe)
+            | int }} F, target {{ states(''input_number.cook_target_temp'') | int
+            }} F.{{ '' Rest at least 3 minutes before carving.'' if states(''input_number.cook_target_temp'')
+            | float(0) == 145 else '''' }}'
+          title: Pull it now
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          data:
+            channel: Cooking
+            importance: high
+            tag: cook_status
+            ttl: 0
+          message: '{{ states(probe) | int }} F, target reached'
+          title: Pull it now
+      - action: media_player.volume_set
+        alias: Set the bedroom speaker level
+        continue_on_error: true
+        data:
+          volume_level: 0.7
+        target:
+          entity_id: media_player.bedroom_speaker_cast
+      - action: media_player.volume_set
+        alias: Set the living room display level, louder than the bedroom at Scott's
+          request
+        continue_on_error: true
+        data:
+          volume_level: 0.8
+        target:
+          entity_id: media_player.living_room_display_cast
+      - action: tts.speak
+        alias: Announce that the target has been reached
+        continue_on_error: true
+        data:
+          cache: true
+          language: en-US
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.living_room_display_cast
+          message: The probe has reached {{ states(probe) | int }} degrees. Time to
+            take it out of the oven.{{ ' Let it rest at least three minutes before
+            carving.' if states('input_number.cook_target_temp') | float(0) == 145
+            else '' }}
+          options:
+            preferred_sample_rate: 44100
+            voice: JennyNeural
+        target:
+          entity_id: tts.home_assistant_cloud
+    - alias: Overshot the target, warn until it comes back down or the session ends
+      conditions:
+      - condition: trigger
+        id: overshoot
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - repeat:
+          sequence:
+          - action: notify.mobile_app_pixel_9
+            data:
+              data:
+                actions:
+                - action: COOK_DISARM
+                  title: Done, stop alerts
+                channel: Cooking
+                color: '#E53935'
+                importance: high
+                notification_icon: mdi:thermometer-alert
+                priority: high
+                sticky: true
+                tag: cook_status
+                ttl: 0
+              message: '{{ states(probe) | int }} F is past the {{ states(''input_number.cook_target_temp'')
+                | int }} F target. Take it out of the oven.'
+              title: Overcooking
+          - action: notify.mobile_app_galaxy_watch7_904t
+            data:
+              data:
+                channel: Cooking
+                importance: high
+                tag: cook_status
+                ttl: 0
+              message: '{{ states(probe) | int }} F, over target'
+              title: Overcooking
+          - action: media_player.volume_set
+            alias: Set the bedroom speaker level
+            continue_on_error: true
+            data:
+              volume_level: 0.7
+            target:
+              entity_id: media_player.bedroom_speaker_cast
+          - action: media_player.volume_set
+            alias: Set the living room display level, louder than the bedroom at Scott's
+              request
+            continue_on_error: true
+            data:
+              volume_level: 0.8
+            target:
+              entity_id: media_player.living_room_display_cast
+          - action: tts.speak
+            alias: Announce the overshoot, repeats with the loop
+            continue_on_error: true
+            data:
+              cache: true
+              language: en-US
+              media_player_entity_id:
+              - media_player.bedroom_speaker_cast
+              - media_player.living_room_display_cast
+              message: The probe is at {{ states(probe) | int }} degrees, past the
+                target. Take it out of the oven now.
+              options:
+                preferred_sample_rate: 44100
+                voice: JennyNeural
+            target:
+              entity_id: tts.home_assistant_cloud
+          - delay:
+              minutes: 5
+          while:
+          - condition: state
+            entity_id: input_boolean.cook_session_active
+            state: 'on'
+          - above: input_number.cook_target_temp
+            condition: numeric_state
+            entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+          - condition: template
+            value_template: '{{ repeat.index < 12 }}'
+    - alias: Notification action tapped, disarm the session
+      conditions:
+      - condition: trigger
+        id: disarm_tapped
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.cook_session_active
+    - alias: Probe offline 30 minutes while armed, auto disarm
+      conditions:
+      - condition: trigger
+        id: probe_gone
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.cook_session_active
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            notification_icon: mdi:chef-hat-off
+            tag: cook_autoreset
+          message: The probe went offline for 30 minutes, so the cooking monitor disarmed
+            itself. Nothing is being watched now.
+          title: Cooking monitor auto reset
+    - alias: Midnight backstop, disarm only if the cook is clearly finished
+      conditions:
+      - condition: trigger
+        id: midnight_reset
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: template
+          value_template: '{{ not has_value(probe) }}'
+        - above: input_number.cook_target_temp
+          condition: numeric_state
+          entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.cook_session_active
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            notification_icon: mdi:chef-hat-off
+            tag: cook_autoreset
+          message: The cooking monitor was still armed at midnight and the cook looked
+            finished, so it disarmed itself. The probe reads {{ states(probe) }}.
+          title: Cooking monitor auto reset
+    - alias: Session ended, clear notifications then check the oven
+      conditions:
+      - condition: trigger
+        id: session_ended
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: cook_status
+          message: clear_notification
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          data:
+            tag: cook_status
+          message: clear_notification
+      - delay:
+          minutes: 15
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.kitchen_thermopro_1_probe_1_ambient_temperature
+          above: 200
+        then:
+        - action: notify.mobile_app_pixel_9
+          data:
+            title: Oven may still be on
+            message: The cooking monitor is off but the oven side probe still reads
+              {{ states('sensor.kitchen_thermopro_1_probe_1_ambient_temperature')
+              | int }} F. Check whether the oven is still running.
+            data:
+              channel: Cooking
+              tag: cook_oven_hot
+              importance: high
+              priority: high
+              ttl: 0
+              color: '#E53935'
+              notification_icon: mdi:stove
+        alias: Fifteen minutes after the session ends, warn if the oven is still hot
+    - alias: Probe offline for 5 minutes during a session
+      conditions:
+      - condition: trigger
+        id: probe_lost
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            color: '#FF5722'
+            importance: high
+            notification_icon: mdi:bluetooth-off
+            priority: high
+            tag: cook_probe_lost
+            ttl: 0
+          message: The meat probe has reported nothing for 5 minutes. Check that the
+            transmitter is powered and in range of the kitchen Bluetooth proxy.
+          title: Probe lost
+    - alias: Probe battery low
+      conditions:
+      - condition: trigger
+        id: battery_low
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            notification_icon: mdi:battery-alert
+            tag: cook_probe_battery
+          message: The meat probe battery is at {{ states('sensor.kitchen_thermopro_1_probe_1_battery')
+            }} percent.
+          title: Meat probe battery low
+    - alias: Internal temp stalled while the oven is hot
+      conditions:
+      - condition: trigger
+        id: stall
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      - condition: numeric_state
+        entity_id: sensor.kitchen_thermopro_1_probe_1_ambient_temperature
+        above: 200
+      - condition: numeric_state
+        entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+        above: 60
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Cook has stalled
+          message: Internal temp has barely moved for 20 minutes at {{ states(probe)
+            | int }} F while the oven side still reads {{ states('sensor.kitchen_thermopro_1_probe_1_ambient_temperature')
+            | int }} F. Check the oven door, the oven itself, and that the probe has
+            not worked loose.
+          data:
+            channel: Cooking
+            tag: cook_stall
+            importance: high
+            priority: high
+            ttl: 0
+            color: '#FF5722'
+            notification_icon: mdi:thermometer-off
+  max: 10
+  mode: parallel
+  variables:
+    probe: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    target_map:
+      Beef, veal, lamb roasts or chops (145): 145
+      Fish and shellfish (145): 145
+      Ground meats (160): 160
+      Ham, fresh uncooked (145): 145
+      Ham, fully cooked reheat (140): 140
+      Ham, leftover or repackaged (165): 165
+      Leftovers or casseroles (165): 165
+      Pork loin, tenderloin, chops (145): 145
+      Poultry, all cuts (165): 165

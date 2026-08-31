@@ -2,7 +2,8 @@
   alias: Medication Reminders with Mounjaro
   description: Provides audible reminders and visual alerts for taking medications
     at designated times and days. Uses parallel actions for efficiency and restores
-    TV lights to their original state after reminders.
+    TV lights to their original state after reminders. Includes a single retry if
+    the bedroom Cast group drops the session before the announcement plays.
   triggers:
   - at: 07:00:00
     id: morning_1
@@ -67,6 +68,31 @@
       entity_id: scene.medication_rainbow_effect
     action: scene.turn_on
     data: {}
+  - delay: 00:00:04
+    note: Gives the Cast group time to reach buffering or playing before the retry
+      check below.
+  - if:
+    - condition: state
+      entity_id: media_player.bedroom_group
+      state: 'off'
+    then:
+    - action: media_player.play_media
+      target:
+        entity_id: media_player.bedroom_group
+      data:
+        media:
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message= {%
+            if trigger.id == 'morning_1' %}Time+for+first+morning+medication+{% elif
+            trigger.id == 'morning_2' %}Time+for+second+morning+medications+{% elif
+            trigger.id == 'evening_1' %}Time+for+evening+medications+{% elif trigger.id
+            == 'evening_2' %}Time+for+second+evening+medications+{% elif trigger.id
+            == 'mounjaro_reminder' %}Time+for+Mounjaro+weekly+injection+{% endif %}
+            &language=en-US&voice=JennyNeural
+          media_content_type: provider
+          metadata: {}
+    note: Retry once. A successful announcement leaves the group idle for about five
+      minutes, so a state of off six seconds in means the Cast session dropped before
+      the audio loaded and nothing was spoken.
   - delay: 00:00:20
   - choose:
     - conditions:

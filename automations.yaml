@@ -2582,10 +2582,25 @@
   mode: single
 - id: '1752868210354'
   alias: Parcel box delivery notification
-  description: Plays chime and TTS when a package is delivered to the parcel box.
+  description: 'Plays chime and TTS when a package is delivered to the parcel box.
     Prevents repeat alerts using a dashboard indicator boolean. Allows manual reset
     and auto-reset at 6:00 AM. Adds actionable notification buttons to reset or dismiss
-    on Scott's phone only.
+    on Scott''s phone only. CAST PATH AND FAILURE HARDENING, 2026-08-30: every parcel
+    box run that touched a speaker failed with a Music Assistant error about the Office
+    Speaker refusing to launch the cast app, aborting before the TTS, the flag, and
+    both notifications. The four speaker targets were switched from the Music Assistant
+    player entities to their native Cast counterparts, every media_player step now
+    carries continue_on_error, the dashboard indicator is set first, and the TTS media_content_type
+    was corrected from audio/mp3 to provider. TO REVERT THE TARGETS, set the entity_id
+    list on the volume_set step and all three play_media steps back to media_player.bedroom_speaker,
+    media_player.dining_room_speaker, media_player.office_speaker, media_player.sunroom_speaker.
+    SPEAKER SET REDUCED, 2026-08-30: announcements now go to the Bedroom and Dining
+    Room Cast speakers only. Casting to four individual Cast devices played them slightly
+    out of sync, which was confusing to listen to. Office and Sunroom were dropped.
+    TTS TRUNCATION TEST, 2026-08-30: the TTS step was converted from media_player.play_media
+    to tts.speak with cache true and preferred_sample_rate 44100, to test whether
+    the sample rate is why the Cast speakers cut the sentence short. If this does
+    not fix it, shorten the message instead.'
   triggers:
   - id: parcel_box_open
     entity_id: binary_sensor.parcel_box_contact
@@ -2619,22 +2634,26 @@
         state: 'off'
       sequence:
       - target:
+          entity_id: input_boolean.parcel_dashboard_indicator
+        action: input_boolean.turn_on
+        data: {}
+        note: Moved to the top of the branch. This flag suppresses repeat announcements,
+          so it must be set before any step that can fail. Runs on 2026-08-28 and
+          2026-08-30 aborted on a speaker error before reaching it.
+      - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           volume_level: 0.7
         action: media_player.volume_set
+        continue_on_error: true
       - delay:
           seconds: 4
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -2650,14 +2669,13 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
       - delay:
           seconds: 3
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -2673,24 +2691,31 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
       - delay:
           seconds: 3
-      - target:
-          entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+      - action: tts.speak
+        target:
+          entity_id: tts.home_assistant_cloud
         data:
-          media:
-            media_content_id: media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=JennyNeural
-            media_content_type: audio/mp3
-            metadata: {}
-        action: media_player.play_media
-      - target:
-          entity_id: input_boolean.parcel_dashboard_indicator
-        action: input_boolean.turn_on
-        data: {}
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
+          message: A delivery has been made to the parcel box on the front porch
+          cache: true
+          language: en-US
+          options:
+            voice: JennyNeural
+            preferred_sample_rate: 44100
+        continue_on_error: true
+        note: Converted from media_player.play_media with a media-source URL to tts.speak
+          so the options field is available. On 2026-08-30 the Cast device reported
+          a media_duration that grew while streaming and stopped playback at 4.128
+          seconds, cutting the sentence after the word parcel. preferred_sample_rate
+          44100 is the documented fix for Cast devices reproducing partial audio,
+          and cache true has the file generated before playback. TO REVERT, restore
+          a media_player.play_media step with media_content_id media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=JennyNeural
+          and media_content_type provider.
       - data:
           title: Parcel Delivery
           message: A package was delivered to the front porch parcel box at {{ now().strftime('%I:%M
@@ -6574,7 +6599,8 @@
   alias: Medication Reminders with Mounjaro
   description: Provides audible reminders and visual alerts for taking medications
     at designated times and days. Uses parallel actions for efficiency and restores
-    TV lights to their original state after reminders.
+    TV lights to their original state after reminders. Includes a single retry if
+    the bedroom Cast group drops the session before the announcement plays.
   triggers:
   - at: 07:00:00
     id: morning_1
@@ -6639,6 +6665,31 @@
       entity_id: scene.medication_rainbow_effect
     action: scene.turn_on
     data: {}
+  - delay: 00:00:04
+    note: Gives the Cast group time to reach buffering or playing before the retry
+      check below.
+  - if:
+    - condition: state
+      entity_id: media_player.bedroom_group
+      state: 'off'
+    then:
+    - action: media_player.play_media
+      target:
+        entity_id: media_player.bedroom_group
+      data:
+        media:
+          media_content_id: media-source://tts/tts.home_assistant_cloud?message= {%
+            if trigger.id == 'morning_1' %}Time+for+first+morning+medication+{% elif
+            trigger.id == 'morning_2' %}Time+for+second+morning+medications+{% elif
+            trigger.id == 'evening_1' %}Time+for+evening+medications+{% elif trigger.id
+            == 'evening_2' %}Time+for+second+evening+medications+{% elif trigger.id
+            == 'mounjaro_reminder' %}Time+for+Mounjaro+weekly+injection+{% endif %}
+            &language=en-US&voice=JennyNeural
+          media_content_type: provider
+          metadata: {}
+    note: Retry once. A successful announcement leaves the group idle for about five
+      minutes, so a state of off six seconds in means the Cast session dropped before
+      the audio loaded and nothing was spoken.
   - delay: 00:00:20
   - choose:
     - conditions:
@@ -10086,7 +10137,24 @@
     from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor. The local
     integration names the primary entity after the device, so the _door suffix is
     gone. Device class is still door, so the off to on transition still means the
-    mailbox was opened.'
+    mailbox was opened. SPEAKER FAILURE HARDENING, 2026-08-30: the two input_boolean
+    flags now run immediately after the open count is set, and every media_player
+    step carries continue_on_error so a single speaker refusing a cast session cannot
+    abort the branch and skip the notifications and flags. The TTS engine was changed
+    from the legacy name cloud to the entity id tts.home_assistant_cloud. CAST PATH
+    TEST, 2026-08-30: the four speaker targets in this branch were switched from the
+    Music Assistant player entities to their native Cast counterparts, because the
+    2026-08-29 abort was a Music Assistant error about the Office Speaker refusing
+    to launch the cast app. TO REVERT, set the target entity_id list on the volume_set
+    step and all three play_media steps in this branch back to media_player.bedroom_speaker,
+    media_player.dining_room_speaker, media_player.office_speaker, media_player.sunroom_speaker.
+    SPEAKER SET REDUCED, 2026-08-30: announcements now go to the Bedroom and Dining
+    Room Cast speakers only, matching the parcel box automation. Casting to four individual
+    Cast devices played them slightly out of sync. Office and Sunroom were dropped.
+    TTS CONVERTED, 2026-08-30: the TTS step was changed from media_player.play_media
+    to tts.speak with cache true and preferred_sample_rate 44100, matching the parcel
+    box automation after that change was confirmed to stop the Cast speakers truncating
+    the sentence.'
   triggers:
   - id: mailbox_open
     entity_id: binary_sensor.mailbox_sensor
@@ -10129,19 +10197,25 @@
         action: input_number.set_value
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - input_boolean.mailbox_notified
+          - input_boolean.mail_dashboard_indicator
+        action: input_boolean.turn_on
+        note: Moved to the top of the branch. These flags gate the second opening
+          branch and the 5 PM reminder, so they must be set before any step that can
+          fail. On 2026-08-29 a speaker error aborted the run before this step, which
+          silently killed the reminder for the rest of the day.
+      - target:
+          entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           volume_level: 0.7
         action: media_player.volume_set
+        continue_on_error: true
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -10157,14 +10231,15 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
+        note: continue_on_error is set so one speaker refusing a cast session cannot
+          abort the run and skip the notifications.
       - delay:
           seconds: 3
       - target:
           entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
         data:
           media:
             media_content_id: media-source://media_source/local/073981_131659__bertrof__game-sound-intro-to-game_amp_80921__justinbw__buttonchime02up_7mp3-90501.mp3
@@ -10180,19 +10255,32 @@
                 media_content_id: media-source://media_source
               browse_entity_id: media_player.all_speakers
         action: media_player.play_media
+        continue_on_error: true
+        note: continue_on_error is set so one speaker refusing a cast session cannot
+          abort the run and skip the notifications.
       - delay:
           seconds: 3
-      - target:
-          entity_id:
-          - media_player.bedroom_speaker
-          - media_player.dining_room_speaker
-          - media_player.office_speaker
-          - media_player.sunroom_speaker
+      - action: tts.speak
+        target:
+          entity_id: tts.home_assistant_cloud
         data:
-          media:
-            media_content_id: media-source://tts/cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=JennyNeural
-            media_content_type: provider
-        action: media_player.play_media
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.dining_room_speaker_cast
+          message: Mail has been delivered to the mailbox
+          cache: true
+          language: en-US
+          options:
+            voice: JennyNeural
+            preferred_sample_rate: 44100
+        continue_on_error: true
+        note: Converted from media_player.play_media with a media-source URL to tts.speak,
+          matching the parcel box automation. With the streamed media-source form
+          the Cast device reported a media_duration that grew while playing and cut
+          the sentence short; with cache true the file is complete before playback
+          and the duration is reported once as a fixed value. TO REVERT, restore a
+          media_player.play_media step with media_content_id media-source://tts/tts.home_assistant_cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=JennyNeural
+          and media_content_type provider.
       - data:
           title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
@@ -10208,11 +10296,6 @@
           title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
         action: notify.mobile_app_bills_phone
-      - target:
-          entity_id:
-          - input_boolean.mailbox_notified
-          - input_boolean.mail_dashboard_indicator
-        action: input_boolean.turn_on
     - conditions:
       - condition: trigger
         id: mailbox_open
@@ -12388,53 +12471,190 @@
       - input_number.fridge_air_filter_weeks_left
       - input_number.fridge_water_filter_weeks_left
   mode: single
-- id: '1788062432208'
-  alias: Sensor Went Silent Alert
-  description: 'Fires when a battery-powered sensor stops reporting altogether while
-    still showing a healthy-looking value.
+- id: '1788062748656'
+  alias: Low Battery Alert (All Battery Sensors)
+  description: 'Daily whole house low battery check at 09:30. Scans every sensor and
+    binary sensor carrying the battery device class (140 percentage sensors and 13
+    binary sensors as of 2026-08-30) and sends one push listing everything that is
+    low.
 
 
-    Built 2026-08-30 after three Aqara temperature sensors failed unnoticed: Dining
-    Room went quiet 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11. Nothing
-    in the system watched for this. The Foyer case is why this exists: it is on Zigbee2MQTT,
-    MQTT retains the last published value, so when the device stopped transmitting
-    at 17 percent battery the entity kept serving 74.606 degrees every day for five
-    and a half weeks. It never went unavailable, and it silently skewed sensor.average_indoor_temperature
-    the whole time.
+    Rewritten 2026-08-30 as a native automation, replacing the gmlupatelli/low_battery_notification
+    blueprint. The blueprint merged both entity types into a single flat list, so
+    binary sensors appeared with no number after them and looked like percentage readings
+    that had failed. That produced a notification claiming the Sunroom and Rear Door
+    deadbolts needed batteries while those locks were reading 89 and 88 percent on
+    the dashboard. The percentages were correct; the two Z-Wave locks were separately
+    asserting their Replace battery now and Replace battery soon flags. This version
+    keeps the two kinds of evidence in labelled sections so they can never be confused
+    again.
 
 
-    Uses the spook.stale trigger from Spook 5.1.0. Targets are labels rather than
-    areas so a sensor moved between rooms stays covered without editing this automation.
-    Six hours is well beyond the normal reporting interval of these Zigbee sensors,
-    so a routine missed report will not fire it.
+    Threshold is 20 rather than 15 because the Foyer temperature sensor stopped transmitting
+    at 17 percent and would never have reached a 15 percent threshold.
 
 
-    KNOWN LIMITATION, by design in Spook: entities that were already silent when this
-    automation loaded are left alone. It only reports silence that begins while it
-    is running. So it will NOT alert on the Foyer sensor, which is frozen right now.
-    Spook does this deliberately so that reloading automations does not replay every
-    sensor that has ever gone quiet.
+    Sensors reading unknown or unavailable are deliberately excluded here. That failure
+    mode is covered by automation.sensor_went_silent_alert.
 
 
-    A companion low-battery automation is still outstanding. The native battery.level_crossed
-    trigger was rejected as invalid by HA Core 2026.8.3 on this instance.'
+    The single template lives in variables so the condition and the notification share
+    one scan of the state machine. There is no native condition for counting entities
+    that match a device class, which is why a template is used in the condition position.'
   triggers:
-  - id: sensor_silent
-    options:
-      for: 06:00:00
-    target:
-      label_id:
-      - temperature_humidity
-      - leak_sensor
-      - door_window_sensors
-    trigger: spook.stale
-  conditions: []
+  - at: 09:30:00
+    id: daily_check
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: '{{ low_body | trim | length > 0 }}'
   actions:
   - action: notify.mobile_app_pixel_9
     data:
       data:
         channel: alarm_stream
         importance: high
+        notification_icon: mdi:battery-alert
+        tag: low_battery_daily
+      message: '{{ low_body }}'
+      title: Low Battery
+  mode: single
+  variables:
+    low_body: '{%- set ns = namespace(pct=[], flag=[]) -%}
+
+      {%- for s in states.sensor if s.attributes.device_class == ''battery'' and s.state
+      | float(-1) >= 0 and s.state | float(-1) < 20 -%}
+
+      {%- set ns.pct = ns.pct + [s.name ~ '' ('' ~ s.state ~ ''%)''] -%}
+
+      {%- endfor -%}
+
+      {%- for s in states.binary_sensor if s.attributes.device_class == ''battery''
+      and s.state == ''on'' -%}
+
+      {%- set ns.flag = ns.flag + [s.name] -%}
+
+      {%- endfor -%}
+
+      {%- if ns.pct %}Below 20 percent:
+
+      {% for i in ns.pct %}- {{ i }}
+
+      {% endfor %}{% endif -%}
+
+      {%- if ns.flag %}
+
+      Reporting low (no percentage given):
+
+      {% for i in ns.flag %}- {{ i }}
+
+      {% endfor %}{% endif -%}'
+- id: '1788098971757'
+  alias: Sensor Went Silent Alert
+  description: 'Alerts when a battery powered temperature, humidity or leak sensor
+    stops reporting altogether while still serving a healthy looking value.
+
+
+    Built 2026-08-30 after Aqara temperature sensors failed unnoticed. The Foyer case
+    is the reason this exists: it is on Zigbee2MQTT, MQTT retains the last published
+    value, so when the device stopped transmitting the entity kept serving 74.606
+    degrees for weeks. It never went unavailable and it silently skewed the indoor
+    temperature average.
+
+
+    VERSION 2, rebuilt 2026-08-30 after v1 fired 63 times between 03:23 and 04:17
+    and woke Scott repeatedly. Four defects in v1, all fixed here:
+
+
+    1. v1 used channel alarm_stream with importance high. That is the Android alarm
+    channel, so it played at alarm volume and ignored Do Not Disturb. A stale sensor
+    is not a wake up event. This version uses a dedicated Sensor Health channel at
+    default importance so it can be muted independently of the smoke, leak and CGM
+    alerts that legitimately use alarm_stream.
+
+
+    2. v1 targeted the labels temperature_humidity, leak_sensor and door_window_sensors.
+    A label target expands to every entity on any device carrying the label, not just
+    the labelled entity. Only 13 entities carried those labels directly but the trigger
+    actually covered 530 entities across 68 devices, including magnetic_field_interference_detected
+    diagnostics, battery sensors, weather station illuminance and UV, and an automation
+    entity. This version uses an explicit entity_id list. That is a deliberate departure
+    from the usual preference for label targets: label expansion is precisely what
+    broke v1, so the list is intentionally hand maintained. Add new sensors here by
+    hand.
+
+
+    3. v1 included door, window and contact sensors. A closed door reports nothing
+    for hours by design, so those were guaranteed overnight false positives. They
+    are excluded entirely.
+
+
+    4. v1 used a 6 hour threshold. Home Assistant restarted at 21:23:54 on 2026-08-29
+    and Spook starts its stale clock at load, so at 03:23:54 every targeted entity
+    that had not reported since the restart came due in the same instant. 46 notifications
+    landed in 3.4 seconds. This version uses 12 hours and holds any alert raised outside
+    waking hours until 08:00, so a restart burst can no longer land in the middle
+    of the night. All monitored entities were measured reporting within 0.3 hours
+    when healthy, so 12 hours is far beyond any normal interval.
+
+
+    Uses the spook.stale trigger from Spook 5.1.0.
+
+
+    KNOWN LIMITATION, by design in Spook: entities already silent when this automation
+    loads are left alone. It only reports silence that begins while it is running.
+    So it will not alert on the Foyer temperature sensor or the two fridge humidity
+    sensors, which are frozen right now. Spook does this deliberately so reloading
+    automations does not replay every sensor that has ever gone quiet.'
+  triggers:
+  - id: sensor_silent
+    options:
+      for: '12:00:00'
+    target:
+      entity_id:
+      - sensor.temp_sensor_primary_bath_temperature
+      - sensor.temp_sensor_foyer_temperature
+      - sensor.temp_sensor_bedroom_temperature
+      - sensor.temp_sensor_living_room_temperature
+      - sensor.temp_sensor_outside_temperature
+      - sensor.temp_sensor_garage
+      - sensor.govee_bt_temp_sensor
+      - sensor.temp_sensor_fridge
+      - sensor.humidity_sensor_fridge
+      - sensor.bedroom_fridge_humidity
+      - binary_sensor.bathroom_sink_leak_sensor_6
+      - binary_sensor.bathroom_2_sink_leak_sensor_8
+      - binary_sensor.bathroom_2_toilet_leak_sensor_7
+      - binary_sensor.dishwasher_leak_sensor_1
+      - binary_sensor.refrigerator_leak_sensor_3
+      - binary_sensor.kitchen_sink_leak_sensor_2
+      - binary_sensor.laundry_leak_sensor_4
+      - binary_sensor.hvac_condensate_leak_sensor_9
+      - binary_sensor.bathroom_toilet_leak_sensor_5
+    trigger: spook.stale
+  conditions: []
+  actions:
+  - alias: Hold until morning if raised outside waking hours
+    if:
+    - condition: not
+      conditions:
+      - after: 08:00:00
+        before: '21:00:00'
+        condition: time
+    note: Stale reporting is never urgent. If the alert lands between 21:00 and 08:00
+      the run parks on a time trigger and delivers at 08:00 instead. The timeout is
+      a safety valve so a run can never park forever.
+    then:
+    - continue_on_timeout: true
+      timeout: '13:00:00'
+      wait_for_trigger:
+      - at: 08:00:00
+        trigger: time
+  - action: notify.mobile_app_pixel_9
+    alias: Notify on the Sensor Health channel
+    data:
+      data:
+        channel: Sensor Health
         notification_icon: mdi:timer-alert-outline
         tag: sensor_silent_{{ trigger.entity_id }}
       message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
@@ -12442,49 +12662,520 @@
         It may still be showing a value, but that value is stale. Check its battery.'
       title: Sensor Went Silent
     note: Names the entity, says when it last spoke, and points at the battery as
-      the usual cause.
-  max: 20
+      the usual cause. Deliberately NOT alarm_stream. Tag is per entity so a repeat
+      for the same sensor replaces the old notification instead of stacking.
+  max: 30
   mode: parallel
-- id: '1788062748656'
-  alias: Low Battery Alert (All Battery Sensors)
-  description: 'Daily whole-house low battery check at 09:30, covering every sensor
-    and binary sensor with the battery device class (about 140 percentage sensors
-    plus 13 binary sensors as of 2026-08-30). Sends one push listing every device
-    below 20 percent, rather than one notification per device.
-
-
-    Built 2026-08-30. Until now every battery automation was device specific (locks,
-    water valve, Ego, curtain motors, toothbrush, mower) and nothing watched the Zigbee
-    temperature, door, window or leak sensors. Three Aqara temperature sensors died
-    unnoticed as a result: Dining Room 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11.
-
-
-    Threshold is 20 rather than 15 because the Foyer sensor stopped transmitting at
-    17 percent and would never have reached a 15 percent threshold.
-
-
-    This uses the gmlupatelli/low_battery_notification blueprint, which was already
-    imported but had never been used. Chosen over a native trigger because battery.level_crossed
-    is rejected as an invalid trigger by HA Core 2026.8.3 on this instance, and battery.became_low
-    only works on binary sensors, which would have covered 13 of 153 devices. The
-    blueprint scans by device class, so newly added battery devices are covered automatically
-    with no entity list to maintain.
-
-
-    Pairs with automation.sensor_went_silent_alert, which catches the other failure
-    mode: a sensor that stops reporting entirely while still showing a stale value.'
-  use_blueprint:
-    input:
-      actions:
+- id: '1788112636474'
+  alias: Meat Probe Cooking Monitor
+  description: 'Single consolidated monitor for the ThermoPro 1 Probe 1 meat thermometer.
+    Selecting a food in input_select.cook_food_type writes the USDA FSIS safe minimum
+    internal temperature into input_number.cook_target_temp. While input_boolean.cook_session_active
+    is on, it pushes Scott''s Pixel 9 and Galaxy Watch7 and speaks on the Bedroom
+    Speaker and Living Room Display when the probe nears the target, reaches it, or
+    overshoots it, and warns if the probe drops offline for 5 minutes or the probe
+    battery reads under 15 percent for a continuous 10 minutes. The 10 minute hold
+    exists because the TP970 emits one garbage battery packet on wake: on 2026-08-30
+    it reported 4.0 percent at 13:07:15 and 86.0 percent four seconds later, which
+    fired a false low battery alert. TTS uses the native Cast entities rather than
+    the Music Assistant ones, and carries cache true plus preferred_sample_rate 44100
+    with continue_on_error on every media step, matching the parcel box and mailbox
+    automations after Music Assistant errors aborted those runs and Cast truncation
+    cut their sentences short. Living room volume is set to 0.8 and bedroom to 0.7
+    before each announcement. Alerts share the Android notification tag cook_status
+    so each new one replaces the last, and the Pull it now and Overcooking alerts
+    carry a Done, stop alerts button that fires the COOK_DISARM action to turn the
+    session off and clear the notification. Two auto resets exist so a forgotten button
+    press cannot leave the monitor armed forever: the probe going offline for 30 minutes
+    while armed disarms it, and at midnight it disarms if the probe is offline or
+    already past target, which is why a cook running past midnight is never interrupted.
+    Measured on 2026-08-30: after the probe was seated in its charger the last advertisement
+    arrived at 13:30:01 and Home Assistant marked the entities unavailable at 13:38:22,
+    an 8 minute 20 second Bluetooth staleness timeout. The 5 and 30 minute for: clauses
+    only start counting after that, so real world latency is roughly 13 minutes to
+    the Probe lost alert and roughly 38 minutes to the auto disarm. Scott reviewed
+    these numbers on 2026-08-30 and chose to leave them unchanged, since the long
+    delay guarantees a brief Bluetooth dropout never raises a false alarm. The arm
+    switch exists so a probe sitting unused in a drawer never triggers alerts. Targets
+    sourced from USDA FSIS Safe Minimum Internal Temperature Chart: fully cooked ham
+    reheated 140 F, leftover or repackaged ham 165 F, fresh or uncooked ham 145 F,
+    whole muscle pork, beef, veal and lamb 145 F with a 3 minute rest, ground meats
+    160 F, all poultry 165 F, fish and shellfish 145 F, leftovers and casseroles 165
+    F. Two later additions: a stall alert fires when sensor.kitchen_thermopro_1_cook_rise_rate
+    stays under 0.2 F per minute for 20 minutes while the session is armed, the oven
+    side reads over 200 F and the internal temp is already over 60 F. The 60 F floor
+    exists because a cold ham genuinely sits flat for about twenty minutes at the
+    start of a cook, as observed on 2026-08-30 when internal held at 39.2 F from 18:40
+    to 19:00 with ambient already past 200 F. Fifteen minutes after any session ends,
+    if the oven side probe still reads over 200 F, it warns that the oven may have
+    been left on.'
+  triggers:
+  - entity_id: input_select.cook_food_type
+    id: food_selected
+    trigger: state
+  - entity_id: input_boolean.cook_session_active
+    id: session_started
+    to: 'on'
+    trigger: state
+  - entity_id: input_boolean.cook_session_active
+    from: 'on'
+    id: session_ended
+    to: 'off'
+    trigger: state
+  - id: approaching
+    trigger: template
+    value_template: '{{ has_value(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'')
+      and states(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'') | float(0)
+      >= states(''input_number.cook_target_temp'') | float(999) - 10 }}'
+  - above: input_number.cook_target_temp
+    entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    id: reached
+    trigger: numeric_state
+  - id: overshoot
+    trigger: template
+    value_template: '{{ has_value(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'')
+      and states(''sensor.kitchen_thermopro_1_probe_1_internal_temperature'') | float(0)
+      >= states(''input_number.cook_target_temp'') | float(999) + 10 }}'
+  - entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    for:
+      minutes: 5
+    id: probe_lost
+    to:
+    - unavailable
+    - unknown
+    trigger: state
+  - entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    for:
+      minutes: 30
+    id: probe_gone
+    to:
+    - unavailable
+    - unknown
+    trigger: state
+  - at: 00:00:00
+    id: midnight_reset
+    trigger: time
+  - below: 15
+    entity_id: sensor.kitchen_thermopro_1_probe_1_battery
+    for:
+      minutes: 10
+    id: battery_low
+    trigger: numeric_state
+  - event_data:
+      action: COOK_DISARM
+    event_type: mobile_app_notification_action
+    id: disarm_tapped
+    trigger: event
+  - trigger: numeric_state
+    entity_id: sensor.kitchen_thermopro_1_cook_rise_rate
+    below: 0.2
+    for:
+      minutes: 20
+    id: stall
+  actions:
+  - choose:
+    - alias: Food selected, write the USDA target temperature
+      conditions:
+      - condition: trigger
+        id: food_selected
+      - condition: template
+        value_template: '{{ trigger.to_state.state in target_map }}'
+      sequence:
+      - action: input_number.set_value
+        data:
+          value: '{{ target_map[trigger.to_state.state] }}'
+        target:
+          entity_id: input_number.cook_target_temp
+    - alias: Session started, confirm the probe reading and target
+      conditions:
+      - condition: trigger
+        id: session_started
+      sequence:
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
+            channel: Cooking
+            color: '#2196F3'
+            notification_icon: mdi:chef-hat
+            tag: cook_status
+          message: '{{ states(''input_select.cook_food_type'') }}. Target {{ states(''input_number.cook_target_temp'')
+            | int }} F. Probe now reads {{ states(probe) }} F, oven side {{ states(''sensor.kitchen_thermopro_1_probe_1_ambient_temperature'')
+            }} F.'
+          title: Cooking monitor started
+    - alias: Ten degrees from target
+      conditions:
+      - condition: trigger
+        id: approaching
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            color: '#FF9800'
             importance: high
+            notification_icon: mdi:thermometer-chevron-up
+            priority: high
+            tag: cook_status
+            ttl: 0
+          message: '{{ states(probe) | int }} F internal, target {{ states(''input_number.cook_target_temp'')
+            | int }} F. Roughly 10 degrees to go.'
+          title: Almost there
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          data:
+            channel: Cooking
+            tag: cook_status
+          message: '{{ states(probe) | int }} F of {{ states(''input_number.cook_target_temp'')
+            | int }} F'
+          title: Almost there
+      - action: media_player.volume_set
+        alias: Set the bedroom speaker level
+        continue_on_error: true
+        data:
+          volume_level: 0.7
+        target:
+          entity_id: media_player.bedroom_speaker_cast
+      - action: media_player.volume_set
+        alias: Set the living room display level, louder than the bedroom at Scott's
+          request
+        continue_on_error: true
+        data:
+          volume_level: 0.8
+        target:
+          entity_id: media_player.living_room_display_cast
+      - action: tts.speak
+        alias: Announce that the probe is closing on the target
+        continue_on_error: true
+        data:
+          cache: true
+          language: en-US
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.living_room_display_cast
+          message: The probe is at {{ states(probe) | int }} degrees. Roughly ten
+            degrees to go.
+          options:
+            preferred_sample_rate: 44100
+            voice: JennyNeural
+        target:
+          entity_id: tts.home_assistant_cloud
+    - alias: Target reached, pull the meat
+      conditions:
+      - condition: trigger
+        id: reached
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            actions:
+            - action: COOK_DISARM
+              title: Done, stop alerts
+            channel: Cooking
+            color: '#4CAF50'
+            importance: high
+            notification_icon: mdi:thermometer-check
+            priority: high
+            sticky: true
+            tag: cook_status
+            ttl: 0
+          message: '{{ states(''input_select.cook_food_type'') }} hit {{ states(probe)
+            | int }} F, target {{ states(''input_number.cook_target_temp'') | int
+            }} F.{{ '' Rest at least 3 minutes before carving.'' if states(''input_number.cook_target_temp'')
+            | float(0) == 145 else '''' }}'
+          title: Pull it now
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          data:
+            channel: Cooking
+            importance: high
+            tag: cook_status
+            ttl: 0
+          message: '{{ states(probe) | int }} F, target reached'
+          title: Pull it now
+      - action: media_player.volume_set
+        alias: Set the bedroom speaker level
+        continue_on_error: true
+        data:
+          volume_level: 0.7
+        target:
+          entity_id: media_player.bedroom_speaker_cast
+      - action: media_player.volume_set
+        alias: Set the living room display level, louder than the bedroom at Scott's
+          request
+        continue_on_error: true
+        data:
+          volume_level: 0.8
+        target:
+          entity_id: media_player.living_room_display_cast
+      - action: tts.speak
+        alias: Announce that the target has been reached
+        continue_on_error: true
+        data:
+          cache: true
+          language: en-US
+          media_player_entity_id:
+          - media_player.bedroom_speaker_cast
+          - media_player.living_room_display_cast
+          message: The probe has reached {{ states(probe) | int }} degrees. Time to
+            take it out of the oven.{{ ' Let it rest at least three minutes before
+            carving.' if states('input_number.cook_target_temp') | float(0) == 145
+            else '' }}
+          options:
+            preferred_sample_rate: 44100
+            voice: JennyNeural
+        target:
+          entity_id: tts.home_assistant_cloud
+    - alias: Overshot the target, warn until it comes back down or the session ends
+      conditions:
+      - condition: trigger
+        id: overshoot
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - repeat:
+          sequence:
+          - action: notify.mobile_app_pixel_9
+            data:
+              data:
+                actions:
+                - action: COOK_DISARM
+                  title: Done, stop alerts
+                channel: Cooking
+                color: '#E53935'
+                importance: high
+                notification_icon: mdi:thermometer-alert
+                priority: high
+                sticky: true
+                tag: cook_status
+                ttl: 0
+              message: '{{ states(probe) | int }} F is past the {{ states(''input_number.cook_target_temp'')
+                | int }} F target. Take it out of the oven.'
+              title: Overcooking
+          - action: notify.mobile_app_galaxy_watch7_904t
+            data:
+              data:
+                channel: Cooking
+                importance: high
+                tag: cook_status
+                ttl: 0
+              message: '{{ states(probe) | int }} F, over target'
+              title: Overcooking
+          - action: media_player.volume_set
+            alias: Set the bedroom speaker level
+            continue_on_error: true
+            data:
+              volume_level: 0.7
+            target:
+              entity_id: media_player.bedroom_speaker_cast
+          - action: media_player.volume_set
+            alias: Set the living room display level, louder than the bedroom at Scott's
+              request
+            continue_on_error: true
+            data:
+              volume_level: 0.8
+            target:
+              entity_id: media_player.living_room_display_cast
+          - action: tts.speak
+            alias: Announce the overshoot, repeats with the loop
+            continue_on_error: true
+            data:
+              cache: true
+              language: en-US
+              media_player_entity_id:
+              - media_player.bedroom_speaker_cast
+              - media_player.living_room_display_cast
+              message: The probe is at {{ states(probe) | int }} degrees, past the
+                target. Take it out of the oven now.
+              options:
+                preferred_sample_rate: 44100
+                voice: JennyNeural
+            target:
+              entity_id: tts.home_assistant_cloud
+          - delay:
+              minutes: 5
+          while:
+          - condition: state
+            entity_id: input_boolean.cook_session_active
+            state: 'on'
+          - above: input_number.cook_target_temp
+            condition: numeric_state
+            entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+          - condition: template
+            value_template: '{{ repeat.index < 12 }}'
+    - alias: Notification action tapped, disarm the session
+      conditions:
+      - condition: trigger
+        id: disarm_tapped
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.cook_session_active
+    - alias: Probe offline 30 minutes while armed, auto disarm
+      conditions:
+      - condition: trigger
+        id: probe_gone
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.cook_session_active
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            notification_icon: mdi:chef-hat-off
+            tag: cook_autoreset
+          message: The probe went offline for 30 minutes, so the cooking monitor disarmed
+            itself. Nothing is being watched now.
+          title: Cooking monitor auto reset
+    - alias: Midnight backstop, disarm only if the cook is clearly finished
+      conditions:
+      - condition: trigger
+        id: midnight_reset
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: template
+          value_template: '{{ not has_value(probe) }}'
+        - above: input_number.cook_target_temp
+          condition: numeric_state
+          entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.cook_session_active
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            notification_icon: mdi:chef-hat-off
+            tag: cook_autoreset
+          message: The cooking monitor was still armed at midnight and the cook looked
+            finished, so it disarmed itself. The probe reads {{ states(probe) }}.
+          title: Cooking monitor auto reset
+    - alias: Session ended, clear notifications then check the oven
+      conditions:
+      - condition: trigger
+        id: session_ended
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: cook_status
+          message: clear_notification
+      - action: notify.mobile_app_galaxy_watch7_904t
+        data:
+          data:
+            tag: cook_status
+          message: clear_notification
+      - delay:
+          minutes: 15
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.kitchen_thermopro_1_probe_1_ambient_temperature
+          above: 200
+        then:
+        - action: notify.mobile_app_pixel_9
+          data:
+            title: Oven may still be on
+            message: The cooking monitor is off but the oven side probe still reads
+              {{ states('sensor.kitchen_thermopro_1_probe_1_ambient_temperature')
+              | int }} F. Check whether the oven is still running.
+            data:
+              channel: Cooking
+              tag: cook_oven_hot
+              importance: high
+              priority: high
+              ttl: 0
+              color: '#E53935'
+              notification_icon: mdi:stove
+        alias: Fifteen minutes after the session ends, warn if the oven is still hot
+    - alias: Probe offline for 5 minutes during a session
+      conditions:
+      - condition: trigger
+        id: probe_lost
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
+            color: '#FF5722'
+            importance: high
+            notification_icon: mdi:bluetooth-off
+            priority: high
+            tag: cook_probe_lost
+            ttl: 0
+          message: The meat probe has reported nothing for 5 minutes. Check that the
+            transmitter is powered and in range of the kitchen Bluetooth proxy.
+          title: Probe lost
+    - alias: Probe battery low
+      conditions:
+      - condition: trigger
+        id: battery_low
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Cooking
             notification_icon: mdi:battery-alert
-            tag: low_battery_daily
-          message: 'These devices are below 20 percent: {{ sensors }}'
-          title: Low Battery
-      threshold: 20
-      time: 09:30:00
-    path: gmlupatelli/low_battery_notification.yaml
+            tag: cook_probe_battery
+          message: The meat probe battery is at {{ states('sensor.kitchen_thermopro_1_probe_1_battery')
+            }} percent.
+          title: Meat probe battery low
+    - alias: Internal temp stalled while the oven is hot
+      conditions:
+      - condition: trigger
+        id: stall
+      - condition: state
+        entity_id: input_boolean.cook_session_active
+        state: 'on'
+      - condition: numeric_state
+        entity_id: sensor.kitchen_thermopro_1_probe_1_ambient_temperature
+        above: 200
+      - condition: numeric_state
+        entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+        above: 60
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          title: Cook has stalled
+          message: Internal temp has barely moved for 20 minutes at {{ states(probe)
+            | int }} F while the oven side still reads {{ states('sensor.kitchen_thermopro_1_probe_1_ambient_temperature')
+            | int }} F. Check the oven door, the oven itself, and that the probe has
+            not worked loose.
+          data:
+            channel: Cooking
+            tag: cook_stall
+            importance: high
+            priority: high
+            ttl: 0
+            color: '#FF5722'
+            notification_icon: mdi:thermometer-off
+  max: 10
+  mode: parallel
+  variables:
+    probe: sensor.kitchen_thermopro_1_probe_1_internal_temperature
+    target_map:
+      Beef, veal, lamb roasts or chops (145): 145
+      Fish and shellfish (145): 145
+      Ground meats (160): 160
+      Ham, fresh uncooked (145): 145
+      Ham, fully cooked reheat (140): 140
+      Ham, leftover or repackaged (165): 165
+      Leftovers or casseroles (165): 165
+      Pork loin, tenderloin, chops (145): 145
+      Poultry, all cuts (165): 165

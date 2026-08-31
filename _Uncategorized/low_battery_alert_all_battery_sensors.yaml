@@ -1,43 +1,78 @@
 - id: '1788062748656'
   alias: Low Battery Alert (All Battery Sensors)
-  description: 'Daily whole-house low battery check at 09:30, covering every sensor
-    and binary sensor with the battery device class (about 140 percentage sensors
-    plus 13 binary sensors as of 2026-08-30). Sends one push listing every device
-    below 20 percent, rather than one notification per device.
+  description: 'Daily whole house low battery check at 09:30. Scans every sensor and
+    binary sensor carrying the battery device class (140 percentage sensors and 13
+    binary sensors as of 2026-08-30) and sends one push listing everything that is
+    low.
 
 
-    Built 2026-08-30. Until now every battery automation was device specific (locks,
-    water valve, Ego, curtain motors, toothbrush, mower) and nothing watched the Zigbee
-    temperature, door, window or leak sensors. Three Aqara temperature sensors died
-    unnoticed as a result: Dining Room 2026-07-13, Foyer 2026-07-21, Living Room 2026-08-11.
+    Rewritten 2026-08-30 as a native automation, replacing the gmlupatelli/low_battery_notification
+    blueprint. The blueprint merged both entity types into a single flat list, so
+    binary sensors appeared with no number after them and looked like percentage readings
+    that had failed. That produced a notification claiming the Sunroom and Rear Door
+    deadbolts needed batteries while those locks were reading 89 and 88 percent on
+    the dashboard. The percentages were correct; the two Z-Wave locks were separately
+    asserting their Replace battery now and Replace battery soon flags. This version
+    keeps the two kinds of evidence in labelled sections so they can never be confused
+    again.
 
 
-    Threshold is 20 rather than 15 because the Foyer sensor stopped transmitting at
-    17 percent and would never have reached a 15 percent threshold.
+    Threshold is 20 rather than 15 because the Foyer temperature sensor stopped transmitting
+    at 17 percent and would never have reached a 15 percent threshold.
 
 
-    This uses the gmlupatelli/low_battery_notification blueprint, which was already
-    imported but had never been used. Chosen over a native trigger because battery.level_crossed
-    is rejected as an invalid trigger by HA Core 2026.8.3 on this instance, and battery.became_low
-    only works on binary sensors, which would have covered 13 of 153 devices. The
-    blueprint scans by device class, so newly added battery devices are covered automatically
-    with no entity list to maintain.
+    Sensors reading unknown or unavailable are deliberately excluded here. That failure
+    mode is covered by automation.sensor_went_silent_alert.
 
 
-    Pairs with automation.sensor_went_silent_alert, which catches the other failure
-    mode: a sensor that stops reporting entirely while still showing a stale value.'
-  use_blueprint:
-    input:
-      actions:
-      - action: notify.mobile_app_pixel_9
-        data:
-          data:
-            channel: alarm_stream
-            importance: high
-            notification_icon: mdi:battery-alert
-            tag: low_battery_daily
-          message: 'These devices are below 20 percent: {{ sensors }}'
-          title: Low Battery
-      threshold: 20
-      time: 09:30:00
-    path: gmlupatelli/low_battery_notification.yaml
+    The single template lives in variables so the condition and the notification share
+    one scan of the state machine. There is no native condition for counting entities
+    that match a device class, which is why a template is used in the condition position.'
+  triggers:
+  - at: 09:30:00
+    id: daily_check
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: '{{ low_body | trim | length > 0 }}'
+  actions:
+  - action: notify.mobile_app_pixel_9
+    data:
+      data:
+        channel: alarm_stream
+        importance: high
+        notification_icon: mdi:battery-alert
+        tag: low_battery_daily
+      message: '{{ low_body }}'
+      title: Low Battery
+  mode: single
+  variables:
+    low_body: '{%- set ns = namespace(pct=[], flag=[]) -%}
+
+      {%- for s in states.sensor if s.attributes.device_class == ''battery'' and s.state
+      | float(-1) >= 0 and s.state | float(-1) < 20 -%}
+
+      {%- set ns.pct = ns.pct + [s.name ~ '' ('' ~ s.state ~ ''%)''] -%}
+
+      {%- endfor -%}
+
+      {%- for s in states.binary_sensor if s.attributes.device_class == ''battery''
+      and s.state == ''on'' -%}
+
+      {%- set ns.flag = ns.flag + [s.name] -%}
+
+      {%- endfor -%}
+
+      {%- if ns.pct %}Below 20 percent:
+
+      {% for i in ns.pct %}- {{ i }}
+
+      {% endfor %}{% endif -%}
+
+      {%- if ns.flag %}
+
+      Reporting low (no percentage given):
+
+      {% for i in ns.flag %}- {{ i }}
+
+      {% endfor %}{% endif -%}'
