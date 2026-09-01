@@ -3117,9 +3117,10 @@
               title: Snooze 24h
             - action: UV_DISMISS
               title: Dismiss
-            channel: HVAC Alerts
+            channel: Quiet Notices
             sticky: true
             tag: hvac_uv_bulb_low_power
+            importance: low
           message: UV purifier peak draw over the last 24h was {{ states('sensor.hvac_uv_purifier_power_24h_max')
             }} W, below the 5 W threshold. The bulb may have failed.
           title: ⚠️ HVAC UV Bulb Alert
@@ -3160,7 +3161,14 @@
   mode: parallel
 - id: '1757385105935'
   alias: Bedroom Fridge - Temp & Connectivity Alerts
-  description: ''
+  description: 'Two branches. HOT: bedroom fridge temperature above 50F for 30 minutes.
+    Repeats hourly with a chime, a TTS announcement on the bedroom group and an alarm_stream
+    push. Deliberately loud, because food is spoiling. OFFLINE: the temperature sensor
+    reads unavailable or unknown for 30 minutes. Chime and TTS as before, but the
+    phone push was moved to the Quiet Notices channel at low importance on 2026-08-31
+    at Scott request. A sensor connectivity fault is not a spoilage emergency and
+    must not use the Android alarm audio stream, which bypasses silent mode and Do
+    Not Disturb.'
   triggers:
   - entity_id:
     - sensor.bedroom_fridge_temperature
@@ -3284,8 +3292,8 @@
           data:
             ttl: 0
             priority: high
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
   mode: single
 - id: '1757806464320'
   alias: Internet Connectivity Monitor
@@ -8165,8 +8173,8 @@
             3.6V 9000mAh C Size\n  Li-SOCl₂ Lithium (Non-Rechargeable)\n\nA purchase
             reminder has been added to your calendar."
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             ttl: 0
             priority: high
         action: notify.mobile_app_pixel_9
@@ -8969,8 +8977,8 @@
         - action: HVAC_FILTER_REPLACED
           title: Filter Replaced ✓
         tag: hvac_filter_reminder
-        channel: Reminders
-        importance: high
+        channel: Quiet Notices
+        importance: low
   mode: single
 - id: '1782396489815'
   alias: HVAC Filter Reminder - Handle Actions
@@ -10556,8 +10564,8 @@
     alias: Tell Scott the mower let itself out
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Quiet Notices
+        importance: low
         notification_icon: mdi:robot-mower
         priority: high
         tag: mower_unattended
@@ -10665,9 +10673,9 @@
         data:
           tag: mower_incomplete
           sticky: true
-          importance: high
+          importance: low
           priority: high
-          channel: alarm_stream
+          channel: Quiet Notices
           ttl: 0
           notification_icon: mdi:robot-mower-outline
   mode: single
@@ -10896,8 +10904,8 @@
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             notification_icon: mdi:gate
             priority: high
             tag: mower_chain
@@ -11005,8 +11013,8 @@
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             notification_icon: mdi:robot-mower
             priority: high
             tag: mower_chain
@@ -11106,8 +11114,8 @@
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             notification_icon: mdi:check-decagram
             priority: high
             tag: mower_chain
@@ -12413,8 +12421,8 @@
   - action: notify.mobile_app_pixel_9
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Quiet Notices
+        importance: low
         priority: high
         ttl: 0
       message: The water leak sensors are still not D2D paired to the main valve.
@@ -12512,8 +12520,8 @@
   - action: notify.mobile_app_pixel_9
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Quiet Notices
+        importance: low
         notification_icon: mdi:battery-alert
         tag: low_battery_daily
       message: '{{ low_body }}'
@@ -12654,9 +12662,10 @@
     alias: Notify on the Sensor Health channel
     data:
       data:
-        channel: Sensor Health
+        channel: Quiet Notices
         notification_icon: mdi:timer-alert-outline
         tag: sensor_silent_{{ trigger.entity_id }}
+        importance: low
       message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
         true) }} has reported nothing since {{ trigger.last_reported | as_local }}.
         It may still be showing a value, but that value is stale. Check its battery.'

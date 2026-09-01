@@ -103,9 +103,10 @@
     alias: Notify on the Sensor Health channel
     data:
       data:
-        channel: Sensor Health
+        channel: Quiet Notices
         notification_icon: mdi:timer-alert-outline
         tag: sensor_silent_{{ trigger.entity_id }}
+        importance: low
       message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
         true) }} has reported nothing since {{ trigger.last_reported | as_local }}.
         It may still be showing a value, but that value is stale. Check its battery.'

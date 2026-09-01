@@ -29,6 +29,6 @@
         - action: HVAC_FILTER_REPLACED
           title: Filter Replaced ✓
         tag: hvac_filter_reminder
-        channel: Reminders
-        importance: high
+        channel: Quiet Notices
+        importance: low
   mode: single

@@ -124,8 +124,8 @@
     alias: Tell Scott the mower let itself out
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Quiet Notices
+        importance: low
         notification_icon: mdi:robot-mower
         priority: high
         tag: mower_unattended

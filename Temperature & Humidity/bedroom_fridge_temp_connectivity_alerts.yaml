@@ -1,6 +1,13 @@
 - id: '1757385105935'
   alias: Bedroom Fridge - Temp & Connectivity Alerts
-  description: ''
+  description: 'Two branches. HOT: bedroom fridge temperature above 50F for 30 minutes.
+    Repeats hourly with a chime, a TTS announcement on the bedroom group and an alarm_stream
+    push. Deliberately loud, because food is spoiling. OFFLINE: the temperature sensor
+    reads unavailable or unknown for 30 minutes. Chime and TTS as before, but the
+    phone push was moved to the Quiet Notices channel at low importance on 2026-08-31
+    at Scott request. A sensor connectivity fault is not a spoilage emergency and
+    must not use the Android alarm audio stream, which bypasses silent mode and Do
+    Not Disturb.'
   triggers:
   - entity_id:
     - sensor.bedroom_fridge_temperature
@@ -124,6 +131,6 @@
           data:
             ttl: 0
             priority: high
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
   mode: single

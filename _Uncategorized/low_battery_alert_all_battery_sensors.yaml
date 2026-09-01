@@ -39,8 +39,8 @@
   - action: notify.mobile_app_pixel_9
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Quiet Notices
+        importance: low
         notification_icon: mdi:battery-alert
         tag: low_battery_daily
       message: '{{ low_body }}'

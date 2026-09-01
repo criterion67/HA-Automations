@@ -82,9 +82,9 @@
         data:
           tag: mower_incomplete
           sticky: true
-          importance: high
+          importance: low
           priority: high
-          channel: alarm_stream
+          channel: Quiet Notices
           ttl: 0
           notification_icon: mdi:robot-mower-outline
   mode: single

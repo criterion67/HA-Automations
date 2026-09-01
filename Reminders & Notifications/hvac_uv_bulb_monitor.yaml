@@ -54,9 +54,10 @@
               title: Snooze 24h
             - action: UV_DISMISS
               title: Dismiss
-            channel: HVAC Alerts
+            channel: Quiet Notices
             sticky: true
             tag: hvac_uv_bulb_low_power
+            importance: low
           message: UV purifier peak draw over the last 24h was {{ states('sensor.hvac_uv_purifier_power_24h_max')
             }} W, below the 5 W threshold. The bulb may have failed.
           title: ⚠️ HVAC UV Bulb Alert

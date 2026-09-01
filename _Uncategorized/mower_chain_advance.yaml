@@ -79,8 +79,8 @@
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             notification_icon: mdi:gate
             priority: high
             tag: mower_chain
@@ -188,8 +188,8 @@
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             notification_icon: mdi:robot-mower
             priority: high
             tag: mower_chain
@@ -289,8 +289,8 @@
       - action: notify.mobile_app_pixel_9
         data:
           data:
-            channel: alarm_stream
-            importance: high
+            channel: Quiet Notices
+            importance: low
             notification_icon: mdi:check-decagram
             priority: high
             tag: mower_chain

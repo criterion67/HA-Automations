@@ -53,8 +53,8 @@
   - action: notify.mobile_app_pixel_9
     data:
       data:
-        channel: alarm_stream
-        importance: high
+        channel: Quiet Notices
+        importance: low
         priority: high
         ttl: 0
       message: The water leak sensors are still not D2D paired to the main valve.
