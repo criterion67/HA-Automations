@@ -1,0 +1,116 @@
+- id: '1788279181910'
+  alias: HVAC Drain Line Cleaning Reminder
+  description: 'Reminds Scott every 30 days to flush the HVAC condensate drain line
+    with distilled white vinegar. The air handler is in the attic and drains by gravity
+    with no condensate pump, so a clogged primary line backs up into the drain pan
+    and out the secondary line, which discharges from the porch ceiling in front of
+    the front door.
+
+
+    STRUCTURE. One consolidated automation with trigger IDs and choose blocks, mode
+    parallel, following the same daily level-based check used by the HVAC filter reminder
+    rather than a one-shot edge trigger. A level check re-raises the reminder every
+    morning until the job is actually done, so a missed or swiped-away notification
+    cannot silently lose the maintenance cycle.
+
+
+    STATE. Three helpers carry the state. input_datetime.hvac_drain_line_due_date
+    holds the next due date and is the 30 day countdown. input_datetime.hvac_drain_line_snooze_until
+    suppresses the reminder for 24 hours at a time. input_boolean.hvac_drain_line_reminder_active
+    drives the conditional card in the notification stack on dashboard-mobile, dashboard-tablet
+    and scotts-dashboard-tablet.
+
+
+    BRANCHES. daily_check fires at 09:00 and on Home Assistant start, and only proceeds
+    when today is on or past the due date AND past the snooze deadline. It raises
+    the boolean and sends an actionable push on the Quiet Notices channel at low importance,
+    per Scott''s channel policy that non-urgent alerts stay silent. snooze and cleaned
+    handle the two notification buttons by calling their scripts.
+
+
+    COMPLETION PATHS. Three different actions all call script.hvac_drain_line_cleaned
+    and mean exactly the same thing: the Cleaned button on this notification, a tap
+    on the dashboard card behind a confirmation dialog, and a scan of the NFC tag
+    stuck to the distilled white vinegar bottle. The tag scan is handled in automation.nfc_tag_actions_consolidated,
+    which is the single home for all NFC tag handling, so no tag logic lives here.
+
+
+    WHY THE CONDITIONS ARE TEMPLATES. Comparing now() against a date-only input_datetime
+    has no native condition equivalent. This mirrors the working pattern in automation.hvac_filter_reminder_daily_check
+    rather than inventing a second approach.
+
+
+    SEEDED 2026-09-01 with a due date of 2026-10-01, because Scott had just completed
+    the cleaning and installed the tag.'
+  triggers:
+  - at: 09:00:00
+    id: daily_check
+    trigger: time
+  - event: start
+    id: daily_check
+    trigger: homeassistant
+  - event_data:
+      action: HVAC_DRAIN_SNOOZE
+    event_type: mobile_app_notification_action
+    id: snooze
+    trigger: event
+  - event_data:
+      action: HVAC_DRAIN_CLEANED
+    event_type: mobile_app_notification_action
+    id: cleaned
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: Daily due check, raise the reminder if the drain line is due
+      conditions:
+      - condition: trigger
+        id: daily_check
+      - alias: Today is on or past the due date
+        condition: template
+        value_template: '{{ as_timestamp(now()) >= state_attr(''input_datetime.hvac_drain_line_due_date'',
+          ''timestamp'') }}'
+      - alias: Not currently snoozed
+        condition: template
+        value_template: '{{ as_timestamp(now()) >= as_timestamp(states(''input_datetime.hvac_drain_line_snooze_until''))
+          }}'
+      sequence:
+      - action: input_boolean.turn_on
+        alias: Raise the flag that shows the dashboard card
+        target:
+          entity_id: input_boolean.hvac_drain_line_reminder_active
+      - action: notify.mobile_app_pixel_9
+        alias: Send the actionable push to the Pixel 9
+        data:
+          data:
+            actions:
+            - action: HVAC_DRAIN_SNOOZE
+              title: Snooze 24h
+            - action: HVAC_DRAIN_CLEANED
+              title: Cleaned ✓
+            channel: Quiet Notices
+            importance: low
+            notification_icon: mdi:pipe-valve
+            tag: hvac_drain_line_reminder
+          message: Time to flush the condensate drain line with distilled white vinegar.
+            Scan the NFC tag on the vinegar bottle when you finish, or use the button
+            below.
+          title: 🔧 HVAC Drain Line Cleaning Due
+        note: 'Quiet Notices at low importance per Scott''s channel policy: this is
+          routine maintenance, not an emergency, so it must not make noise. The tag
+          lets script.hvac_drain_line_cleaned clear this notification from the phone
+          when the job is marked done from anywhere.'
+    - alias: Snooze button tapped on the notification
+      conditions:
+      - condition: trigger
+        id: snooze
+      sequence:
+      - action: script.hvac_drain_line_snooze
+    - alias: Cleaned button tapped on the notification
+      conditions:
+      - condition: trigger
+        id: cleaned
+      sequence:
+      - action: script.hvac_drain_line_cleaned
+  max: 10
+  mode: parallel

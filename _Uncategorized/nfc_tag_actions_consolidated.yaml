@@ -44,7 +44,19 @@
     NOT merged here: NFC - Toggle Garage Door from Truck (b38fed34). It uses wait_for_trigger
     with a 30 second timeout. Folding it in would either block every other tag for
     up to 30 seconds under mode single, or change its own re-entrancy under mode parallel.
-    It stays standalone.'
+    It stays standalone.
+
+
+    ADDED 2026-09-01: HVAC Drain Line Clean (95cc68d1), a twelfth tag. It is stuck
+    to the distilled white vinegar bottle and scanning it calls script.hvac_drain_line_cleaned,
+    which pushes input_datetime.hvac_drain_line_due_date out 30 days, clears input_boolean.hvac_drain_line_reminder_active
+    so the dashboard card hides, resets the snooze helper, and clears the push notification
+    from the phone. The branch deliberately holds no logic of its own: the notification
+    button in automation.hvac_drain_line_cleaning_reminder and the dashboard card
+    both call the same script, so all three completion paths behave identically and
+    there is exactly one place to change the behavior. This is NOT a repeat of the
+    removed HVAC filter tag situation, where the tag drove an orphaned counter that
+    nothing else read.'
   triggers:
   - id: front_door
     tag_id: eff1012d-ee57-4eec-838c-9edcd248eb05
@@ -79,6 +91,9 @@
     trigger: tag
   - id: garbage_can
     tag_id: c5100db2-1d33-4338-8c3a-7d0ce419f7c2
+    trigger: tag
+  - id: hvac_drain_line
+    tag_id: 95cc68d1-1fcf-45bc-9fc0-3c40d96f2143
     trigger: tag
   actions:
   - choose:
@@ -227,5 +242,11 @@
               title: The garbage can has been set on the street for pickup
         target:
           entity_id: media_player.bedroom_speaker
+    - alias: HVAC drain line tag marks the cleaning complete
+      conditions:
+      - condition: trigger
+        id: hvac_drain_line
+      sequence:
+      - action: script.hvac_drain_line_cleaned
   max: 10
   mode: parallel

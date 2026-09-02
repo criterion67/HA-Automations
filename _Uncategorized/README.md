@@ -1,6 +1,6 @@
 # _Uncategorized
 
-49 automation(s) in this category.
+50 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -29,6 +29,19 @@ Note on the mower trigger: it fires on leaving error with no to state specified,
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
 | Health - Blood Pressure Reminder (Consolidated) | Single source of truth for the blood pressure reminder, covering both the dashboard card and the phone notification. At 7:00 AM and again at 7:00 PM it clears input_boolean.bp_reminder_dismissed (which reveals the conditional card on the Mobile and Scott's Dashboard tablet views) and sends one push to the Pixel 9 tagged bp_reminder. The reminder goes away three ways, all of which end in the same state: tapping Dismiss on the phone notification, tapping the dashboard card, or a genuinely new systolic reading arriving from Health Connect. Any of those sets the boolean on and clears the phone notification by tag, so the two surfaces stay in sync. A new systolic reading also stamps input_datetime.last_bp_reading and input_number.last_known_systolic; the value-change guard on that branch prevents Health Connect resyncs and restarts from being mistaken for fresh readings. Replaces four earlier automations: the 30 minute time_pattern morning reminder, the midnight and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation. |
 | Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2 short: Spotify playlist. Button 2 long: 1000 80s Hits radio (RadioBrowser via MA). Button 3: Previous Track. Button 4: Next Track. |
+| HVAC Drain Line Cleaning Reminder | Reminds Scott every 30 days to flush the HVAC condensate drain line with distilled white vinegar. The air handler is in the attic and drains by gravity with no condensate pump, so a clogged primary line backs up into the drain pan and out the secondary line, which discharges from the porch ceiling in front of the front door.
+
+STRUCTURE. One consolidated automation with trigger IDs and choose blocks, mode parallel, following the same daily level-based check used by the HVAC filter reminder rather than a one-shot edge trigger. A level check re-raises the reminder every morning until the job is actually done, so a missed or swiped-away notification cannot silently lose the maintenance cycle.
+
+STATE. Three helpers carry the state. input_datetime.hvac_drain_line_due_date holds the next due date and is the 30 day countdown. input_datetime.hvac_drain_line_snooze_until suppresses the reminder for 24 hours at a time. input_boolean.hvac_drain_line_reminder_active drives the conditional card in the notification stack on dashboard-mobile, dashboard-tablet and scotts-dashboard-tablet.
+
+BRANCHES. daily_check fires at 09:00 and on Home Assistant start, and only proceeds when today is on or past the due date AND past the snooze deadline. It raises the boolean and sends an actionable push on the Quiet Notices channel at low importance, per Scott's channel policy that non-urgent alerts stay silent. snooze and cleaned handle the two notification buttons by calling their scripts.
+
+COMPLETION PATHS. Three different actions all call script.hvac_drain_line_cleaned and mean exactly the same thing: the Cleaned button on this notification, a tap on the dashboard card behind a confirmation dialog, and a scan of the NFC tag stuck to the distilled white vinegar bottle. The tag scan is handled in automation.nfc_tag_actions_consolidated, which is the single home for all NFC tag handling, so no tag logic lives here.
+
+WHY THE CONDITIONS ARE TEMPLATES. Comparing now() against a date-only input_datetime has no native condition equivalent. This mirrors the working pattern in automation.hvac_filter_reminder_daily_check rather than inventing a second approach.
+
+SEEDED 2026-09-01 with a due date of 2026-10-01, because Scott had just completed the cleaning and installed the tag. |
 | HVAC Filter Reminder - Daily Check | Checks daily if HVAC filters are due and sends an actionable notification |
 | HVAC Filter Reminder - Handle Actions | Handles snooze and replaced actions from HVAC filter notifications |
 | Kitchen Fridge Alerts (Consolidated) | Single handler for all kitchen refrigerator and freezer alerting, replacing three automations: Temperature and Sensor, Low Battery, and No Power Draw. Every trigger has a unique id and its own choose branch, so no branch can be shadowed by the first-match behavior of choose.
@@ -197,7 +210,9 @@ The HVAC filter tag (823c6552) was REMOVED on 2026-08-20 at Scott's instruction.
 
 The disabled second front door trigger (2b8bddee) is carried forward still disabled so the original intent is not lost.
 
-NOT merged here: NFC - Toggle Garage Door from Truck (b38fed34). It uses wait_for_trigger with a 30 second timeout. Folding it in would either block every other tag for up to 30 seconds under mode single, or change its own re-entrancy under mode parallel. It stays standalone. |
+NOT merged here: NFC - Toggle Garage Door from Truck (b38fed34). It uses wait_for_trigger with a 30 second timeout. Folding it in would either block every other tag for up to 30 seconds under mode single, or change its own re-entrancy under mode parallel. It stays standalone.
+
+ADDED 2026-09-01: HVAC Drain Line Clean (95cc68d1), a twelfth tag. It is stuck to the distilled white vinegar bottle and scanning it calls script.hvac_drain_line_cleaned, which pushes input_datetime.hvac_drain_line_due_date out 30 days, clears input_boolean.hvac_drain_line_reminder_active so the dashboard card hides, resets the snooze helper, and clears the push notification from the phone. The branch deliberately holds no logic of its own: the notification button in automation.hvac_drain_line_cleaning_reminder and the dashboard card both call the same script, so all three completion paths behave identically and there is exactly one place to change the behavior. This is NOT a repeat of the removed HVAC filter tag situation, where the tag drove an orphaned counter that nothing else read. |
 | Office- Network Cabinet WLED Presence Control | Turns the network cabinet WLED strip on when office presence is detected, off after 5 min of no presence. If internet is down, skips the turn-off so the red warning from the Internet Connectivity Monitor stays active. |
 | Office- Presence Lighting Control V3 | Turns office lamps, ceiling light, and fan on with presence, turns them off after 5 min of no presence, restores prior fan and ceiling light state on re-entry, and resets manual override. |
 | Petkit - Feeder Notifications (Consolidated) | All notification and monitoring for Gracie's Fresh Element Solo feeder, replacing three automations: Feeder Notifications, Notify if Feed Not Dispensed, and Notify on Battery Issue. Every trigger has a unique id and its own choose branch, so no branch can be shadowed by the first-match behavior of choose.
