@@ -13325,3 +13325,141 @@
       - action: script.hvac_drain_line_cleaned
   max: 10
   mode: parallel
+- id: '1788369664861'
+  alias: Dawn Dusk Routine (Sun Based)
+  description: Sun-based dawn/dusk routine. Temporary replacement for the illuminance-based
+    v5 while the WS90 lux sensor is unreliable. Dawn opens the bedroom curtains and
+    activates the dawn scene at sunrise. Dusk closes the curtains and activates the
+    dusk scene at sunset. Re-enable v5 and disable this automation once the weather
+    station is fixed.
+  triggers:
+  - id: Dawn
+    trigger: sun.dawn
+  - id: Dusk
+    trigger: sun.dusk
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Dawn
+      sequence:
+      - parallel:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.dawn_group
+        - action: cover.open_cover
+          target:
+            entity_id: cover.bedroom_curtains
+    - conditions:
+      - condition: trigger
+        id: Dusk
+      sequence:
+      - parallel:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.dusk_group
+        - action: cover.close_cover
+          target:
+            entity_id: cover.bedroom_curtains
+      - delay: 00:00:10
+      - action: scene.turn_on
+        target:
+          entity_id: scene.dusk_group
+  mode: single
+- id: '1788391579286'
+  alias: Test - Fridge or Freezer Open Sound
+  description: 'TEST AUTOMATION. Plays the UniFi motion alert wav on the dining room
+    Cast speaker when the fridge door or the freezer drawer opens. The Cast device
+    plays its own cold start tone whenever a new cast session opens, and that tone
+    does not repeat while the session stays warm. To hide it, this automation drops
+    the volume to zero, plays the file once inaudibly to spend the tone, waits, restores
+    the volume, then plays the file again into the now warm session. Music Assistant
+    was ruled out on 2026-09-02: play_announcement failed with PlayerCommandFailed
+    because the Cast speakers cannot reach the stream server on 192.168.10.168 port
+    8097.'
+  triggers:
+  - entity_id:
+    - binary_sensor.fridge_door_contact
+    - binary_sensor.freezer_drawer_contact
+    id: door_opened
+    note: Both contacts report device_class door, so on means open.
+    to: 'on'
+    trigger: state
+  actions:
+  - alias: Drop volume to zero before waking the speaker
+    action: media_player.volume_set
+    target:
+      entity_id: media_player.dining_room_speaker_cast
+    data:
+      volume_level: 0
+    continue_on_error: true
+    note: Silences the Cast cold start tone that plays when a new cast session opens.
+  - alias: Prime the cast session with a silent pass of the alert file
+    action: media_player.play_media
+    target:
+      entity_id: media_player.dining_room_speaker_cast
+    data:
+      media:
+        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.wav
+        media_content_type: audio/x-wav
+        metadata:
+          title: UniFi_Sounds_Motion_Alert.wav
+          thumbnail:
+          media_class: music
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://media_source
+    continue_on_error: true
+    note: Plays inaudibly at volume zero. Its only job is to open the cast session
+      so the cold start tone is spent while nothing can be heard.
+  - alias: Wait for the cast session to actually start
+    wait_for_trigger:
+    - trigger: state
+      entity_id: media_player.dining_room_speaker_cast
+      to: playing
+    timeout:
+      seconds: 5
+    continue_on_timeout: true
+    note: 'Replaces a flat 4 second delay. Waits only as long as the session genuinely
+      takes to open. Falls through after 5 seconds so a stalled speaker cannot hang
+      the run. Caveat: if the speaker is already in state playing when this runs there
+      is no transition to catch and this will burn the full timeout.'
+  - alias: Short tail so the cold start tone finishes before the volume comes back
+    delay:
+      seconds: 1
+    note: One second is an estimate. If the tone leaks through after the volume restore,
+      lengthen this rather than the wait above.
+  - alias: Restore the speaker volume
+    action: media_player.volume_set
+    target:
+      entity_id: media_player.dining_room_speaker_cast
+    data:
+      volume_level: '{{ restore_volume }}'
+    continue_on_error: true
+  - alias: Play the alert file into the warm session
+    action: media_player.play_media
+    target:
+      entity_id: media_player.dining_room_speaker_cast
+    data:
+      media:
+        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.wav
+        media_content_type: audio/x-wav
+        metadata:
+          title: UniFi_Sounds_Motion_Alert.wav
+          thumbnail:
+          media_class: music
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://media_source
+    note: The audible pass. The session is already open by now so no cold start tone
+      should precede it.
+  mode: single
+  variables:
+    restore_volume: '{{ state_attr(''media_player.dining_room_speaker_cast'', ''volume_level'')
+      | float(0.7) }}'
+  max_exceeded: silent

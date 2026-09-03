@@ -1,0 +1,42 @@
+- id: '1788369664861'
+  alias: Dawn Dusk Routine (Sun Based)
+  description: Sun-based dawn/dusk routine. Temporary replacement for the illuminance-based
+    v5 while the WS90 lux sensor is unreliable. Dawn opens the bedroom curtains and
+    activates the dawn scene at sunrise. Dusk closes the curtains and activates the
+    dusk scene at sunset. Re-enable v5 and disable this automation once the weather
+    station is fixed.
+  triggers:
+  - id: Dawn
+    trigger: sun.dawn
+  - id: Dusk
+    trigger: sun.dusk
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: Dawn
+      sequence:
+      - parallel:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.dawn_group
+        - action: cover.open_cover
+          target:
+            entity_id: cover.bedroom_curtains
+    - conditions:
+      - condition: trigger
+        id: Dusk
+      sequence:
+      - parallel:
+        - action: scene.turn_on
+          target:
+            entity_id: scene.dusk_group
+        - action: cover.close_cover
+          target:
+            entity_id: cover.bedroom_curtains
+      - delay: 00:00:10
+      - action: scene.turn_on
+        target:
+          entity_id: scene.dusk_group
+  mode: single
