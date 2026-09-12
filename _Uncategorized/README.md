@@ -1,6 +1,6 @@
 # _Uncategorized
 
-52 automation(s) in this category.
+53 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -28,6 +28,22 @@ Note on the mower trigger: it fires on leaving error with no to state specified,
 | Fridge Filters Weekly Countdown | Decrements the fresh air filter and water filter week counters by one every Monday morning. Each filter has a 26 week (6 month) service life, so the counters run 26 down to 0 and stop at the input_number minimum of 0. The M3 Supply Card on the Appliances view of the Mobile dashboard shows these as dots and its Pack refilled button sets the counter back to 26 when a filter is physically changed. |
 | Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
+| Garage Safety Net: Rudy | Independent safety net for the garage where Rudy stays. Owns all garage climate monitoring and alerting so that no single failure, sensor, automation or otherwise, can leave the garage hot without Scott knowing.
+
+Built 2026-09-11 after binary_sensor.rear_door stuck in the open state from 08:15:25 to 13:43:22. Master: Garage Climate Doors turned the AC off at 08:18:26 on that stale reading, the resume never ran, the door-open alert was silenced by an unavailable heater switch, and the garage reached 86.9 F before Scott noticed. Nothing here depends on the door sensors being truthful or on the heater existing.
+
+Temperature source is sensor.temp_sensor_garage, a dedicated garage sensor. Chosen over the Apollo presence sensor, which runs hot, and over the AC's own internal reading, which sits in the return air and read 80 while the room sensor read 85. On 2026-09-11 the room sensor tracked 77.1 at 08:00 climbing smoothly to 86.9 at 16:55.
+
+Thresholds and why:
+- 82 F warning: the unit normally holds 77 to 79 at Scott's 77 setpoint, so 80 would nuisance fire. 82 is above anything seen while the AC was healthy.
+- 88 F critical: emergency for a dog. Goes to alarm_stream.
+- 5 minutes off: first actionable alert. Tightened from 15 on 2026-09-11 19:06 after the rear door stuck a second time and Scott found the AC off before any alert was due.
+- 10 minutes off: hard cap. Tightened from 20 the same evening. Cooling is forced back on regardless of what any door sensor claims, but only if the garage is above 80, so a deliberate shutoff on a cool day is left alone.
+- 3 hours silent on sensor.rear_door_last_seen: the node's heartbeat interval reads 70 minutes, so 3 hours is about two and a half missed heartbeats. sensor.rear_door_last_seen and number.rear_door_heartbeat_interval were enabled on 2026-09-11 specifically for this. Contact sensors are deliberately excluded from automation.sensor_went_silent_alert because a closed door reports nothing for hours by design, so last_seen is the correct signal here rather than the door state itself.
+
+The eco guard exists because the Midea unit keeps reasserting the eco preset on its own. Nothing in Home Assistant sets it: a config search across all automations, scripts and scenes found no preset_mode writes anywhere. The cause is on the AC or ESPHome side and is not yet identified, so this snaps it back to none whenever it appears. Scott wants cool or dry only, never eco.
+
+No notification here goes to Bill's phone, by Scott's explicit instruction. |
 | Health - Blood Pressure Reminder (Consolidated) | Single source of truth for the blood pressure reminder, covering both the dashboard card and the phone notification. At 7:00 AM and again at 7:00 PM it clears input_boolean.bp_reminder_dismissed (which reveals the conditional card on the Mobile and Scott's Dashboard tablet views) and sends one push to the Pixel 9 tagged bp_reminder. The reminder goes away three ways, all of which end in the same state: tapping Dismiss on the phone notification, tapping the dashboard card, or a genuinely new systolic reading arriving from Health Connect. Any of those sets the boolean on and clears the phone notification by tag, so the two surfaces stay in sync. A new systolic reading also stamps input_datetime.last_bp_reading and input_number.last_known_systolic; the value-change guard on that branch prevents Health Connect resyncs and restarts from being mistaken for fresh readings. Replaces four earlier automations: the 30 minute time_pattern morning reminder, the midnight and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation. |
 | Hue Tap Dial 2: Bathroom Era 100 Media Controls | Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2. Dial adjusts volume. Button 1: Play/Pause. Button 2 short: Spotify playlist. Button 2 long: 1000 80s Hits radio (RadioBrowser via MA). Button 3: Previous Track. Button 4: Next Track. |
 | HVAC Drain Line Cleaning Reminder | Reminds Scott every 30 days to flush the HVAC condensate drain line with distilled white vinegar. The air handler is in the attic and drains by gravity with no condensate pump, so a clogged primary line backs up into the drain pan and out the secondary line, which discharges from the porch ceiling in front of the front door.

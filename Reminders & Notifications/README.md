@@ -25,7 +25,23 @@
 | Master Garage Climate Control | Central controller for garage heat and cool based on button, temperature, and freeze protection. |
 | Master Wonkavator Print Finished TTS | Announce when Wonkavator finishes printing with speaker fallback and light cue |
 | Master Wonkavator Print Start Reset | Resets announcement state only when a REAL new print begins |
-| Master: Garage Climate Doors | Turns off heater or AC when doors open, resumes automatically when closed, and sends actionable notifications for cool/heat resume. |
+| Master: Garage Climate Doors | Turns the garage AC off when the GARAGE DOOR has been open for 3 minutes, and resumes cooling when it closes again.
+
+REAR DOOR REMOVED 2026-09-11 19:06. binary_sensor.rear_door no longer has any authority over the garage AC, in either direction. It stuck in the open state twice in eleven hours on 2026-09-11: on at 08:15:25 with no close report until 13:43:22, then on again at 18:55:25 with no close report at all. Each time this automation shut the AC off three minutes later on a reading that was not true, with Rudy in the garage. The first incident reached 86.9 F. A sensor that has failed twice in a day does not get to turn off the cooling. It keeps its monitoring role in automation.garage_safety_net_rudy, which alerts when it goes silent, and that is all it does now.
+
+Do not add the rear door back as a trigger until the Ring node (Z-Wave node 262, 4SD2SZ-0EN0) has been reseated and proven stable over time.
+
+EARLIER REBUILD, same day, after the first incident:
+
+1. The resume branch required the shutoff to be less than 300 seconds old. When the door finally read closed after 5h27m the condition failed and the sequence stopped silently, so the AC was never restored. That 300 second window is gone.
+
+2. The 5-minute door-still-open alert required switch.garage_heater to be in state off. That switch has been unavailable since 2026-09-07 16:55, and unavailable does not match off, so the alert was silenced on every one-minute check and Scott got no warning at all. All monitoring and alerting now lives in automation.garage_safety_net_rudy.
+
+3. The heater is physically unplugged for the season. Every reference to switch.garage_heater and input_boolean.garage_heat_cool_mode was removed. Note the two garage automations disagreed on what garage_heat_cool_mode meant: Master Garage Climate Control treats on as AC mode, this one treated on as heat mode. Reintroduce a heater path deliberately in the fall, do not restore the old one.
+
+4. Resume calls climate.set_hvac_mode rather than climate.set_temperature, so Scott's setpoint is preserved instead of being forced to 80.
+
+KNOWN LIMITATION: resume always returns to cool. If the AC was in dry when the garage door opened, it comes back in cool. |
 | Medication Reminders with Mounjaro | Provides audible reminders and visual alerts for taking medications at designated times and days. Uses parallel actions for efficiency and restores TV lights to their original state after reminders. Includes a single retry if the bedroom Cast group drops the session before the announcement plays. |
 | Network Cabinet Fan Smart Control | Controls the network cabinet fan based on temperature and office presence. Turns on at 85°F or higher, off 5 min after temp drops below 85°F. Disables fan while office is occupied. Honors override via input_boolean.network_cabinet_fan_automation_enabled. |
 | New consumable added to to-do list |  |

@@ -1,0 +1,309 @@
+- id: '1789165406558'
+  alias: 'Garage Safety Net: Rudy'
+  description: 'Independent safety net for the garage where Rudy stays. Owns all garage
+    climate monitoring and alerting so that no single failure, sensor, automation
+    or otherwise, can leave the garage hot without Scott knowing.
+
+
+    Built 2026-09-11 after binary_sensor.rear_door stuck in the open state from 08:15:25
+    to 13:43:22. Master: Garage Climate Doors turned the AC off at 08:18:26 on that
+    stale reading, the resume never ran, the door-open alert was silenced by an unavailable
+    heater switch, and the garage reached 86.9 F before Scott noticed. Nothing here
+    depends on the door sensors being truthful or on the heater existing.
+
+
+    Temperature source is sensor.temp_sensor_garage, a dedicated garage sensor. Chosen
+    over the Apollo presence sensor, which runs hot, and over the AC''s own internal
+    reading, which sits in the return air and read 80 while the room sensor read 85.
+    On 2026-09-11 the room sensor tracked 77.1 at 08:00 climbing smoothly to 86.9
+    at 16:55.
+
+
+    Thresholds and why:
+
+    - 82 F warning: the unit normally holds 77 to 79 at Scott''s 77 setpoint, so 80
+    would nuisance fire. 82 is above anything seen while the AC was healthy.
+
+    - 88 F critical: emergency for a dog. Goes to alarm_stream.
+
+    - 5 minutes off: first actionable alert. Tightened from 15 on 2026-09-11 19:06
+    after the rear door stuck a second time and Scott found the AC off before any
+    alert was due.
+
+    - 10 minutes off: hard cap. Tightened from 20 the same evening. Cooling is forced
+    back on regardless of what any door sensor claims, but only if the garage is above
+    80, so a deliberate shutoff on a cool day is left alone.
+
+    - 3 hours silent on sensor.rear_door_last_seen: the node''s heartbeat interval
+    reads 70 minutes, so 3 hours is about two and a half missed heartbeats. sensor.rear_door_last_seen
+    and number.rear_door_heartbeat_interval were enabled on 2026-09-11 specifically
+    for this. Contact sensors are deliberately excluded from automation.sensor_went_silent_alert
+    because a closed door reports nothing for hours by design, so last_seen is the
+    correct signal here rather than the door state itself.
+
+
+    The eco guard exists because the Midea unit keeps reasserting the eco preset on
+    its own. Nothing in Home Assistant sets it: a config search across all automations,
+    scripts and scenes found no preset_mode writes anywhere. The cause is on the AC
+    or ESPHome side and is not yet identified, so this snaps it back to none whenever
+    it appears. Scott wants cool or dry only, never eco.
+
+
+    No notification here goes to Bill''s phone, by Scott''s explicit instruction.'
+  triggers:
+  - above: 82
+    entity_id: sensor.temp_sensor_garage
+    for: 00:05:00
+    id: temp_warn
+    trigger: numeric_state
+  - above: 88
+    entity_id: sensor.temp_sensor_garage
+    for: 00:05:00
+    id: temp_critical
+    trigger: numeric_state
+  - entity_id: climate.garage_ac
+    for: 00:05:00
+    id: ac_off_15
+    to: 'off'
+    trigger: state
+  - entity_id: climate.garage_ac
+    for: 00:10:00
+    id: ac_off_hardcap
+    to: 'off'
+    trigger: state
+  - attribute: preset_mode
+    entity_id: climate.garage_ac
+    id: eco_guard
+    to: eco
+    trigger: state
+  - entity_id:
+    - binary_sensor.rear_door
+    - cover.garage_door
+    - climate.garage_ac
+    - sensor.temp_sensor_garage
+    for: 00:15:00
+    id: gear_unavailable
+    to:
+    - unavailable
+    - unknown
+    trigger: state
+  - id: door_sensor_silent
+    options:
+      for: 03:00:00
+    target:
+      entity_id:
+      - sensor.rear_door_last_seen
+    trigger: spook.stale
+  - event_data:
+      action: GARAGE_SAFETY_RESUME_COOL
+    event_type: mobile_app_notification_action
+    id: resume_cool
+    trigger: event
+  - event_data:
+      action: GARAGE_SAFETY_RESUME_DRY
+    event_type: mobile_app_notification_action
+    id: resume_dry
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: Garage above 82 F for 5 minutes
+      conditions:
+      - condition: trigger
+        id: temp_warn
+      sequence:
+      - alias: Force cooling on if the AC is sitting off
+        if:
+        - condition: state
+          entity_id: climate.garage_ac
+          state: 'off'
+        then:
+        - action: climate.set_hvac_mode
+          data:
+            hvac_mode: cool
+          target:
+            entity_id: climate.garage_ac
+      - action: notify.mobile_app_pixel_9
+        alias: Warn Scott
+        data:
+          data:
+            channel: Garage Safety
+            importance: high
+            notification_icon: mdi:dog
+            tag: garage_temp_alert
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. AC is {{ states('climate.garage_ac') }}. Rudy is out there.
+          title: Garage Warm
+    - alias: Garage above 88 F for 5 minutes, emergency
+      conditions:
+      - condition: trigger
+        id: temp_critical
+      sequence:
+      - alias: Force cooling on if the AC is sitting off
+        if:
+        - condition: state
+          entity_id: climate.garage_ac
+          state: 'off'
+        then:
+        - action: climate.set_hvac_mode
+          data:
+            hvac_mode: cool
+          target:
+            entity_id: climate.garage_ac
+      - action: notify.mobile_app_pixel_9
+        alias: Alarm Scott
+        data:
+          data:
+            channel: alarm_stream
+            notification_icon: mdi:dog-side-off
+            tag: garage_temp_critical
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. AC is {{ states('climate.garage_ac') }}. Check on Rudy now.
+          title: GARAGE TOO HOT FOR RUDY
+    - alias: AC has been off 5 minutes and the garage is warm
+      conditions:
+      - condition: trigger
+        id: ac_off_15
+      - above: 78
+        condition: numeric_state
+        entity_id: sensor.temp_sensor_garage
+      - condition: state
+        entity_id: input_boolean.garage_ac_off_notified
+        state: 'off'
+      sequence:
+      - action: input_boolean.turn_on
+        alias: Mark as notified so this does not repeat every time
+        target:
+          entity_id: input_boolean.garage_ac_off_notified
+      - action: notify.mobile_app_pixel_9
+        alias: Actionable alert with Cool and Dry buttons
+        data:
+          data:
+            actions:
+            - action: GARAGE_SAFETY_RESUME_COOL
+              title: Cool
+            - action: GARAGE_SAFETY_RESUME_DRY
+              title: Dry
+            - action: GARAGE_SAFETY_DISMISS
+              title: Dismiss
+            channel: Garage Safety
+            importance: high
+            notification_icon: mdi:air-conditioner
+            tag: garage_climate_alert
+          message: Garage AC has been off 5 minutes. Garage is {{ states('sensor.temp_sensor_garage')
+            | float(0) | round(1) }} F. Rear door reads {{ states('binary_sensor.rear_door')
+            }}, garage door reads {{ states('cover.garage_door') }}.
+          title: Garage AC Off
+    - alias: Hard cap, AC off 10 minutes and garage above 80, force it back on
+      conditions:
+      - condition: trigger
+        id: ac_off_hardcap
+      - condition: state
+        entity_id: climate.garage_ac
+        state: 'off'
+      - above: 80
+        condition: numeric_state
+        entity_id: sensor.temp_sensor_garage
+      sequence:
+      - action: climate.set_hvac_mode
+        alias: Force cooling on regardless of door state
+        data:
+          hvac_mode: cool
+        target:
+          entity_id: climate.garage_ac
+      - action: input_boolean.turn_off
+        alias: Clear the off-notified flag
+        target:
+          entity_id: input_boolean.garage_ac_off_notified
+      - action: notify.mobile_app_pixel_9
+        alias: Tell Scott the safety net intervened
+        data:
+          data:
+            channel: alarm_stream
+            notification_icon: mdi:shield-check
+            tag: garage_climate_alert
+          message: Garage AC had been off 10 minutes with the garage at {{ states('sensor.temp_sensor_garage')
+            | float(0) | round(1) }} F. Cooling was forced back on for Rudy. Rear
+            door reads {{ states('binary_sensor.rear_door') }}.
+          title: Garage AC Forced On
+    - alias: Eco guard, snap the preset back to none
+      conditions:
+      - condition: trigger
+        id: eco_guard
+      sequence:
+      - action: climate.set_preset_mode
+        alias: Scott wants cool or dry only, never eco
+        data:
+          preset_mode: none
+        target:
+          entity_id: climate.garage_ac
+    - alias: A garage safety entity went unavailable for 15 minutes
+      conditions:
+      - condition: trigger
+        id: gear_unavailable
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Garage Safety
+            importance: high
+            notification_icon: mdi:lan-disconnect
+            tag: garage_offline_{{ trigger.entity_id }}
+          message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
+            true) }} has been {{ states(trigger.entity_id) }} for 15 minutes. Garage
+            safety coverage is degraded.'
+          title: Garage Sensor Offline
+    - alias: Rear door node has not spoken in 3 hours
+      conditions:
+      - condition: trigger
+        id: door_sensor_silent
+      sequence:
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            channel: Garage Safety
+            importance: high
+            notification_icon: mdi:door-open
+            tag: rear_door_silent
+          message: The rear door Z-Wave node has not reported in 3 hours. Its heartbeat
+            is 70 minutes, so it is not talking. Whatever the door state says right
+            now may be stale.
+          title: Rear Door Sensor Silent
+    - alias: Scott tapped Cool
+      conditions:
+      - condition: trigger
+        id: resume_cool
+      sequence:
+      - action: climate.set_hvac_mode
+        data:
+          hvac_mode: cool
+        target:
+          entity_id: climate.garage_ac
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.garage_ac_off_notified
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: garage_climate_alert
+          message: clear_notification
+    - alias: Scott tapped Dry
+      conditions:
+      - condition: trigger
+        id: resume_dry
+      sequence:
+      - action: climate.set_hvac_mode
+        data:
+          hvac_mode: dry
+        target:
+          entity_id: climate.garage_ac
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.garage_ac_off_notified
+      - action: notify.mobile_app_pixel_9
+        data:
+          data:
+            tag: garage_climate_alert
+          message: clear_notification
+  max: 10
+  mode: parallel
