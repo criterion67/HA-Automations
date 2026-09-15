@@ -1,0 +1,104 @@
+- id: '1789438254016'
+  alias: DrainFlo Vinegar Refill Reminder
+  description: 'Warns Scott when the DrainFlo vinegar jug is running low, so a monthly
+    dose never fails for want of vinegar.
+
+
+    HOW THE COUNT WORKS. input_number.drainflo_doses_remaining is a budget, not a
+    measurement. Home Assistant has no way to see inside the jug. A gallon is 3785
+    mL and one dose is 237 mL, so a full jug is 16 doses. automation.drainflo_dosing
+    decrements it by one after every verified dose, and script.drainflo_refilled resets
+    it to 16. Because it is open loop, a refill that is never acknowledged leaves
+    the count drifting low, and eventually the pump runs dry. The Kamoer is dry run
+    tolerant so that is not damaging, but the drain line silently stops getting vinegar,
+    which is the failure this whole project exists to prevent.
+
+
+    WHY 2 DOSES. The warning raises at 2 remaining, which is two months of headroom
+    on a monthly schedule. That is deliberately generous: a gallon lasts 16 months,
+    so this notification fires roughly once every year and a bit and Scott will have
+    completely forgotten the system exists by then.
+
+
+    STRUCTURE. Daily level check at 09:00 and on Home Assistant start, matching the
+    pattern used by the other maintenance reminders, rather than a one-shot edge trigger.
+    A level check re-raises every morning until the jug is actually refilled, so a
+    swiped-away notification cannot silently lose the cycle.
+
+
+    SNOOZE IS 7 DAYS, not the 24 hours used by the retired drain line reminder, because
+    there is no urgency with two doses in hand and daily nagging would just train
+    Scott to ignore it.
+
+
+    COMPLETION PATHS. Two actions both call script.drainflo_refilled and mean the
+    same thing: the Refilled button on this notification, and a tap on the refill
+    card in the dashboard notification stack.'
+  triggers:
+  - at: 09:00:00
+    id: daily_check
+    trigger: time
+  - event: start
+    id: daily_check
+    trigger: homeassistant
+  - event_data:
+      action: DRAINFLO_REFILL_SNOOZE
+    event_type: mobile_app_notification_action
+    id: snooze
+    trigger: event
+  - event_data:
+      action: DRAINFLO_REFILLED
+    event_type: mobile_app_notification_action
+    id: refilled
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: Daily level check, warn if the jug is down to 2 doses or fewer
+      conditions:
+      - condition: trigger
+        id: daily_check
+      - alias: 2 doses or fewer left in the jug
+        below: 3
+        condition: numeric_state
+        entity_id: input_number.drainflo_doses_remaining
+      - alias: Not currently snoozed
+        condition: template
+        value_template: '{{ as_timestamp(now()) >= as_timestamp(states(''input_datetime.drainflo_refill_snooze_until''))
+          }}'
+      sequence:
+      - action: input_boolean.turn_on
+        alias: Raise the flag that shows the dashboard refill card
+        target:
+          entity_id: input_boolean.drainflo_refill_active
+      - action: notify.mobile_app_pixel_9
+        alias: Send the actionable push to the Pixel 9
+        data:
+          data:
+            actions:
+            - action: DRAINFLO_REFILL_SNOOZE
+              title: Snooze 7d
+            - action: DRAINFLO_REFILLED
+              title: Refilled ✓
+            channel: Quiet Notices
+            importance: low
+            notification_icon: mdi:bottle-tonic-outline
+            tag: drainflo_refill_reminder
+          message: '{{ states(''input_number.drainflo_doses_remaining'') | int }}
+            doses left in the attic jug. Refill it with distilled white vinegar and
+            tap Refilled, or snooze for a week.'
+          title: DrainFlo vinegar running low
+    - alias: Snooze button tapped on the notification
+      conditions:
+      - condition: trigger
+        id: snooze
+      sequence:
+      - action: script.drainflo_refill_snooze
+    - alias: Refilled button tapped on the notification
+      conditions:
+      - condition: trigger
+        id: refilled
+      sequence:
+      - action: script.drainflo_refilled
+  max: 10
+  mode: parallel

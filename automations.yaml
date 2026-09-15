@@ -13673,3 +13673,369 @@
           message: clear_notification
   max: 10
   mode: parallel
+- id: '1789438222294'
+  alias: DrainFlo Dosing
+  description: 'Doses the HVAC condensate drain line with 1 cup of distilled white
+    vinegar on the 15th of every month, replacing the manual monthly pour and the
+    reminder system that prompted it. The air handler is in the attic and drains by
+    gravity with no condensate pump, so a clogged primary line backs up into the drain
+    pan and out the secondary line, which discharges from the porch ceiling in front
+    of the front door.
+
+
+    HARDWARE. A Kamoer NKP 12V peristaltic pump sits in a printed enclosure on the
+    lid, drawing from a 1 gallon vinegar jug that stands inside a 2 gallon bucket
+    for containment. The pump tubing passes through a drilled 3/4 inch PVC cleanout
+    cap and hangs about 3 inches into the riser, so there are no fittings anywhere
+    in the liquid path. Power is switched by a Shelly 1 Gen4 dry contact relay running
+    on Zigbee via Z2M, exposed as switch.drainflo.
+
+
+    DOSE TIMING. 110 seconds. Measured 2026-09-14 with water on the bench: one cup
+    took 105 seconds, which is about 135 mL per minute. The extra 5 seconds is margin,
+    because overdosing slightly is harmless and underdosing defeats the purpose. Peristaltic
+    tube takes a set over time and flow drops, so if a cup ever starts taking noticeably
+    longer that is the signal to replace the pump tube and re-measure.
+
+
+    SCHEDULE. 05:00 on the 15th of every month. Scott chose the 15th because the 1st
+    is already crowded with other monthly reminders and notifications, and 05:00 because
+    the attic is near its daily minimum then, which matters since the pump is rated
+    0 to 40C and a Foley attic exceeds that by afternoon. The blower may have cycled
+    by 05:00 in summer, which slightly shortens how long the vinegar dwells in the
+    trap, an accepted tradeoff for avoiding the first-of-month pileup.
+
+
+    SCHEDULE SOURCE. A day-of-month template condition, not a helper. There is no
+    native day-of-month condition in Home Assistant, so now().day == 15 is the only
+    option. input_datetime.hvac_drain_line_due_date is still updated by script.hvac_drain_line_cleaned
+    after each dose, but only as a dashboard readout of when the next dose falls.
+    It no longer gates anything, so if it drifts nothing breaks.
+
+
+    NO DEVICE SIDE WATCHDOG. The Shelly 1 Gen4 exposes no countdown or auto off over
+    Zigbee. Tested 2026-09-14 by publishing on_time to zigbee2mqtt/DrainFlo/set, which
+    the device silently ignored while a plain state ON worked, so the off command
+    depends entirely on Home Assistant. That is why this automation carries three
+    independent protections: the dose sequence turns the pump off itself, the safety_cutoff
+    branch force-offs anything still running at 6 minutes, and the ha_start branch
+    force-offs on every restart in case HA died mid dose. The 2 gallon bucket is the
+    last line of defence.
+
+
+    VERIFICATION. A commanded dose is not assumed to have worked. The switch is checked
+    before commanding, then checked again 5 seconds after turn on. Either check failing
+    raises input_boolean.drainflo_pump_fault and pushes. The fault does not self clear
+    when the Shelly returns, because a missed monthly dose stays missed until someone
+    deals with it.
+
+
+    NOTIFICATION CHANNELS. Success and fault go on Quiet Notices at low importance
+    per Scott''s channel policy, since neither is an emergency. The safety cutoff
+    goes on alarm_stream, because a pump stuck on above a ceiling is the same class
+    of problem as the monthly valve test failing.'
+  triggers:
+  - at: 05:00:00
+    id: scheduled_dose
+    trigger: time
+  - entity_id: switch.drainflo
+    for:
+      minutes: 6
+    id: safety_cutoff
+    to: 'on'
+    trigger: state
+  - event: start
+    id: ha_start
+    trigger: homeassistant
+  - entity_id: switch.drainflo
+    for:
+      hours: 2
+    id: pump_unavailable
+    to: unavailable
+    trigger: state
+  - event_data:
+      action: DRAINFLO_FAULT_DISMISS
+    event_type: mobile_app_notification_action
+    id: fault_dismiss
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: Monthly dose on the 15th, flush the drain line with a cup of vinegar
+      conditions:
+      - condition: trigger
+        id: scheduled_dose
+      - alias: Today is the 15th of the month
+        condition: template
+        value_template: '{{ now().day == 15 }}'
+      sequence:
+      - alias: Only dose if the Shelly is actually reachable
+        else:
+        - action: switch.turn_on
+          alias: Start the pump
+          target:
+            entity_id: switch.drainflo
+        - alias: Give the relay a moment to actually close
+          delay:
+            seconds: 5
+        - alias: Confirm the pump really came on before trusting the dose
+          else:
+          - action: switch.turn_off
+            alias: Belt and braces, command off anyway
+            continue_on_error: true
+            target:
+              entity_id: switch.drainflo
+          - action: input_boolean.turn_on
+            alias: Raise the fault flag for the dashboard card
+            target:
+              entity_id: input_boolean.drainflo_pump_fault
+          - action: notify.mobile_app_pixel_9
+            alias: Tell Scott the pump did not respond
+            data:
+              data:
+                actions:
+                - action: DRAINFLO_FAULT_DISMISS
+                  title: Dismiss
+                channel: Quiet Notices
+                importance: low
+                notification_icon: mdi:pump-off
+                tag: drainflo_pump_fault
+              message: The relay was commanded on at 05:00 but did not report on.
+                No vinegar was dosed. Check the relay, then dose manually or dismiss.
+              title: DrainFlo pump did not start
+          if:
+          - condition: state
+            entity_id: switch.drainflo
+            state: 'on'
+          then:
+          - alias: Run the remaining 105 seconds of the 110 second dose
+            delay:
+              seconds: 105
+          - action: switch.turn_off
+            alias: Stop the pump
+            target:
+              entity_id: switch.drainflo
+          - action: input_number.decrement
+            alias: Spend one dose from the jug budget
+            target:
+              entity_id: input_number.drainflo_doses_remaining
+          - action: script.hvac_drain_line_cleaned
+            alias: Record the dose and set the next due date
+          - action: input_boolean.turn_off
+            alias: Clear any earlier fault now that a dose has succeeded
+            target:
+              entity_id: input_boolean.drainflo_pump_fault
+          - action: notify.mobile_app_pixel_9
+            alias: Confirm the dose to Scott
+            data:
+              data:
+                channel: Quiet Notices
+                importance: low
+                notification_icon: mdi:pipe-valve
+                tag: drainflo_dose_complete
+              message: 1 cup of vinegar dosed at 05:00. {{ states('input_number.drainflo_doses_remaining')
+                | int }} doses left in the jug. Next dose on the 15th of next month.
+              title: DrainFlo dosed the drain line
+        if:
+        - condition: state
+          entity_id: switch.drainflo
+          state:
+          - unavailable
+          - unknown
+        then:
+        - action: input_boolean.turn_on
+          alias: Raise the fault flag for the dashboard card
+          target:
+            entity_id: input_boolean.drainflo_pump_fault
+        - action: notify.mobile_app_pixel_9
+          alias: Tell Scott the dose was skipped
+          data:
+            data:
+              actions:
+              - action: DRAINFLO_FAULT_DISMISS
+                title: Dismiss
+              channel: Quiet Notices
+              importance: low
+              notification_icon: mdi:pump-off
+              tag: drainflo_pump_fault
+            message: The Shelly was unreachable at 05:00 on the 15th so no vinegar
+              was dosed. The drain line will not be flushed until next month unless
+              you dose it manually.
+            title: DrainFlo missed the monthly dose
+    - alias: Safety cutoff, the pump has been running far longer than a dose
+      conditions:
+      - condition: trigger
+        id: safety_cutoff
+      sequence:
+      - action: switch.turn_off
+        alias: Force the pump off
+        target:
+          entity_id: switch.drainflo
+      - action: input_boolean.turn_on
+        alias: Raise the fault flag for the dashboard card
+        target:
+          entity_id: input_boolean.drainflo_pump_fault
+      - action: notify.mobile_app_pixel_9
+        alias: Wake Scott, this one is urgent
+        data:
+          data:
+            actions:
+            - action: DRAINFLO_FAULT_DISMISS
+              title: Dismiss
+            channel: alarm_stream
+            notification_icon: mdi:alert
+            tag: drainflo_pump_fault
+          message: The pump ran past 6 minutes against a 110 second dose and has been
+            force stopped. Check the bucket in the attic for vinegar.
+          title: DrainFlo pump stuck on
+      - action: logbook.log
+        alias: Record the cutoff in the logbook
+        data:
+          entity_id: switch.drainflo
+          message: Safety cutoff fired. Pump ran past 6 minutes and was force stopped.
+          name: DrainFlo
+    - alias: Home Assistant restarted, make sure the pump is not left running
+      conditions:
+      - condition: trigger
+        id: ha_start
+      sequence:
+      - action: switch.turn_off
+        alias: Force off in case HA died mid dose
+        continue_on_error: true
+        target:
+          entity_id: switch.drainflo
+    - alias: Shelly has been unreachable for hours, warn before the dose window
+      conditions:
+      - condition: trigger
+        id: pump_unavailable
+      sequence:
+      - action: input_boolean.turn_on
+        alias: Raise the fault flag for the dashboard card
+        target:
+          entity_id: input_boolean.drainflo_pump_fault
+      - action: notify.mobile_app_pixel_9
+        alias: Warn Scott the relay is offline
+        data:
+          data:
+            actions:
+            - action: DRAINFLO_FAULT_DISMISS
+              title: Dismiss
+            channel: Quiet Notices
+            importance: low
+            notification_icon: mdi:zigbee
+            tag: drainflo_pump_fault
+          message: switch.drainflo has been unavailable for 2 hours. If it is still
+            offline at 05:00 on the 15th the monthly dose will be skipped.
+          title: DrainFlo relay offline
+    - alias: Dismiss button tapped on a fault notification
+      conditions:
+      - condition: trigger
+        id: fault_dismiss
+      sequence:
+      - action: script.drainflo_clear_fault
+  max: 10
+  mode: parallel
+- id: '1789438254016'
+  alias: DrainFlo Vinegar Refill Reminder
+  description: 'Warns Scott when the DrainFlo vinegar jug is running low, so a monthly
+    dose never fails for want of vinegar.
+
+
+    HOW THE COUNT WORKS. input_number.drainflo_doses_remaining is a budget, not a
+    measurement. Home Assistant has no way to see inside the jug. A gallon is 3785
+    mL and one dose is 237 mL, so a full jug is 16 doses. automation.drainflo_dosing
+    decrements it by one after every verified dose, and script.drainflo_refilled resets
+    it to 16. Because it is open loop, a refill that is never acknowledged leaves
+    the count drifting low, and eventually the pump runs dry. The Kamoer is dry run
+    tolerant so that is not damaging, but the drain line silently stops getting vinegar,
+    which is the failure this whole project exists to prevent.
+
+
+    WHY 2 DOSES. The warning raises at 2 remaining, which is two months of headroom
+    on a monthly schedule. That is deliberately generous: a gallon lasts 16 months,
+    so this notification fires roughly once every year and a bit and Scott will have
+    completely forgotten the system exists by then.
+
+
+    STRUCTURE. Daily level check at 09:00 and on Home Assistant start, matching the
+    pattern used by the other maintenance reminders, rather than a one-shot edge trigger.
+    A level check re-raises every morning until the jug is actually refilled, so a
+    swiped-away notification cannot silently lose the cycle.
+
+
+    SNOOZE IS 7 DAYS, not the 24 hours used by the retired drain line reminder, because
+    there is no urgency with two doses in hand and daily nagging would just train
+    Scott to ignore it.
+
+
+    COMPLETION PATHS. Two actions both call script.drainflo_refilled and mean the
+    same thing: the Refilled button on this notification, and a tap on the refill
+    card in the dashboard notification stack.'
+  triggers:
+  - at: 09:00:00
+    id: daily_check
+    trigger: time
+  - event: start
+    id: daily_check
+    trigger: homeassistant
+  - event_data:
+      action: DRAINFLO_REFILL_SNOOZE
+    event_type: mobile_app_notification_action
+    id: snooze
+    trigger: event
+  - event_data:
+      action: DRAINFLO_REFILLED
+    event_type: mobile_app_notification_action
+    id: refilled
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: Daily level check, warn if the jug is down to 2 doses or fewer
+      conditions:
+      - condition: trigger
+        id: daily_check
+      - alias: 2 doses or fewer left in the jug
+        below: 3
+        condition: numeric_state
+        entity_id: input_number.drainflo_doses_remaining
+      - alias: Not currently snoozed
+        condition: template
+        value_template: '{{ as_timestamp(now()) >= as_timestamp(states(''input_datetime.drainflo_refill_snooze_until''))
+          }}'
+      sequence:
+      - action: input_boolean.turn_on
+        alias: Raise the flag that shows the dashboard refill card
+        target:
+          entity_id: input_boolean.drainflo_refill_active
+      - action: notify.mobile_app_pixel_9
+        alias: Send the actionable push to the Pixel 9
+        data:
+          data:
+            actions:
+            - action: DRAINFLO_REFILL_SNOOZE
+              title: Snooze 7d
+            - action: DRAINFLO_REFILLED
+              title: Refilled ✓
+            channel: Quiet Notices
+            importance: low
+            notification_icon: mdi:bottle-tonic-outline
+            tag: drainflo_refill_reminder
+          message: '{{ states(''input_number.drainflo_doses_remaining'') | int }}
+            doses left in the attic jug. Refill it with distilled white vinegar and
+            tap Refilled, or snooze for a week.'
+          title: DrainFlo vinegar running low
+    - alias: Snooze button tapped on the notification
+      conditions:
+      - condition: trigger
+        id: snooze
+      sequence:
+      - action: script.drainflo_refill_snooze
+    - alias: Refilled button tapped on the notification
+      conditions:
+      - condition: trigger
+        id: refilled
+      sequence:
+      - action: script.drainflo_refilled
+  max: 10
+  mode: parallel

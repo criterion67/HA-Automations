@@ -1,6 +1,6 @@
 # _Uncategorized
 
-53 automation(s) in this category.
+55 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -25,6 +25,32 @@ The NWS branch keeps its extra condition because unlike the other five it trigge
 Note on the mower trigger: it fires on leaving error with no to state specified, which is how the original behaved, so it also fires on a transition from error to unavailable. |
 | Dawn Dusk Routine (Illuminance Based v5) | Illuminance-based test that replaces the sun elevation offsets. Dawn opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance. Test version running while v4 (elevation based) is disabled. |
 | Dawn Dusk Routine (Sun Based) | Sun-based dawn/dusk routine. Temporary replacement for the illuminance-based v5 while the WS90 lux sensor is unreliable. Dawn opens the bedroom curtains and activates the dawn scene at sunrise. Dusk closes the curtains and activates the dusk scene at sunset. Re-enable v5 and disable this automation once the weather station is fixed. |
+| DrainFlo Dosing | Doses the HVAC condensate drain line with 1 cup of distilled white vinegar on the 15th of every month, replacing the manual monthly pour and the reminder system that prompted it. The air handler is in the attic and drains by gravity with no condensate pump, so a clogged primary line backs up into the drain pan and out the secondary line, which discharges from the porch ceiling in front of the front door.
+
+HARDWARE. A Kamoer NKP 12V peristaltic pump sits in a printed enclosure on the lid, drawing from a 1 gallon vinegar jug that stands inside a 2 gallon bucket for containment. The pump tubing passes through a drilled 3/4 inch PVC cleanout cap and hangs about 3 inches into the riser, so there are no fittings anywhere in the liquid path. Power is switched by a Shelly 1 Gen4 dry contact relay running on Zigbee via Z2M, exposed as switch.drainflo.
+
+DOSE TIMING. 110 seconds. Measured 2026-09-14 with water on the bench: one cup took 105 seconds, which is about 135 mL per minute. The extra 5 seconds is margin, because overdosing slightly is harmless and underdosing defeats the purpose. Peristaltic tube takes a set over time and flow drops, so if a cup ever starts taking noticeably longer that is the signal to replace the pump tube and re-measure.
+
+SCHEDULE. 05:00 on the 15th of every month. Scott chose the 15th because the 1st is already crowded with other monthly reminders and notifications, and 05:00 because the attic is near its daily minimum then, which matters since the pump is rated 0 to 40C and a Foley attic exceeds that by afternoon. The blower may have cycled by 05:00 in summer, which slightly shortens how long the vinegar dwells in the trap, an accepted tradeoff for avoiding the first-of-month pileup.
+
+SCHEDULE SOURCE. A day-of-month template condition, not a helper. There is no native day-of-month condition in Home Assistant, so now().day == 15 is the only option. input_datetime.hvac_drain_line_due_date is still updated by script.hvac_drain_line_cleaned after each dose, but only as a dashboard readout of when the next dose falls. It no longer gates anything, so if it drifts nothing breaks.
+
+NO DEVICE SIDE WATCHDOG. The Shelly 1 Gen4 exposes no countdown or auto off over Zigbee. Tested 2026-09-14 by publishing on_time to zigbee2mqtt/DrainFlo/set, which the device silently ignored while a plain state ON worked, so the off command depends entirely on Home Assistant. That is why this automation carries three independent protections: the dose sequence turns the pump off itself, the safety_cutoff branch force-offs anything still running at 6 minutes, and the ha_start branch force-offs on every restart in case HA died mid dose. The 2 gallon bucket is the last line of defence.
+
+VERIFICATION. A commanded dose is not assumed to have worked. The switch is checked before commanding, then checked again 5 seconds after turn on. Either check failing raises input_boolean.drainflo_pump_fault and pushes. The fault does not self clear when the Shelly returns, because a missed monthly dose stays missed until someone deals with it.
+
+NOTIFICATION CHANNELS. Success and fault go on Quiet Notices at low importance per Scott's channel policy, since neither is an emergency. The safety cutoff goes on alarm_stream, because a pump stuck on above a ceiling is the same class of problem as the monthly valve test failing. |
+| DrainFlo Vinegar Refill Reminder | Warns Scott when the DrainFlo vinegar jug is running low, so a monthly dose never fails for want of vinegar.
+
+HOW THE COUNT WORKS. input_number.drainflo_doses_remaining is a budget, not a measurement. Home Assistant has no way to see inside the jug. A gallon is 3785 mL and one dose is 237 mL, so a full jug is 16 doses. automation.drainflo_dosing decrements it by one after every verified dose, and script.drainflo_refilled resets it to 16. Because it is open loop, a refill that is never acknowledged leaves the count drifting low, and eventually the pump runs dry. The Kamoer is dry run tolerant so that is not damaging, but the drain line silently stops getting vinegar, which is the failure this whole project exists to prevent.
+
+WHY 2 DOSES. The warning raises at 2 remaining, which is two months of headroom on a monthly schedule. That is deliberately generous: a gallon lasts 16 months, so this notification fires roughly once every year and a bit and Scott will have completely forgotten the system exists by then.
+
+STRUCTURE. Daily level check at 09:00 and on Home Assistant start, matching the pattern used by the other maintenance reminders, rather than a one-shot edge trigger. A level check re-raises every morning until the jug is actually refilled, so a swiped-away notification cannot silently lose the cycle.
+
+SNOOZE IS 7 DAYS, not the 24 hours used by the retired drain line reminder, because there is no urgency with two doses in hand and daily nagging would just train Scott to ignore it.
+
+COMPLETION PATHS. Two actions both call script.drainflo_refilled and mean the same thing: the Refilled button on this notification, and a tap on the refill card in the dashboard notification stack. |
 | Fridge Filters Weekly Countdown | Decrements the fresh air filter and water filter week counters by one every Monday morning. Each filter has a 26 week (6 month) service life, so the counters run 26 down to 0 and stop at the input_number minimum of 0. The M3 Supply Card on the Appliances view of the Mobile dashboard shows these as dots and its Pack refilled button sets the counter back to 26 when a filter is physically changed. |
 | Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
