@@ -1,6 +1,6 @@
 # _Uncategorized
 
-55 automation(s) in this category.
+54 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -102,9 +102,15 @@ All branches send a high priority push to notify.mobile_app_pixel_9 with the cur
 | LCM: Calendar PIN Setter - Slot 4 | Extracts a 4-digit PIN from calendar event description and sets it on Slot 4. Clears PIN when event ends. |
 | LibreLink - Sensor Expiration Notification | Sends mobile notifications and TTS announcements at 24 hours, 1 hour, and at the moment of Libre 3 sensor expiration. TTS is directed to the Bedroom Speaker Group. |
 | Living Room TV - Turn Off When Bill Leaves | When Bill has been away from home for 10 minutes, turn off the Living Room Chromecast. If Scott is home, send an actionable notification first asking whether to keep it on. If no response within 2 minutes, turn it off automatically. |
-| Low Battery Alert (All Battery Sensors) | Daily whole house low battery check at 09:30. Scans every sensor and binary sensor carrying the battery device class (140 percentage sensors and 13 binary sensors as of 2026-08-30) and sends one push listing everything that is low.
+| Low Battery Alert (All Battery Sensors) | Daily whole house low battery check at 09:30. Scans every sensor and binary sensor carrying the battery device class and sends one push listing everything that is low.
 
-Rewritten 2026-08-30 as a native automation, replacing the gmlupatelli/low_battery_notification blueprint. The blueprint merged both entity types into a single flat list, so binary sensors appeared with no number after them and looked like percentage readings that had failed. That produced a notification claiming the Sunroom and Rear Door deadbolts needed batteries while those locks were reading 89 and 88 percent on the dashboard. The percentages were correct; the two Z-Wave locks were separately asserting their Replace battery now and Replace battery soon flags. This version keeps the two kinds of evidence in labelled sections so they can never be confused again.
+Rewritten 2026-08-30 as a native automation, replacing the gmlupatelli/low_battery_notification blueprint, and keeps percentage readings and low battery flags in separate labelled sections.
+
+Edited 2026-09-15 to remove two sources of false alerts:
+1. OFFLINE DEVICES. YoLink Local writes 0 to a battery sensor when the device drops offline instead of going unavailable (Rear Yard Gate read 0 from 05:20 to 11:15 on 2026-09-15 while its other entities were unavailable). A battery reading of exactly 0 is now skipped when any other entity on the same device is unavailable. A real 0 on a device that is still online is still reported. Offline devices are the job of automation.sensor_went_silent_alert.
+2. LOCK FLAGS THAT CONTRADICT THE PERCENTAGE. The Sunroom and Rear Door Z-Wave deadbolts hold their Replace battery now and Replace battery soon flags on while reading 89 percent, and Scott confirmed 89 percent is accurate. A battery binary sensor is now skipped whenever the same device also has a battery percentage sensor, so the percentage wins. The flag section only reports devices that have no percentage sensor.
+
+Also on 2026-09-15 the Goldenmate UPS moved to the NUT integration (sensor.goldenmate_battery_charge), and the old HASS.Agent based sensor.goldenmate_battery_level template helper that read a fake 0 was deleted.
 
 Threshold is 20 rather than 15 because the Foyer temperature sensor stopped transmitting at 17 percent and would never have reached a 15 percent threshold.
 
@@ -270,27 +276,13 @@ Battery semantics carried over unchanged: sensor.fresh_element_solo_battery_leve
 | Petkit - Feeding Schedule | Dispenses Gracie's three daily meals via the Fresh Element Solo and plays the 9000 Hz tone to call her. Schedule: 30g at 7:00 AM, 20g at 12:00 PM, 30g at 6:00 PM = 80g daily total. |
 | Pico 2 - Bedroom Ceiling Lights Control | Controls bedroom ceiling lights using the Lutron Pico 2 remote: on, off, raise brightness, lower brightness. |
 | Pico 2 - Bedroom: ON Button | Handles single, double, and hold for the Pico 2 ON button. Single=turn on, Hold=50% warm white, Double=100% warm white. |
-| Power Outage - Desktop Shutdown | DISABLED 2026-08-30 - DOES NOT WORK. Do not re-enable until rebuilt for Linux.
+| Power Outage - EFR3P-2 Network & HA Shutdown | When EFR3P-2 battery drops below 20% while AC is offline, sets outage flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and the HA host (Wyse 5070). HA will auto-restart when grid power is restored.
 
-This automation depended entirely on HASS.Agent running on the Windows desktop, which published its entities over MQTT. Scott moved to the Linux Mint desktop as his main machine and HASS.Agent is Windows only, so every entity it provided is now unavailable:
-  button.scott_desktop_shutdown (the actual shutdown, and the reason this automation cannot work)
-  button.scott_desktop_restart
-  button.scott_desktop_sleep
-  sensor.scott_desktop_goldenmatebatterylevel (one of the two triggers)
-  sensor.scott_desktop_goldenmateruntimeremaining
-  sensor.scott_desktop_goldenmatestatus
+Edited 2026-09-15: now reads EFR3P-2 over USB through the Network UPS Tools app on the HA PC instead of the ef_ble Bluetooth integration, which relayed through the office ESPHome proxy and was the less reliable path. Trigger is sensor.efr3p_2_battery_charge (NUT, matched to serial R635ZABAWH344398). The AC condition uses binary_sensor.efr3p_2_ac_power, a template helper that is on when NUT status contains OL, and goes unavailable if NUT stops reporting, so this condition fails closed and will not shut anything down on missing data.
 
-Left enabled it would fire its two notifications on a real outage and then press a button that does not exist, giving the appearance of protection while the desktop rode the UPS down to zero. Turned off so it stops presenting as working.
+The NUT low battery setpoint on this unit reads 10 percent, below this 20 percent trigger, so the NUT app does not stop itself before this automation fires. Re-check that if the setpoint is ever changed on the EcoFlow.
 
-ALSO AFFECTED, three template helpers read those dead sensors and now return defaults rather than errors: binary_sensor.goldenmate_ac_power currently reports NO AC POWER while grid power is fine, because its template is int(0) == 2 on an unavailable source. sensor.goldenmate_battery_level and sensor.goldenmate_runtime_remaining are the same shape. The pihole-ups dashboard has a Goldenmate - Desktop section showing all of it.
-
-REBUILD PLAN. Nothing here was deleted, because this is the skeleton of the replacement. Repoint rather than recreate:
-  1. Replace the button.press step with a shell_command that SSHes into the Linux desktop, matching the working pattern already in configuration.yaml for shutdown_unas_pro and shutdown_udm_pro_max, both using the key at /config/.ssh/id_ha_power.
-  2. Confirm whether the Linux desktop is physically on the Goldenmate at all. Scott was unsure as of 2026-08-30. If it is, HA needs a new way to read that UPS since the software that read it is gone. If it is not, drop the battery trigger and keep only the EFR3P-1 AC-offline trigger.
-  3. Repoint or retire the three Goldenmate template helpers and the pihole-ups dashboard section to match whatever step 2 decides.
-
-ORIGINAL PURPOSE, kept for reference: shut down SCOTT-DESKTOP when either EFR3P-1 AC had been offline for 10 minutes, or the Goldenmate battery dropped below 25 percent. Network gear and the HA host are handled separately by automation.power_outage_efr3p_2_network_ha_shutdown, which is unaffected by any of this. |
-| Power Outage - EFR3P-2 Network & HA Shutdown | When EFR3P-2 battery drops to 20% while AC is offline, sets outage flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and the HA host (Wyse 5070). HA will auto-restart when grid power is restored. |
+The ef_ble Bluetooth integration is intentionally kept for output power readings and device controls, which NUT does not provide. |
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts. |
 | Reminder - Re-pair YoLink D2D Leak Sensors to Water Valve | TEMPORARY REMINDER, created 2026-08-26. Delete or turn off this automation once the D2D re-pairing is finished.
 

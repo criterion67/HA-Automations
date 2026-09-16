@@ -1,20 +1,35 @@
 - id: '1788062748656'
   alias: Low Battery Alert (All Battery Sensors)
   description: 'Daily whole house low battery check at 09:30. Scans every sensor and
-    binary sensor carrying the battery device class (140 percentage sensors and 13
-    binary sensors as of 2026-08-30) and sends one push listing everything that is
-    low.
+    binary sensor carrying the battery device class and sends one push listing everything
+    that is low.
 
 
     Rewritten 2026-08-30 as a native automation, replacing the gmlupatelli/low_battery_notification
-    blueprint. The blueprint merged both entity types into a single flat list, so
-    binary sensors appeared with no number after them and looked like percentage readings
-    that had failed. That produced a notification claiming the Sunroom and Rear Door
-    deadbolts needed batteries while those locks were reading 89 and 88 percent on
-    the dashboard. The percentages were correct; the two Z-Wave locks were separately
-    asserting their Replace battery now and Replace battery soon flags. This version
-    keeps the two kinds of evidence in labelled sections so they can never be confused
-    again.
+    blueprint, and keeps percentage readings and low battery flags in separate labelled
+    sections.
+
+
+    Edited 2026-09-15 to remove two sources of false alerts:
+
+    1. OFFLINE DEVICES. YoLink Local writes 0 to a battery sensor when the device
+    drops offline instead of going unavailable (Rear Yard Gate read 0 from 05:20 to
+    11:15 on 2026-09-15 while its other entities were unavailable). A battery reading
+    of exactly 0 is now skipped when any other entity on the same device is unavailable.
+    A real 0 on a device that is still online is still reported. Offline devices are
+    the job of automation.sensor_went_silent_alert.
+
+    2. LOCK FLAGS THAT CONTRADICT THE PERCENTAGE. The Sunroom and Rear Door Z-Wave
+    deadbolts hold their Replace battery now and Replace battery soon flags on while
+    reading 89 percent, and Scott confirmed 89 percent is accurate. A battery binary
+    sensor is now skipped whenever the same device also has a battery percentage sensor,
+    so the percentage wins. The flag section only reports devices that have no percentage
+    sensor.
+
+
+    Also on 2026-09-15 the Goldenmate UPS moved to the NUT integration (sensor.goldenmate_battery_charge),
+    and the old HASS.Agent based sensor.goldenmate_battery_level template helper that
+    read a fake 0 was deleted.
 
 
     Threshold is 20 rather than 15 because the Foyer temperature sensor stopped transmitting
@@ -52,14 +67,33 @@
       {%- for s in states.sensor if s.attributes.device_class == ''battery'' and s.state
       | float(-1) >= 0 and s.state | float(-1) < 20 -%}
 
+      {%- set dev = device_id(s.entity_id) -%}
+
+      {%- set offline = s.state | float(-1) == 0 and dev is not none and device_entities(dev)
+      | select(''is_state'', ''unavailable'') | list | count > 0 -%}
+
+      {%- if not offline -%}
+
       {%- set ns.pct = ns.pct + [s.name ~ '' ('' ~ s.state ~ ''%)''] -%}
+
+      {%- endif -%}
 
       {%- endfor -%}
 
       {%- for s in states.binary_sensor if s.attributes.device_class == ''battery''
       and s.state == ''on'' -%}
 
+      {%- set dev = device_id(s.entity_id) -%}
+
+      {%- set has_pct = dev is not none and device_entities(dev) | select(''match'',
+      ''sensor\.'') | select(''is_state_attr'', ''device_class'', ''battery'') | list
+      | count > 0 -%}
+
+      {%- if not has_pct -%}
+
       {%- set ns.flag = ns.flag + [s.name] -%}
+
+      {%- endif -%}
 
       {%- endfor -%}
 

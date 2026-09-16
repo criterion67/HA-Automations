@@ -7847,65 +7847,6 @@
         target:
           entity_id: input_boolean.office_ceiling_presence_enabled
   mode: single
-- id: '1776226412089'
-  alias: Power Outage - Desktop Shutdown
-  description: "DISABLED 2026-08-30 - DOES NOT WORK. Do not re-enable until rebuilt
-    for Linux.\n\nThis automation depended entirely on HASS.Agent running on the Windows
-    desktop, which published its entities over MQTT. Scott moved to the Linux Mint
-    desktop as his main machine and HASS.Agent is Windows only, so every entity it
-    provided is now unavailable:\n  button.scott_desktop_shutdown (the actual shutdown,
-    and the reason this automation cannot work)\n  button.scott_desktop_restart\n
-    \ button.scott_desktop_sleep\n  sensor.scott_desktop_goldenmatebatterylevel (one
-    of the two triggers)\n  sensor.scott_desktop_goldenmateruntimeremaining\n  sensor.scott_desktop_goldenmatestatus\n\nLeft
-    enabled it would fire its two notifications on a real outage and then press a
-    button that does not exist, giving the appearance of protection while the desktop
-    rode the UPS down to zero. Turned off so it stops presenting as working.\n\nALSO
-    AFFECTED, three template helpers read those dead sensors and now return defaults
-    rather than errors: binary_sensor.goldenmate_ac_power currently reports NO AC
-    POWER while grid power is fine, because its template is int(0) == 2 on an unavailable
-    source. sensor.goldenmate_battery_level and sensor.goldenmate_runtime_remaining
-    are the same shape. The pihole-ups dashboard has a Goldenmate - Desktop section
-    showing all of it.\n\nREBUILD PLAN. Nothing here was deleted, because this is
-    the skeleton of the replacement. Repoint rather than recreate:\n  1. Replace the
-    button.press step with a shell_command that SSHes into the Linux desktop, matching
-    the working pattern already in configuration.yaml for shutdown_unas_pro and shutdown_udm_pro_max,
-    both using the key at /config/.ssh/id_ha_power.\n  2. Confirm whether the Linux
-    desktop is physically on the Goldenmate at all. Scott was unsure as of 2026-08-30.
-    If it is, HA needs a new way to read that UPS since the software that read it
-    is gone. If it is not, drop the battery trigger and keep only the EFR3P-1 AC-offline
-    trigger.\n  3. Repoint or retire the three Goldenmate template helpers and the
-    pihole-ups dashboard section to match whatever step 2 decides.\n\nORIGINAL PURPOSE,
-    kept for reference: shut down SCOTT-DESKTOP when either EFR3P-1 AC had been offline
-    for 10 minutes, or the Goldenmate battery dropped below 25 percent. Network gear
-    and the HA host are handled separately by automation.power_outage_efr3p_2_network_ha_shutdown,
-    which is unaffected by any of this."
-  triggers:
-  - entity_id: binary_sensor.ef_r30118_ac_plugged_in
-    to: 'off'
-    for: 00:10:00
-    trigger: state
-  - entity_id: sensor.scott_desktop_goldenmatebatterylevel
-    below: 25
-    trigger: numeric_state
-  conditions: []
-  actions:
-  - alias: 'Notify: dashboard alert'
-    action: notify.persistent_notification
-    data:
-      title: ⚡ Power Outage — Shutting Down Desktop
-      message: Grid power has been out for 10 minutes. Shutting down SCOTT-DESKTOP.
-  - alias: 'Notify: mobile push to Pixel 9'
-    action: notify.mobile_app_pixel_9
-    data:
-      title: ⚡ Power Outage
-      message: Grid power out for 10 minutes. Shutting down desktop PC now.
-  - alias: Shut down SCOTT-DESKTOP
-    action: button.press
-    target:
-      entity_id: button.scott_desktop_shutdown
-  - alias: Wait 60s for desktop to shut down
-    delay: 00:01:00
-  mode: single
 - id: '1776296571883'
   alias: Power Restored — Recovery Notification
   description: On HA startup, checks if the power outage shutdown flag is set. If
@@ -7937,43 +7878,61 @@
   mode: single
 - id: '1776378808727'
   alias: Power Outage - EFR3P-2 Network & HA Shutdown
-  description: When EFR3P-2 battery drops to 20% while AC is offline, sets outage
+  description: 'When EFR3P-2 battery drops below 20% while AC is offline, sets outage
     flag, sends mobile alert, then gracefully shuts down UNAS Pro, UDM Pro Max, and
     the HA host (Wyse 5070). HA will auto-restart when grid power is restored.
+
+
+    Edited 2026-09-15: now reads EFR3P-2 over USB through the Network UPS Tools app
+    on the HA PC instead of the ef_ble Bluetooth integration, which relayed through
+    the office ESPHome proxy and was the less reliable path. Trigger is sensor.efr3p_2_battery_charge
+    (NUT, matched to serial R635ZABAWH344398). The AC condition uses binary_sensor.efr3p_2_ac_power,
+    a template helper that is on when NUT status contains OL, and goes unavailable
+    if NUT stops reporting, so this condition fails closed and will not shut anything
+    down on missing data.
+
+
+    The NUT low battery setpoint on this unit reads 10 percent, below this 20 percent
+    trigger, so the NUT app does not stop itself before this automation fires. Re-check
+    that if the setpoint is ever changed on the EcoFlow.
+
+
+    The ef_ble Bluetooth integration is intentionally kept for output power readings
+    and device controls, which NUT does not provide.'
   triggers:
-  - platform: numeric_state
-    entity_id: sensor.ef_r34398_battery_level
-    below: 20
+  - below: 20
+    entity_id: sensor.efr3p_2_battery_charge
+    trigger: numeric_state
   conditions:
   - condition: state
-    entity_id: binary_sensor.ef_r34398_ac_plugged_in
+    entity_id: binary_sensor.efr3p_2_ac_power
     state: 'off'
   actions:
-  - alias: 'Flag: mark power outage shutdown triggered'
-    action: input_boolean.turn_on
+  - action: input_boolean.turn_on
+    alias: 'Flag: mark power outage shutdown triggered'
     target:
       entity_id: input_boolean.power_outage_shutdown_triggered
-  - alias: 'Notify: dashboard alert'
-    action: notify.persistent_notification
+  - action: notify.persistent_notification
+    alias: 'Notify: dashboard alert'
     data:
-      title: ⚡ Power Outage — EFR3P-2 Low Battery
       message: EFR3P-2 battery at 20%. Shutting down UNAS Pro, UDM Pro Max, and Home
         Assistant host.
-  - alias: 'Notify: mobile push to Pixel 9'
-    action: notify.mobile_app_pixel_9
+      title: ⚡ Power Outage — EFR3P-2 Low Battery
+  - action: notify.mobile_app_pixel_9
+    alias: 'Notify: mobile push to Pixel 9'
     data:
-      title: ⚡ Power Outage (EFR3P-2)
       message: EFR3P-2 battery at 20%. Shutting down network gear and HA host.
-  - alias: Step 1 — Shut down UNAS Pro via SSH
-    action: shell_command.shutdown_unas_pro
+      title: ⚡ Power Outage (EFR3P-2)
+  - action: shell_command.shutdown_unas_pro
+    alias: Step 1 — Shut down UNAS Pro via SSH
   - alias: Wait 60s for UNAS Pro to shut down
     delay: 00:01:00
-  - alias: Step 2 — Shut down UDM Pro Max via SSH
-    action: shell_command.shutdown_udm_pro_max
+  - action: shell_command.shutdown_udm_pro_max
+    alias: Step 2 — Shut down UDM Pro Max via SSH
   - alias: Wait 10s then shut down HA host
     delay: 00:00:10
-  - alias: Step 3 — Full OS poweroff via Supervisor
-    action: hassio.host_shutdown
+  - action: hassio.host_shutdown
+    alias: Step 3 — Full OS poweroff via Supervisor
   mode: single
 - id: '1776626168259'
   alias: Monthly Valve Test
@@ -12404,20 +12363,35 @@
 - id: '1788062748656'
   alias: Low Battery Alert (All Battery Sensors)
   description: 'Daily whole house low battery check at 09:30. Scans every sensor and
-    binary sensor carrying the battery device class (140 percentage sensors and 13
-    binary sensors as of 2026-08-30) and sends one push listing everything that is
-    low.
+    binary sensor carrying the battery device class and sends one push listing everything
+    that is low.
 
 
     Rewritten 2026-08-30 as a native automation, replacing the gmlupatelli/low_battery_notification
-    blueprint. The blueprint merged both entity types into a single flat list, so
-    binary sensors appeared with no number after them and looked like percentage readings
-    that had failed. That produced a notification claiming the Sunroom and Rear Door
-    deadbolts needed batteries while those locks were reading 89 and 88 percent on
-    the dashboard. The percentages were correct; the two Z-Wave locks were separately
-    asserting their Replace battery now and Replace battery soon flags. This version
-    keeps the two kinds of evidence in labelled sections so they can never be confused
-    again.
+    blueprint, and keeps percentage readings and low battery flags in separate labelled
+    sections.
+
+
+    Edited 2026-09-15 to remove two sources of false alerts:
+
+    1. OFFLINE DEVICES. YoLink Local writes 0 to a battery sensor when the device
+    drops offline instead of going unavailable (Rear Yard Gate read 0 from 05:20 to
+    11:15 on 2026-09-15 while its other entities were unavailable). A battery reading
+    of exactly 0 is now skipped when any other entity on the same device is unavailable.
+    A real 0 on a device that is still online is still reported. Offline devices are
+    the job of automation.sensor_went_silent_alert.
+
+    2. LOCK FLAGS THAT CONTRADICT THE PERCENTAGE. The Sunroom and Rear Door Z-Wave
+    deadbolts hold their Replace battery now and Replace battery soon flags on while
+    reading 89 percent, and Scott confirmed 89 percent is accurate. A battery binary
+    sensor is now skipped whenever the same device also has a battery percentage sensor,
+    so the percentage wins. The flag section only reports devices that have no percentage
+    sensor.
+
+
+    Also on 2026-09-15 the Goldenmate UPS moved to the NUT integration (sensor.goldenmate_battery_charge),
+    and the old HASS.Agent based sensor.goldenmate_battery_level template helper that
+    read a fake 0 was deleted.
 
 
     Threshold is 20 rather than 15 because the Foyer temperature sensor stopped transmitting
@@ -12455,14 +12429,33 @@
       {%- for s in states.sensor if s.attributes.device_class == ''battery'' and s.state
       | float(-1) >= 0 and s.state | float(-1) < 20 -%}
 
+      {%- set dev = device_id(s.entity_id) -%}
+
+      {%- set offline = s.state | float(-1) == 0 and dev is not none and device_entities(dev)
+      | select(''is_state'', ''unavailable'') | list | count > 0 -%}
+
+      {%- if not offline -%}
+
       {%- set ns.pct = ns.pct + [s.name ~ '' ('' ~ s.state ~ ''%)''] -%}
+
+      {%- endif -%}
 
       {%- endfor -%}
 
       {%- for s in states.binary_sensor if s.attributes.device_class == ''battery''
       and s.state == ''on'' -%}
 
+      {%- set dev = device_id(s.entity_id) -%}
+
+      {%- set has_pct = dev is not none and device_entities(dev) | select(''match'',
+      ''sensor\.'') | select(''is_state_attr'', ''device_class'', ''battery'') | list
+      | count > 0 -%}
+
+      {%- if not has_pct -%}
+
       {%- set ns.flag = ns.flag + [s.name] -%}
+
+      {%- endif -%}
 
       {%- endfor -%}
 
