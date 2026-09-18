@@ -47,16 +47,16 @@
     It stays standalone.
 
 
-    ADDED 2026-09-01: HVAC Drain Line Clean (95cc68d1), a twelfth tag. It is stuck
-    to the distilled white vinegar bottle and scanning it calls script.hvac_drain_line_cleaned,
-    which pushes input_datetime.hvac_drain_line_due_date out 30 days, clears input_boolean.hvac_drain_line_reminder_active
-    so the dashboard card hides, resets the snooze helper, and clears the push notification
-    from the phone. The branch deliberately holds no logic of its own: the notification
-    button in automation.hvac_drain_line_cleaning_reminder and the dashboard card
-    both call the same script, so all three completion paths behave identically and
-    there is exactly one place to change the behavior. This is NOT a repeat of the
-    removed HVAC filter tag situation, where the tag drove an orphaned counter that
-    nothing else read.'
+    ADDED 2026-09-01, REPURPOSED 2026-09-17: Vinegar bottle tag (95cc68d1), a twelfth
+    tag stuck to the distilled white vinegar bottle in the attic. It originally called
+    script.hvac_drain_line_cleaned to mark a manual pour complete, back when dosing
+    was a human chore. DrainFlo now doses automatically at 05:00 on the 15th of each
+    month, so marking a pour complete is meaningless and that whole reminder system
+    was retired. Rather than delete the tag, the branch now calls script.drainflo_run_dose,
+    which runs a real 110 second dose immediately regardless of the date, verifies
+    the relay actually closed, decrements the jug counter and notifies. Scanning the
+    bottle therefore doses the drain line rather than just claiming it was done. Note
+    this spends a dose from the counter, same as any other dose.'
   triggers:
   - id: front_door
     tag_id: eff1012d-ee57-4eec-838c-9edcd248eb05
@@ -242,11 +242,12 @@
               title: The garbage can has been set on the street for pickup
         target:
           entity_id: media_player.bedroom_speaker
-    - alias: HVAC drain line tag marks the cleaning complete
+    - alias: Vinegar bottle tag runs a manual DrainFlo dose
       conditions:
       - condition: trigger
         id: hvac_drain_line
       sequence:
-      - action: script.hvac_drain_line_cleaned
+      - alias: Dose the drain line now, regardless of the date
+        action: script.drainflo_run_dose
   max: 10
   mode: parallel

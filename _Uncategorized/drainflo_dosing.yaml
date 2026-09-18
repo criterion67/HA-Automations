@@ -1,11 +1,22 @@
 - id: '1789438222294'
   alias: DrainFlo Dosing
-  description: 'Doses the HVAC condensate drain line with 1 cup of distilled white
-    vinegar on the 15th of every month, replacing the manual monthly pour and the
-    reminder system that prompted it. The air handler is in the attic and drains by
-    gravity with no condensate pump, so a clogged primary line backs up into the drain
-    pan and out the secondary line, which discharges from the porch ceiling in front
-    of the front door.
+  description: 'OFFLINE BRANCH DOES NOT CURRENTLY FIRE. Tested 2026-09-17 by unplugging
+    the relay for an hour: switch.drainflo never changed from ''off'' and last_updated
+    never moved, so Zigbee2MQTT availability tracking is not reporting for this device
+    and the pump_unavailable trigger has nothing to fire on. The branch is left in
+    place because it costs nothing and will start working if availability is ever
+    enabled in Z2M. A better fix now exists: the same physical relay was added to
+    the Shelly integration over WiFi on 2026-09-17 at 192.168.30.130, and that integration
+    tracks availability properly, so this trigger could be repointed at the WiFi entity
+    instead.
+
+
+    Doses the HVAC condensate drain line with 1 cup of distilled white vinegar on
+    the 15th of every month, replacing the manual monthly pour and the reminder system
+    that prompted it. The air handler is in the attic and drains by gravity with no
+    condensate pump, so a clogged primary line backs up into the drain pan and out
+    the secondary line, which discharges from the porch ceiling in front of the front
+    door.
 
 
     HARDWARE. A Kamoer NKP 12V peristaltic pump sits in a printed enclosure on the
@@ -48,11 +59,24 @@
     last line of defence.
 
 
+    WHERE THE DOSE LOGIC LIVES. Not here. Both the scheduled branch and the manual
+    default branch call script.drainflo_run_dose, so the dose sequence and the 110
+    second calibration number exist in exactly one place. If the pump tube is replaced
+    and the flow rate changes, that script is the only thing to edit.
+
+
+    MANUAL RUNS. Every named branch is gated on a trigger id, and a manual run from
+    the UI carries no trigger id, so before 2026-09-17 pressing Run did nothing at
+    all. The default branch fixes that: it catches any run that matches no trigger
+    id, which in practice means only a manual invocation, and doses immediately without
+    checking the date. Use it to dose out of cycle or to test.
+
+
     VERIFICATION. A commanded dose is not assumed to have worked. The switch is checked
     before commanding, then checked again 5 seconds after turn on. Either check failing
-    raises input_boolean.drainflo_pump_fault and pushes. The fault does not self clear
-    when the Shelly returns, because a missed monthly dose stays missed until someone
-    deals with it.
+    raises input_boolean.drainflo_pump_fault and pushes, and leaves the counter and
+    due date untouched. The fault does not self clear when the Shelly returns, because
+    a missed monthly dose stays missed until someone deals with it.
 
 
     NOTIFICATION CHANNELS. Success and fault go on Quiet Notices at low importance
@@ -94,99 +118,8 @@
         condition: template
         value_template: '{{ now().day == 15 }}'
       sequence:
-      - alias: Only dose if the Shelly is actually reachable
-        else:
-        - action: switch.turn_on
-          alias: Start the pump
-          target:
-            entity_id: switch.drainflo
-        - alias: Give the relay a moment to actually close
-          delay:
-            seconds: 5
-        - alias: Confirm the pump really came on before trusting the dose
-          else:
-          - action: switch.turn_off
-            alias: Belt and braces, command off anyway
-            continue_on_error: true
-            target:
-              entity_id: switch.drainflo
-          - action: input_boolean.turn_on
-            alias: Raise the fault flag for the dashboard card
-            target:
-              entity_id: input_boolean.drainflo_pump_fault
-          - action: notify.mobile_app_pixel_9
-            alias: Tell Scott the pump did not respond
-            data:
-              data:
-                actions:
-                - action: DRAINFLO_FAULT_DISMISS
-                  title: Dismiss
-                channel: Quiet Notices
-                importance: low
-                notification_icon: mdi:pump-off
-                tag: drainflo_pump_fault
-              message: The relay was commanded on at 05:00 but did not report on.
-                No vinegar was dosed. Check the relay, then dose manually or dismiss.
-              title: DrainFlo pump did not start
-          if:
-          - condition: state
-            entity_id: switch.drainflo
-            state: 'on'
-          then:
-          - alias: Run the remaining 105 seconds of the 110 second dose
-            delay:
-              seconds: 105
-          - action: switch.turn_off
-            alias: Stop the pump
-            target:
-              entity_id: switch.drainflo
-          - action: input_number.decrement
-            alias: Spend one dose from the jug budget
-            target:
-              entity_id: input_number.drainflo_doses_remaining
-          - action: script.hvac_drain_line_cleaned
-            alias: Record the dose and set the next due date
-          - action: input_boolean.turn_off
-            alias: Clear any earlier fault now that a dose has succeeded
-            target:
-              entity_id: input_boolean.drainflo_pump_fault
-          - action: notify.mobile_app_pixel_9
-            alias: Confirm the dose to Scott
-            data:
-              data:
-                channel: Quiet Notices
-                importance: low
-                notification_icon: mdi:pipe-valve
-                tag: drainflo_dose_complete
-              message: 1 cup of vinegar dosed at 05:00. {{ states('input_number.drainflo_doses_remaining')
-                | int }} doses left in the jug. Next dose on the 15th of next month.
-              title: DrainFlo dosed the drain line
-        if:
-        - condition: state
-          entity_id: switch.drainflo
-          state:
-          - unavailable
-          - unknown
-        then:
-        - action: input_boolean.turn_on
-          alias: Raise the fault flag for the dashboard card
-          target:
-            entity_id: input_boolean.drainflo_pump_fault
-        - action: notify.mobile_app_pixel_9
-          alias: Tell Scott the dose was skipped
-          data:
-            data:
-              actions:
-              - action: DRAINFLO_FAULT_DISMISS
-                title: Dismiss
-              channel: Quiet Notices
-              importance: low
-              notification_icon: mdi:pump-off
-              tag: drainflo_pump_fault
-            message: The Shelly was unreachable at 05:00 on the 15th so no vinegar
-              was dosed. The drain line will not be flushed until next month unless
-              you dose it manually.
-            title: DrainFlo missed the monthly dose
+      - alias: Hand off to the shared dose routine
+        action: script.drainflo_run_dose
     - alias: Safety cutoff, the pump has been running far longer than a dose
       conditions:
       - condition: trigger
@@ -258,5 +191,8 @@
         id: fault_dismiss
       sequence:
       - action: script.drainflo_clear_fault
+    default:
+    - alias: Manual run from the UI, dose regardless of the date
+      action: script.drainflo_run_dose
   max: 10
   mode: parallel
