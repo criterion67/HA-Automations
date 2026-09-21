@@ -64,7 +64,22 @@
     seconds later straight into the arriving mower, which reported "Return to station
     failed" and was stranded outside for 40 minutes. Do not remove this guard. The
     trigger hold alone cannot distinguish the two cases, because the flicker and the
-    real undock produce an identical off transition.'
+    real undock produce an identical off transition.
+
+
+    ALLOWLIST CHANGE 2026-09-20. On 2026-09-20 at 08:14:45 Scott cut power to the
+    outlet feeding the mower dock while identifying a breaker. binary_sensor.jason_momower_docked
+    went from on to off and sensor.jason_momower_state_name went to paused, with the
+    mower still sitting in the dock. The 2026-08-27 guard below is a BLOCKLIST of
+    returning, charging and charging_completed, and paused is not on that list, so
+    it passed. This automation fired at 08:14:55 and opened the garage door. It closed
+    it again at 08:16:49 on its own 108 second timer, but a power event must never
+    move the door. binary_sensor.jason_momower_mowing stayed off throughout. The fix
+    is an ALLOWLIST inside the actions: the flag raise and the whole door sequence
+    now run only when that mowing sensor reads on, and every other case falls to an
+    else branch that touches nothing and sends a notification naming the live state.
+    The blocklist condition is kept so that return flickers stay silent instead of
+    generating a notification each time.'
   triggers:
   - entity_id: binary_sensor.jason_momower_docked
     for:
@@ -99,54 +114,86 @@
       on its own, because state_name had already read returning for 10 full seconds
       when this ran.'
   actions:
-  - action: input_boolean.turn_on
-    alias: Raise the suppression flag so the return leg is handled normally
-    target:
-      entity_id: input_boolean.mower_cycle_active
-  - alias: Open the door to 21 inches, but ONLY if it is actually shut
+  - alias: Only act on a real mow. Anything else leaves the door alone
+    note: 'ADDED 2026-09-20 after a dock power loss opened the garage door. Scott
+      cut power to the mower outlet while identifying a breaker; binary_sensor.jason_momower_docked
+      went off and sensor.jason_momower_state_name went to paused with the mower still
+      physically in the dock, so the blocklist condition above passed and this automation
+      opened the door. binary_sensor.jason_momower_mowing stayed off for the whole
+      event, so it is the correct discriminator. This is now an allowlist: the door
+      sequence runs only on a confirmed mow, and every other case falls to the else
+      branch, which touches nothing and only notifies. Fail closed is deliberate.
+      If the mowing sensor ever lags a self resume, the cost is a missed door open
+      plus a notification, not a door opening on a power event.'
     if:
-    - alias: Door read closed at the moment the mower undocked
-      condition: template
-      value_template: '{{ door_was_closed }}'
+    - alias: Mower is actually mowing
+      condition: state
+      entity_id: binary_sensor.jason_momower_mowing
+      state: 'on'
     then:
-    - action: cover.open_cover
-      alias: Start the door opening
+    - action: input_boolean.turn_on
+      alias: Raise the suppression flag so the return leg is handled normally
       target:
-        entity_id: cover.garage_door
-    - alias: Wait the calibrated interval for a 21 inch opening
-      delay:
-        milliseconds: 2500
-    - action: cover.stop_cover
-      alias: Stop the door partway
-      target:
-        entity_id: cover.garage_door
-  - action: notify.mobile_app_pixel_9
-    alias: Tell Scott the mower let itself out
-    data:
+        entity_id: input_boolean.mower_cycle_active
+    - alias: Open the door to 21 inches, but ONLY if it is actually shut
+      if:
+      - alias: Door read closed at the moment the mower undocked
+        condition: template
+        value_template: '{{ door_was_closed }}'
+      then:
+      - action: cover.open_cover
+        alias: Start the door opening
+        target:
+          entity_id: cover.garage_door
+      - alias: Wait the calibrated interval for a 21 inch opening
+        delay:
+          milliseconds: 2500
+      - action: cover.stop_cover
+        alias: Stop the door partway
+        target:
+          entity_id: cover.garage_door
+    - action: notify.mobile_app_pixel_9
+      alias: Tell Scott the mower let itself out
       data:
-        channel: Quiet Notices
-        importance: low
-        notification_icon: mdi:robot-mower
-        priority: high
-        tag: mower_unattended
-        ttl: 0
-      message: Jason MoMower undocked without a Home Assistant command. {{ 'The garage
-        door was opened for it and will close automatically.' if door_was_closed else
-        'The garage door was already open, so it was left alone.' }}
-      title: Mower Started On Its Own
-  - alias: Close the door behind the mower, only if we opened it
-    if:
-    - alias: We are the ones who opened it
-      condition: template
-      value_template: '{{ door_was_closed }}'
-    then:
-    - alias: Finish out the 120 second exit window measured from the undock
-      delay:
-        seconds: 108
-    - action: cover.close_cover
-      alias: Close the garage door behind the mower
-      target:
-        entity_id: cover.garage_door
+        data:
+          channel: Quiet Notices
+          importance: low
+          notification_icon: mdi:robot-mower
+          priority: high
+          tag: mower_unattended
+          ttl: 0
+        message: Jason MoMower undocked without a Home Assistant command. {{ 'The
+          garage door was opened for it and will close automatically.' if door_was_closed
+          else 'The garage door was already open, so it was left alone.' }}
+        title: Mower Started On Its Own
+    - alias: Close the door behind the mower, only if we opened it
+      if:
+      - alias: We are the ones who opened it
+        condition: template
+        value_template: '{{ door_was_closed }}'
+      then:
+      - alias: Finish out the 120 second exit window measured from the undock
+        delay:
+          seconds: 108
+      - action: cover.close_cover
+        alias: Close the garage door behind the mower
+        target:
+          entity_id: cover.garage_door
+    else:
+    - action: notify.mobile_app_pixel_9
+      alias: Tell Scott the undock was ignored and why
+      data:
+        data:
+          channel: Quiet Notices
+          importance: low
+          notification_icon: mdi:robot-mower
+          priority: high
+          tag: mower_undock_ignored
+          ttl: 0
+        message: 'Jason MoMower''s docked sensor went off but the mower is not mowing
+          (state: {{ states(''sensor.jason_momower_state_name'') }}). The garage door
+          was left alone. A dock power loss looks like this.'
+        title: Mower Undock Ignored
   mode: single
   variables:
     door_was_closed: '{{ is_state(''cover.garage_door'', ''closed'') }}'
