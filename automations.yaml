@@ -4430,10 +4430,10 @@
   mode: single
 - id: '1762155215972'
   alias: Bathroom Lighting Control (Presence + TV v2.3)
-  description: 'Smart bathroom lighting tied to bedroom TV activity and mmWave presence
-    with corrected overnight time handling.
-
-    '
+  description: Smart bathroom lighting tied to bedroom TV activity and mmWave presence
+    with corrected overnight time handling. The bathroom tablet screen is controlled
+    through Kiosk Satellite (light.bathroom_tablet_kiosk_screen), replacing the retired
+    Fully Kiosk screen switch.
   triggers:
   - entity_id: binary_sensor.bathroom_presence_radar_target
     to: 'on'
@@ -4512,8 +4512,8 @@
         action: switch.turn_off
       - delay: 5
       - target:
-          entity_id: switch.fire_tablet_screen
-        action: switch.turn_off
+          entity_id: light.bathroom_tablet_kiosk_screen
+        action: light.turn_off
     - conditions:
       - condition: trigger
         id: TV_Paused
@@ -4553,7 +4553,7 @@
           entity_id:
           - light.bathroom_vanity_light_group
           - switch.bathroom_mirror
-          - switch.fire_tablet_screen
+          - light.bathroom_tablet_kiosk_screen
         action: homeassistant.turn_off
     - conditions:
       - condition: trigger
@@ -4581,8 +4581,11 @@
 - id: '1762182206207'
   alias: Doorbell Person or Visitor - Tablet Camera View v2.0
   description: When a person is detected or someone presses the G6 Pro Doorbell, wake
-    all tablets, show the doorbell camera in full screen for 30 seconds, then return
-    to the main dashboard.
+    all tablets, show the doorbell camera full screen for 30 seconds, then return
+    to the main dashboard and turn the bathroom tablet screen back off. Bedroom and
+    bathroom tablets run Kiosk Satellite and switch views through their dashboard
+    view selects. The office tablet (Galaxy Tab A9+ 2) still runs Fully Kiosk until
+    it is migrated.
   triggers:
   - entity_id: binary_sensor.g6_pro_doorbell_person_detected
     to: 'on'
@@ -4591,40 +4594,58 @@
     to: 'on'
     trigger: state
   actions:
-  - alias: Turn on all tablet screens
-    action: switch.turn_on
+  - alias: Turn on Kiosk Satellite tablet screens
+    action: light.turn_on
     target:
       entity_id:
-      - switch.galaxy_tab_a9_screen
-      - switch.galaxy_tab_a9_2_screen
-      - switch.fire_tablet_screen
+      - light.bedroom_tablet_kiosk_screen
+      - light.bathroom_tablet_kiosk_screen
+    continue_on_error: true
+  - alias: Turn on office tablet screen (Fully)
+    action: switch.turn_on
+    target:
+      entity_id: switch.galaxy_tab_a9_2_screen
     continue_on_error: true
   - alias: Wait 2 seconds for screens to wake
     delay: 00:00:02
-  - alias: Open full-screen doorbell camera on all tablets
+  - alias: Show doorbell camera on Kiosk Satellite tablets
+    action: select.select_option
+    target:
+      entity_id:
+      - select.bedroom_tablet_kiosk_dashboard_view
+      - select.bathroom_tablet_kiosk_dashboard_view
+    data:
+      option: doorbell-camera/0
+    continue_on_error: true
+  - alias: Show doorbell camera on office tablet (Fully)
     action: fully_kiosk.load_url
     data:
       device_id:
-      - 9b6f1d82aeb414da86e3d7afd9156e83
       - a9214fb40d85cc451175d4ccb7262585
-      - 40e383f71e7bc1b2d46bc6a82898d899
       url: http://192.168.10.168:8123/doorbell-camera/0?hide_header&hide_sidebar
     continue_on_error: true
   - alias: Wait 30 seconds while displaying camera
     delay: 00:00:30
-  - alias: Return all tablets to main dashboard
+  - alias: Return Kiosk Satellite tablets to main dashboard
+    action: select.select_option
+    target:
+      entity_id:
+      - select.bedroom_tablet_kiosk_dashboard_view
+      - select.bathroom_tablet_kiosk_dashboard_view
+    data:
+      option: scotts-dashboard-tablet/home
+    continue_on_error: true
+  - alias: Return office tablet to main dashboard (Fully)
     action: fully_kiosk.load_url
     data:
       device_id:
-      - 9b6f1d82aeb414da86e3d7afd9156e83
       - a9214fb40d85cc451175d4ccb7262585
-      - 40e383f71e7bc1b2d46bc6a82898d899
       url: http://192.168.10.168:8123/scotts-dashboard-tablet/0
     continue_on_error: true
-  - alias: Turn off Fire Tablet screen after viewing
-    action: switch.turn_off
+  - alias: Turn off bathroom tablet screen after viewing
+    action: light.turn_off
     target:
-      entity_id: switch.fire_tablet_screen
+      entity_id: light.bathroom_tablet_kiosk_screen
   mode: single
 - id: '1763347794930'
   alias: Apollo Sensor Self Heal
@@ -8758,54 +8779,6 @@
           media_id: 1000 80s Hits
           media_type: radio
           enqueue: replace
-- id: '1781048073798'
-  alias: Tablet Nightly Maintenance
-  description: Every evening at 19:00, clears the browser cache on both Galaxy Tab
-    A9+ tablets, then performs a full device restart. After the restart delay, loads
-    the start URL on both tablets. The bedroom tablet (A9+ 1) and office tablet (A9+
-    2) run in parallel.
-  triggers:
-  - platform: time
-    at: '19:00:00'
-  actions:
-  - parallel:
-    - sequence:
-      - alias: Bedroom tablet - clear cache
-        action: button.press
-        target:
-          entity_id: button.galaxy_tab_a9_1_clear_browser_cache
-      - alias: Bedroom tablet - wait after cache clear
-        delay:
-          seconds: 5
-      - alias: Bedroom tablet - restart device
-        action: button.press
-        target:
-          entity_id: button.galaxy_tab_a9_restart_device
-    - sequence:
-      - alias: Office tablet - clear cache
-        action: button.press
-        target:
-          entity_id: button.galaxy_tab_a9_2_clear_browser_cache
-      - alias: Office tablet - wait after cache clear
-        delay:
-          seconds: 5
-      - alias: Office tablet - restart device
-        action: button.press
-        target:
-          entity_id: button.galaxy_tab_a9_2_restart_device
-  - alias: Wait for tablets to reboot
-    delay:
-      seconds: 60
-  - parallel:
-    - alias: Bedroom tablet - load start URL
-      action: button.press
-      target:
-        entity_id: button.galaxy_tab_a9_load_start_url
-    - alias: Office tablet - load start URL
-      action: button.press
-      target:
-        entity_id: button.galaxy_tab_a9_2_load_start_url
-  mode: single
 - id: '1782396479145'
   alias: HVAC Filter Reminder - Daily Check
   description: Checks daily if HVAC filters are due and sends an actionable notification
@@ -11155,7 +11128,14 @@
     any entity in the critical list is pending, otherwise royalblue, and sets the
     ownership flag. The startup guard is bypassed only for that time trigger, because
     a time trigger has no from_state. The critical list now appears twice (critical
-    branch and 8 AM branch); keep both copies in sync when editing it.'
+    branch and 8 AM branch); keep both copies in sync when editing it.
+
+
+    DEFAULT BRANCH FIX 2026-09-21. The 8 AM quiet_hours_end trigger fell through to
+    the default branch whenever nothing was pending, which sent a stale Update Completed
+    notification and turned the lamp royalblue every morning. The default branch now
+    also requires trigger id updates_changed, so an 8 AM run with zero pending does
+    nothing.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -11307,8 +11287,11 @@
           target:
             entity_id: input_boolean.fado_update_indicator_active
     default:
-    - alias: Notify and light the lamp only outside quiet hours (10 PM to 8 AM)
+    - alias: 'Only on an update change: notify and light the lamp outside quiet hours
+        (10 PM to 8 AM)'
       if:
+      - condition: trigger
+        id: updates_changed
       - condition: time
         after: 08:00:00
         before: '22:00:00'

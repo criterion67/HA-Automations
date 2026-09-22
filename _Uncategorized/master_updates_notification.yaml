@@ -57,7 +57,14 @@
     any entity in the critical list is pending, otherwise royalblue, and sets the
     ownership flag. The startup guard is bypassed only for that time trigger, because
     a time trigger has no from_state. The critical list now appears twice (critical
-    branch and 8 AM branch); keep both copies in sync when editing it.'
+    branch and 8 AM branch); keep both copies in sync when editing it.
+
+
+    DEFAULT BRANCH FIX 2026-09-21. The 8 AM quiet_hours_end trigger fell through to
+    the default branch whenever nothing was pending, which sent a stale Update Completed
+    notification and turned the lamp royalblue every morning. The default branch now
+    also requires trigger id updates_changed, so an 8 AM run with zero pending does
+    nothing.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -209,8 +216,11 @@
           target:
             entity_id: input_boolean.fado_update_indicator_active
     default:
-    - alias: Notify and light the lamp only outside quiet hours (10 PM to 8 AM)
+    - alias: 'Only on an update change: notify and light the lamp outside quiet hours
+        (10 PM to 8 AM)'
       if:
+      - condition: trigger
+        id: updates_changed
       - condition: time
         after: 08:00:00
         before: '22:00:00'

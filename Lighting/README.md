@@ -4,7 +4,7 @@
 
 | Automation | Description |
 |---|---|
-| Bathroom Lighting Control (Presence + TV v2.3) | Smart bathroom lighting tied to bedroom TV activity and mmWave presence with corrected overnight time handling. |
+| Bathroom Lighting Control (Presence + TV v2.3) | Smart bathroom lighting tied to bedroom TV activity and mmWave presence with corrected overnight time handling. The bathroom tablet screen is controlled through Kiosk Satellite (light.bathroom_tablet_kiosk_screen), replacing the retired Fully Kiosk screen switch. |
 | Bathroom Mirror: Light Control | Lighting control for bathroom mirror on/off |
 | Bathroom Shower: Light Timer v4.4 | Door open sets 5000 K at 100%. If still open after 1:30, red plus chime plus TTS, then back to 5000 K. After announcement, the next door close starts a 10 minute in shower timer and announces "Shower timer has started". Timer finish shows a brief red reminder, then returns to 5000 K. Light turns off when the door closes for quick in and out, or when you exit and close the door after a timed shower. |
 | Bedroom Closet: Light Control | Door sensor turns on/off bedroom closet light. |

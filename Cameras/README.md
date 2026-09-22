@@ -6,7 +6,7 @@
 |---|---|
 | Camera Quiet Mode - Activate | When Camera Quiet Mode is toggled on, disable person detection on all cameras with the Camera Snooze label and start a 1-hour timer to auto re-enable. |
 | Camera Quiet Mode - Deactivate | When the quiet mode timer expires or the toggle is manually turned off, re-enable person detection on all cameras with the Camera Snooze label. |
-| Doorbell Person or Visitor - Tablet Camera View v2.0 | When a person is detected or someone presses the G6 Pro Doorbell, wake all tablets, show the doorbell camera in full screen for 30 seconds, then return to the main dashboard. |
+| Doorbell Person or Visitor - Tablet Camera View v2.0 | When a person is detected or someone presses the G6 Pro Doorbell, wake all tablets, show the doorbell camera full screen for 30 seconds, then return to the main dashboard and turn the bathroom tablet screen back off. Bedroom and bathroom tablets run Kiosk Satellite and switch views through their dashboard view selects. The office tablet (Galaxy Tab A9+ 2) still runs Fully Kiosk until it is migrated. |
 | Water Leak Alert 1 - Triggered Response | Sounds the alarm for a detected water leak: TTS announcement on media_player.all_speakers naming the sensor, a high priority actionable push with Snooze and Dismiss, then three siren pulses on switch.ring_alarm_siren, repeating every 5 minutes until the leak clears or the alert is snoozed.
 
 Mode is restart so a second leak sensor tripping restarts the loop and re-announces with the new sensor name rather than starting a competing siren.
