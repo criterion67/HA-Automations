@@ -31,7 +31,15 @@
     the mailbox trigger entity changed from binary_sensor.mailbox_sensor_door to binary_sensor.mailbox_sensor
     when the sensor moved from the YoLink cloud integration to the YoLink Local (yolocal)
     integration on the YS1606-UC Local Hub. Behaviour is unchanged; the local integration
-    simply names the primary entity after the device, dropping the _door suffix.'
+    simply names the primary entity after the device, dropping the _door suffix.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     for:
@@ -168,18 +176,17 @@
       image_path: '{{ response.key_frame }}'
       label: Package
       title: '{{ response.structured_response.title }}'
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      data:
-        image: '{% set t = trigger.id | default('''') %}{{ ''/local/snapshots/delivery_package.png''
-          if t == ''package'' else (''/local/snapshots/delivery_driveway.png'' if
-          t in [''mailbox'', ''driveway''] else ''/local/snapshots/delivery_doorbell.png'')
-          }}'
-        tag: doorbell_delivery_ai
-        url: homeassistant://navigate/lovelace
       message: '{{ response.structured_response.description }}'
       title: '{% set t = trigger.id | default('''') %}{{ ''Mail Delivered! 📬'' if
         t == ''mailbox'' else (''Package Delivered! 📦'' if t in [''parcel_box'', ''package'']
         else ''Delivery Detected! 📦'') }}'
+      tag: doorbell_delivery_ai
+      image: '{% set t = trigger.id | default('''') %}{{ ''/local/snapshots/delivery_package.png''
+        if t == ''package'' else (''/local/snapshots/delivery_driveway.png'' if t
+        in [''mailbox'', ''driveway''] else ''/local/snapshots/delivery_doorbell.png'')
+        }}'
+      url: homeassistant://navigate/lovelace
   max_exceeded: silent
   mode: single

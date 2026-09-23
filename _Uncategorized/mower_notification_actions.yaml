@@ -29,7 +29,15 @@
     after 15 minutes open during a cycle. Scott removed that on 2026-08-12 because
     it could shut the door on him while he was working in the garage, and it could
     not distinguish a stalled mower from a slow return. The tradeoff is that a silent
-    stall with no error raised will leave the door open until Scott notices.'
+    stall with no error raised will leave the door open until Scott notices.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - event_data:
       action: MOWER_CLOSE_GARAGE
@@ -52,24 +60,22 @@
         alias: Close the garage door
         target:
           entity_id: cover.garage_door
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            tag: mower_error
           message: Closing the garage door now. The mower cycle flag is still set,
             so the door will reopen on its own if Jason MoMower recovers and reports
             returning.
           title: Garage Closing
+          tag: mower_error
     - alias: Scott tapped Leave Open
       conditions:
       - condition: trigger
         id: leave_open
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            tag: mower_error
           message: Leaving the garage door as it is. Nothing further will move it
             automatically except the normal return sequence when Jason MoMower docks.
           title: Garage Left As Is
+          tag: mower_error
   mode: queued

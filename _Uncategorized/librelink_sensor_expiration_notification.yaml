@@ -1,8 +1,16 @@
 - id: '1774893025511'
   alias: LibreLink - Sensor Expiration Notification
-  description: Sends mobile notifications and TTS announcements at 24 hours, 1 hour,
+  description: 'Sends mobile notifications and TTS announcements at 24 hours, 1 hour,
     and at the moment of Libre 3 sensor expiration. TTS is directed to the Bedroom
     Speaker Group.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - value_template: '{{ now() >= (as_datetime(states(''sensor.librelink_expiration_timestamp''))
       - timedelta(hours=24)) and now() < (as_datetime(states(''sensor.librelink_expiration_timestamp''))
@@ -23,26 +31,24 @@
       - condition: trigger
         id: warning_24h
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Libre 3 Sensor Expiring Soon
           message: Your Libre 3 sensor will expire in 24 hours. Make sure you have
             a replacement sensor ready.
-          data:
-            importance: high
-            channel: Glucose Monitor
+          title: Libre 3 Sensor Expiring Soon
+          channel: Glucose Monitor
+          importance: high
     - conditions:
       - condition: trigger
         id: warning_1h
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Libre 3 Sensor Expiring in 1 Hour
           message: Your Libre 3 sensor expires in 1 hour. Prepare your replacement
             sensor now.
-          data:
-            importance: high
-            channel: Glucose Monitor
+          title: Libre 3 Sensor Expiring in 1 Hour
+          channel: Glucose Monitor
+          importance: high
       - action: tts.cloud_say
         target:
           entity_id: media_player.bedroom_group
@@ -53,14 +59,13 @@
       - condition: trigger
         id: expired
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Libre 3 Sensor Has Expired
           message: Your Libre 3 sensor has expired. Readings are no longer accurate.
             Please apply a new sensor now.
-          data:
-            importance: high
-            channel: Glucose Monitor
+          title: Libre 3 Sensor Has Expired
+          channel: Glucose Monitor
+          importance: high
       - action: tts.cloud_say
         target:
           entity_id: media_player.bedroom_group

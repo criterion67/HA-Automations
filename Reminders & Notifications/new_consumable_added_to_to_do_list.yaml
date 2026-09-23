@@ -1,6 +1,14 @@
 - id: '1743275776382'
   alias: New consumable added to to-do list
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: todo.consumables
     trigger: state
@@ -10,7 +18,7 @@
       }}'
   actions:
   - data:
-      title: Consumable Added
       message: 'New item added to consumables: {{ trigger.to_state.attributes.items[-1]
         }}'
-    action: notify.mobile_app_pixel_9
+      title: Consumable Added
+    action: script.notify_alert

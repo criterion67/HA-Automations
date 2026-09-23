@@ -1,8 +1,16 @@
 - id: '1763771518580'
   alias: Garage Door position change notifications v2
-  description: Announces and notifies on garage door open and close. Suppressed while
+  description: 'Announces and notifies on garage door open and close. Suppressed while
     input_boolean.mower_cycle_active is on, so a mower cycle does not fire four TTS
     announcements and four notifications into the bedroom.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id:
     - binary_sensor.garage_door_position
@@ -69,8 +77,7 @@
               - media_content_type: provider
                 media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
         action: media_player.play_media
-      - action: notify.mobile_app_pixel_9
-        metadata: {}
+      - action: script.notify_alert
         data:
           message: Garage door has been opened.
           title: Garage Door Position Changed
@@ -116,8 +123,7 @@
         color: 125
         level: 79
         duration: 15
-      - action: notify.mobile_app_pixel_9
-        metadata: {}
+      - action: script.notify_alert
         data:
           message: Garage door has been closed.
           title: Garage Door Position Changed

@@ -1,6 +1,14 @@
 - id: '1759124281059'
   alias: Elsa – Finish Cleanup (Notify + Reset)
-  description: Clears room selections and sends notifications when Elsa finishes.
+  description: 'Clears room selections and sends notifications when Elsa finishes.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - id: docked
     trigger: state
@@ -48,14 +56,15 @@
       sequence:
       - variables:
           msg: Elsa has completed cleaning and is now drying.
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
-      - action: notify.mobile_app_galaxy_watch7_904t
+          title: Elsa update
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
+          title: Elsa update
+          target: watch
     - conditions:
       - condition: template
         value_template: "{{ trigger.id == 'docked'\n   and valid_transition\n   and\
@@ -66,14 +75,15 @@
             ~ time_min ~ '' min.'' if area and time_min else '''' }}
 
             '
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
-      - action: notify.mobile_app_galaxy_watch7_904t
+          title: Elsa update
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
+          title: Elsa update
+          target: watch
     - conditions:
       - condition: template
         value_template: "{{ trigger.id == 'idle'\n   and valid_transition\n   and\
@@ -84,14 +94,15 @@
             in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
 
             '
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
-      - action: notify.mobile_app_galaxy_watch7_904t
+          title: Elsa update
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
+          title: Elsa update
+          target: watch
     - conditions:
       - condition: template
         value_template: "{{ trigger.id == 'completed'\n   and valid_transition\n \
@@ -102,14 +113,15 @@
             m² in '' ~ time_min ~ '' min.'' if area and time_min else '''' }}
 
             '
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
-      - action: notify.mobile_app_galaxy_watch7_904t
+          title: Elsa update
+      - action: script.notify_alert
         data:
-          title: Elsa update
           message: '{{ msg }}'
+          title: Elsa update
+          target: watch
   - choose:
     - conditions:
       - condition: template

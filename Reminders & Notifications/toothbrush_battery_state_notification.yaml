@@ -1,8 +1,16 @@
 - id: '1722821907720'
   alias: 'Toothbrush: Battery State Notification'
-  description: Monitors the battery level for the Oral-B toothbrush and sends a notification
+  description: 'Monitors the battery level for the Oral-B toothbrush and sends a notification
     when a recharge is necessary and also sends a follow-up notification once it has
     been recharged.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id:
     - sensor.bathroom_oral_b_toothbrush_battery
@@ -25,7 +33,7 @@
       - data:
           message: Oral-B Toothbrush needs recharging
           title: Oral-B Toothbrush Battery
-        action: notify.mobile_app_pixel_9
+        action: script.notify_alert
     - conditions:
       - condition: trigger
         id:
@@ -34,5 +42,5 @@
       - data:
           message: 'Oral-B Toothbrush recharged! '
           title: Oral-B Toothbrush Battery
-        action: notify.mobile_app_pixel_9
+        action: script.notify_alert
   mode: single

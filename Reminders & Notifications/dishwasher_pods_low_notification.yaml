@@ -1,6 +1,14 @@
 - id: '1730302526508'
   alias: Dishwasher Pods Low Notification
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id:
     - counter.dishwasher_pods
@@ -10,7 +18,7 @@
   - data:
       message: 'Alert: Only {{ states(''counter.dishwasher_pods'') }} dishwasher pods
         left. Time to restock!'
-    action: notify.mobile_app_pixel_9
+    action: script.notify_alert
   - data:
       item: Buy more dishwasher pods
     action: todo.add_item

@@ -7,7 +7,14 @@
     phone push was moved to the Quiet Notices channel at low importance on 2026-08-31
     at Scott request. A sensor connectivity fault is not a spoilage emergency and
     must not use the Android alarm audio stream, which bypasses silent mode and Do
-    Not Disturb.'
+    Not Disturb.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
+    and icon values. Delivery behavior is unchanged; channel and importance policy
+    now lives in the shared script.'
   triggers:
   - entity_id:
     - sensor.bedroom_fridge_temperature
@@ -81,15 +88,14 @@
                   title: Bedroom fridge temperature alert
                   thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
                   media_class: app
-          - action: notify.mobile_app_pixel_9
+          - action: script.notify_alert
             data:
-              title: Bedroom Fridge Alert
               message: Temperature is {{ temp_f }}°F. Please check the fridge.
-              data:
-                ttl: 0
-                priority: high
-                channel: alarm_stream
-                importance: high
+              title: Bedroom Fridge Alert
+              channel: alarm_stream
+              importance: high
+              priority: high
+              ttl: 0
           - delay:
               hours: 1
     - conditions:
@@ -123,14 +129,13 @@
               title: Bedroom fridge sensor unavailable alert
               thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
               media_class: app
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Bedroom Fridge Sensor Alert
           message: The bedroom fridge temperature sensor is unavailable. Please check
             the sensor or connection.
-          data:
-            ttl: 0
-            priority: high
-            channel: Quiet Notices
-            importance: low
+          title: Bedroom Fridge Sensor Alert
+          channel: Quiet Notices
+          importance: low
+          priority: high
+          ttl: 0
   mode: single

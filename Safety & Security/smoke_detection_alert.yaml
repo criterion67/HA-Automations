@@ -1,6 +1,13 @@
 - id: '1717540704356'
   alias: Smoke Detection Alert
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions and icon values.
+    Delivery behavior is unchanged; channel and importance policy now lives in the
+    shared script.'
   triggers:
   - entity_id:
     - binary_sensor.smoke_detectors_smoke_detectors
@@ -57,16 +64,14 @@
           - media_content_type: provider
             media_content_id: media-source://tts/tts.home_assistant_cloud?message=Alert%2C+Alert%2C+Smoke+has+been+detected+in+the+house%21+Please+exit+immediately%21+&language=en-US&voice=JennyNeural
     action: media_player.play_media
-  - metadata: {}
-    data:
+  - data:
       message: 'Smoke has been detected in the house! '
       title: URGENT - Smoke Detected!
-      data:
-        channel: alarm_stream
-        importance: high
-        ttl: 0
-        priority: high
-    action: notify.mobile_app_pixel_9
+      channel: alarm_stream
+      importance: high
+      priority: high
+      ttl: 0
+    action: script.notify_alert
   - delay:
       hours: 0
       minutes: 0

@@ -2,7 +2,9 @@
   alias: Office- Presence Lighting Control V3
   description: Turns office lamps, ceiling light, and fan on with presence, turns
     them off after 5 min of no presence, restores prior fan and ceiling light state
-    on re-entry, and resets manual override.
+    on re-entry, and resets manual override. The office tablet screen (Kiosk Satellite,
+    light.office_tablet_kiosk_screen) turns on with presence and off after 5 min of
+    no presence, regardless of the ceiling presence toggle.
   triggers:
   - entity_id: binary_sensor.office_presence_radar_target
     to: 'on'
@@ -15,6 +17,24 @@
     trigger: state
   conditions: []
   actions:
+  - alias: Office tablet screen follows presence
+    choose:
+    - conditions:
+      - condition: trigger
+        id: detected
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.office_tablet_kiosk_screen
+        continue_on_error: true
+    - conditions:
+      - condition: trigger
+        id: cleared
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.office_tablet_kiosk_screen
+        continue_on_error: true
   - choose:
     - conditions:
       - condition: trigger

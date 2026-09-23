@@ -118,7 +118,14 @@
     NOTIFICATION CHANNELS. Success and fault go on Quiet Notices at low importance
     per Scott''s channel policy, since neither is an emergency. The safety cutoff
     goes on alarm_stream, because a pump stuck on above a ceiling is the same class
-    of problem as the monthly valve test failing.'
+    of problem as the monthly valve test failing.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
+    and icon values. Delivery behavior is unchanged; channel and importance policy
+    now lives in the shared script.'
   triggers:
   - at: 05:00:00
     id: scheduled_dose
@@ -178,19 +185,18 @@
         alias: Raise the fault flag for the dashboard card
         target:
           entity_id: input_boolean.drainflo_pump_fault
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Wake Scott, this one is urgent
         data:
-          data:
-            actions:
-            - action: DRAINFLO_FAULT_DISMISS
-              title: Dismiss
-            channel: alarm_stream
-            notification_icon: mdi:alert
-            tag: drainflo_pump_fault
           message: The pump ran past 6 minutes against a 110 second dose and has been
             force stopped. Check the bucket in the attic for vinegar.
           title: DrainFlo pump stuck on
+          tag: drainflo_pump_fault
+          channel: alarm_stream
+          actions:
+          - action: DRAINFLO_FAULT_DISMISS
+            title: Dismiss
+          icon: mdi:alert
       - action: logbook.log
         alias: Record the cutoff in the logbook
         data:
@@ -218,21 +224,20 @@
         alias: Raise the fault flag for the dashboard card
         target:
           entity_id: input_boolean.drainflo_pump_fault
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Warn Scott the relay is unreachable
         data:
-          data:
-            actions:
-            - action: DRAINFLO_FAULT_DISMISS
-              title: Dismiss
-            channel: Quiet Notices
-            importance: low
-            notification_icon: mdi:lan-disconnect
-            tag: drainflo_pump_fault
           message: The DrainFlo relay has been unreachable for 2 hours ({{ 'WiFi'
             if trigger.id == 'pump_unavailable_wifi' else 'Zigbee' }}). If it is still
             offline at 05:00 on the 15th the monthly dose will be skipped.
           title: DrainFlo relay offline
+          tag: drainflo_pump_fault
+          channel: Quiet Notices
+          importance: low
+          actions:
+          - action: DRAINFLO_FAULT_DISMISS
+            title: Dismiss
+          icon: mdi:lan-disconnect
     - alias: Dismiss button tapped on a fault notification
       conditions:
       - condition: trigger

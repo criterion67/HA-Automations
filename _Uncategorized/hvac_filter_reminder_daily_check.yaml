@@ -1,6 +1,14 @@
 - id: '1782396479145'
   alias: HVAC Filter Reminder - Daily Check
-  description: Checks daily if HVAC filters are due and sends an actionable notification
+  description: 'Checks daily if HVAC filters are due and sends an actionable notification
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: time
     at: 09:00:00
@@ -17,18 +25,17 @@
   - action: input_boolean.turn_on
     target:
       entity_id: input_boolean.hvac_filter_reminder_active
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      title: 🔧 HVAC Filter Change Due
       message: Time to replace your HVAC filters (16"×20"×1", qty 2). Check your supply
         or pick up filters at the hardware store.
-      data:
-        actions:
-        - action: HVAC_FILTER_SNOOZE
-          title: Snooze 24h
-        - action: HVAC_FILTER_REPLACED
-          title: Filter Replaced ✓
-        tag: hvac_filter_reminder
-        channel: Quiet Notices
-        importance: low
+      title: 🔧 HVAC Filter Change Due
+      tag: hvac_filter_reminder
+      channel: Quiet Notices
+      importance: low
+      actions:
+      - action: HVAC_FILTER_SNOOZE
+        title: Snooze 24h
+      - action: HVAC_FILTER_REPLACED
+        title: Filter Replaced ✓
   mode: single

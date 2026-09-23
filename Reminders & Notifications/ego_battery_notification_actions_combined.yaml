@@ -1,6 +1,14 @@
 - id: '1758738295864'
   alias: Ego Battery Notification Actions (Combined)
-  description: Handles app notification actions for both plugs with a 3-snooze limit.
+  description: 'Handles app notification actions for both plugs with a 3-snooze limit.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: event
     event_type: mobile_app_notification_action
@@ -62,31 +70,30 @@
           - condition: template
             value_template: '{{ is_state(cfg.switch, ''off'') }}'
           - data:
-              title: Ego Battery Charger Reminder
               message: 'Charger is still off. You have {{ 3 - (states(cfg.snooze)|int(0))
                 }} snoozes left. Do you want to reset it for the next battery?
 
                 '
-              data:
-                sticky: true
-                actions:
-                - action: '{{ a }}'
-                  title: Snooze Again
-                - action: '{{ ''RESET_CHARGER_1'' if a.endswith(''_1'') else ''RESET_CHARGER_2''
-                    }}
+              title: Ego Battery Charger Reminder
+              actions:
+              - action: '{{ a }}'
+                title: Snooze Again
+              - action: '{{ ''RESET_CHARGER_1'' if a.endswith(''_1'') else ''RESET_CHARGER_2''
+                  }}
 
-                    '
-                  title: Dismiss / Reset
-            action: notify.mobile_app_pixel_9
+                  '
+                title: Dismiss / Reset
+              sticky: true
+            action: script.notify_alert
         - conditions:
           - condition: template
             value_template: '{{ states(cfg.snooze)|int(0) >= 3 }}'
           sequence:
           - data:
-              title: Ego Battery Charger
               message: 'Snooze limit reached (3). Reminders stopped. Charger remains
                 off until you turn it on.
 
                 '
-            action: notify.mobile_app_pixel_9
+              title: Ego Battery Charger
+            action: script.notify_alert
   mode: restart

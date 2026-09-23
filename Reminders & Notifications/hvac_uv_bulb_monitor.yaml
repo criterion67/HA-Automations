@@ -1,11 +1,19 @@
 - id: '1757355570578'
   alias: HVAC UV Bulb Monitor
-  description: Alerts when the HVAC UV purifier has drawn under 5W for a full 24 hours,
-    which indicates a failed bulb or ballast. Uses a level-based daily check against
-    a 24h max Statistics helper instead of an edge-based numeric_state trigger, because
-    the original edge trigger fired once on 2026-06-20 and could never re-arm after
-    the power stayed at 0W. Snooze defers 24h via an input_datetime stamp; Dismiss
+  description: 'Alerts when the HVAC UV purifier has drawn under 5W for a full 24
+    hours, which indicates a failed bulb or ballast. Uses a level-based daily check
+    against a 24h max Statistics helper instead of an edge-based numeric_state trigger,
+    because the original edge trigger fired once on 2026-06-20 and could never re-arm
+    after the power stayed at 0W. Snooze defers 24h via an input_datetime stamp; Dismiss
     suppresses alerts until the purifier draws power again. Both are restart-safe.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: 09:00:00
     id: daily_check
@@ -46,21 +54,20 @@
       note: 'Fires only if all four gates pass: right trigger, sustained low draw,
         not dismissed, not snoozed.'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            actions:
-            - action: UV_SNOOZE_24H
-              title: Snooze 24h
-            - action: UV_DISMISS
-              title: Dismiss
-            channel: Quiet Notices
-            sticky: true
-            tag: hvac_uv_bulb_low_power
-            importance: low
           message: UV purifier peak draw over the last 24h was {{ states('sensor.hvac_uv_purifier_power_24h_max')
             }} W, below the 5 W threshold. The bulb may have failed.
           title: ⚠️ HVAC UV Bulb Alert
+          tag: hvac_uv_bulb_low_power
+          channel: Quiet Notices
+          importance: low
+          actions:
+          - action: UV_SNOOZE_24H
+            title: Snooze 24h
+          - action: UV_DISMISS
+            title: Dismiss
+          sticky: true
     - conditions:
       - condition: trigger
         id: power_restored

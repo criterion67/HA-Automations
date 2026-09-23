@@ -32,7 +32,15 @@
     TTS CONVERTED, 2026-08-30: the TTS step was changed from media_player.play_media
     to tts.speak with cache true and preferred_sample_rate 44100, matching the parcel
     box automation after that change was confirmed to stop the Cast speakers truncating
-    the sentence.'
+    the sentence.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - id: mailbox_open
     entity_id: binary_sensor.mailbox_sensor
@@ -160,20 +168,20 @@
           media_player.play_media step with media_content_id media-source://tts/tts.home_assistant_cloud?message=Mail+has+been+delivered+to+the+mailbox&language=en-US&voice=JennyNeural
           and media_content_type provider.
       - data:
-          title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
-          data:
-            tag: mailbox_delivery_scott
-            actions:
-            - action: MAILBOX_RESET
-              title: Reset
-            - action: MAILBOX_DISMISS
-              title: Dismiss
-        action: notify.mobile_app_pixel_9
+          title: Mailbox Notification
+          tag: mailbox_delivery_scott
+          actions:
+          - action: MAILBOX_RESET
+            title: Reset
+          - action: MAILBOX_DISMISS
+            title: Dismiss
+        action: script.notify_alert
       - data:
-          title: Mailbox Notification
           message: Mail was delivered at {{ now().strftime('%I:%M %p on %b %-d') }}
-        action: notify.mobile_app_bills_phone
+          title: Mailbox Notification
+          target: bill
+        action: script.notify_alert
     - conditions:
       - condition: trigger
         id: mailbox_open
@@ -206,17 +214,17 @@
       sequence:
       - data:
           message: Don't forget to check the mail today!
-          data:
-            tag: mailbox_reminder_scott
-            actions:
-            - action: MAILBOX_RESET
-              title: Reset
-            - action: MAILBOX_DISMISS
-              title: Dismiss
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_reminder_scott
+          actions:
+          - action: MAILBOX_RESET
+            title: Reset
+          - action: MAILBOX_DISMISS
+            title: Dismiss
+        action: script.notify_alert
       - data:
           message: Don't forget to check the mail today!
-        action: notify.mobile_app_bills_phone
+          target: bill
+        action: script.notify_alert
     - conditions:
       - condition: trigger
         id: daily_reset
@@ -233,15 +241,11 @@
           value: 0
         action: input_number.set_value
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_delivery_scott
+        action: script.notify_clear
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_reminder_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_reminder_scott
+        action: script.notify_clear
     - conditions:
       - condition: trigger
         id: manual_reset
@@ -258,15 +262,11 @@
           value: 0
         action: input_number.set_value
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_delivery_scott
+        action: script.notify_clear
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_reminder_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_reminder_scott
+        action: script.notify_clear
     - conditions:
       - condition: trigger
         id: mobile_reset
@@ -283,28 +283,20 @@
           value: 0
         action: input_number.set_value
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_delivery_scott
+        action: script.notify_clear
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_reminder_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_reminder_scott
+        action: script.notify_clear
     - conditions:
       - condition: trigger
         id: mobile_dismiss
       sequence:
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_delivery_scott
+        action: script.notify_clear
       - data:
-          message: clear_notification
-          data:
-            tag: mailbox_reminder_scott
-        action: notify.mobile_app_pixel_9
+          tag: mailbox_reminder_scott
+        action: script.notify_clear
   mode: queued
   max: 10

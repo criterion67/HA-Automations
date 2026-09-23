@@ -79,7 +79,15 @@
     now run only when that mowing sensor reads on, and every other case falls to an
     else branch that touches nothing and sends a notification naming the live state.
     The blocklist condition is kept so that return flickers stay silent instead of
-    generating a notification each time.'
+    generating a notification each time.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: binary_sensor.jason_momower_docked
     for:
@@ -152,20 +160,19 @@
         alias: Stop the door partway
         target:
           entity_id: cover.garage_door
-    - action: notify.mobile_app_pixel_9
+    - action: script.notify_alert
       alias: Tell Scott the mower let itself out
       data:
-        data:
-          channel: Quiet Notices
-          importance: low
-          notification_icon: mdi:robot-mower
-          priority: high
-          tag: mower_unattended
-          ttl: 0
         message: Jason MoMower undocked without a Home Assistant command. {{ 'The
           garage door was opened for it and will close automatically.' if door_was_closed
           else 'The garage door was already open, so it was left alone.' }}
         title: Mower Started On Its Own
+        tag: mower_unattended
+        channel: Quiet Notices
+        importance: low
+        priority: high
+        ttl: 0
+        icon: mdi:robot-mower
     - alias: Close the door behind the mower, only if we opened it
       if:
       - alias: We are the ones who opened it
@@ -180,20 +187,19 @@
         target:
           entity_id: cover.garage_door
     else:
-    - action: notify.mobile_app_pixel_9
+    - action: script.notify_alert
       alias: Tell Scott the undock was ignored and why
       data:
-        data:
-          channel: Quiet Notices
-          importance: low
-          notification_icon: mdi:robot-mower
-          priority: high
-          tag: mower_undock_ignored
-          ttl: 0
         message: 'Jason MoMower''s docked sensor went off but the mower is not mowing
           (state: {{ states(''sensor.jason_momower_state_name'') }}). The garage door
           was left alone. A dock power loss looks like this.'
         title: Mower Undock Ignored
+        tag: mower_undock_ignored
+        channel: Quiet Notices
+        importance: low
+        priority: high
+        ttl: 0
+        icon: mdi:robot-mower
   mode: single
   variables:
     door_was_closed: '{{ is_state(''cover.garage_door'', ''closed'') }}'

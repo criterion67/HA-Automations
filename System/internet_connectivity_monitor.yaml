@@ -1,7 +1,15 @@
 - id: '1757806464320'
   alias: Internet Connectivity Monitor
-  description: Notify + change cabinet lights when internet goes down or comes back
+  description: 'Notify + change cabinet lights when internet goes down or comes back
     up. Forces light ON for red warning.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: state
     entity_id: binary_sensor.8_8_8_8
@@ -20,9 +28,9 @@
         id: internet_down
       sequence:
       - data:
-          title: Internet Down
           message: The internet has been unreachable for 10 seconds (test).
-        action: notify.mobile_app_pixel_9
+          title: Internet Down
+        action: script.notify_alert
       - choose:
         - conditions:
           - condition: template
@@ -54,9 +62,9 @@
         id: internet_up
       sequence:
       - data:
-          title: Internet Restored
           message: The internet connection is back online.
-        action: notify.mobile_app_pixel_9
+          title: Internet Restored
+        action: script.notify_alert
       - choose:
         - conditions:
           - condition: state

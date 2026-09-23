@@ -1,17 +1,23 @@
 - id: '1718472036626'
   alias: 'Bedroom Closet Alert Notification '
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
-  - platform: state
-    entity_id:
+  - entity_id:
     - lock.bedroom_closet_door_deadbolt
     to: unlocked
+    trigger: state
   conditions: []
   actions:
-  - metadata: {}
-    data:
-      title: Bedroom Closet Alert
-      data: {}
+  - data:
       message: Closet Door was unlocked! {{now().strftime('%I:%M %p on %b %-d')}}
-    action: notify.mobile_app_pixel_9
+      title: Bedroom Closet Alert
+    action: script.notify_alert
   mode: single

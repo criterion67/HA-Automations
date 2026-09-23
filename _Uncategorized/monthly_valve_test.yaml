@@ -1,8 +1,15 @@
 - id: '1776626168259'
   alias: Monthly Valve Test
-  description: On the 1st of each month, cycles the main water valve closed then open
-    to verify it is operational. Sends a mobile notification with results. On failure,
-    sends a critical alert and creates a persistent dashboard notification.
+  description: 'On the 1st of each month, cycles the main water valve closed then
+    open to verify it is operational. Sends a mobile notification with results. On
+    failure, sends a critical alert and creates a persistent dashboard notification.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions and icon values.
+    Delivery behavior is unchanged; channel and importance policy now lives in the
+    shared script.'
   triggers:
   - at: '10:00:00'
     trigger: time
@@ -41,26 +48,25 @@
       - condition: template
         value_template: '{{ main_valve_ok }}'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: ✅ Monthly Valve Test — All Clear
           message: 'Main Water Valve passed its monthly test on {{ now().strftime(''%B
             %d, %Y'') }}.
 
             • Main Water Valve: PASS'
+          title: ✅ Monthly Valve Test — All Clear
     default:
-    - action: notify.mobile_app_pixel_9
+    - action: script.notify_alert
       data:
-        title: 🚨 Valve Test FAILURE — Action Required
         message: 'Main Water Valve failed the monthly test on {{ now().strftime(''%B
           %d, %Y'') }}.
 
           • Main Water Valve: {{ ''✅ PASS'' if main_valve_ok else ''❌ FAIL'' }}'
-        data:
-          channel: alarm_stream
-          importance: high
-          ttl: 0
-          priority: high
+        title: 🚨 Valve Test FAILURE — Action Required
+        channel: alarm_stream
+        importance: high
+        priority: high
+        ttl: 0
     - action: persistent_notification.create
       data:
         title: 🚨 VALVE TEST FAILURE — Action Required

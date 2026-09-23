@@ -36,7 +36,14 @@
 
     This automation does NOT touch the garage door, does NOT restart the mow, and
     does NOT clear any flag. It only restores the mode and reports. Anything beyond
-    that is Scott''s call with eyes on the mower.'
+    that is Scott''s call with eyes on the mower.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
+    and icon values. Delivery behavior is unchanged; channel and importance policy
+    now lives in the shared script.'
   triggers:
   - event: start
     id: ha_started
@@ -77,18 +84,9 @@
       mower, so the read back needs time for a real device poll to land.'
   - alias: Report whether the mode was actually restored
     else:
-    - action: notify.mobile_app_pixel_9
+    - action: script.notify_alert
       alias: Mode restore FAILED, hard alert
       data:
-        data:
-          channel: alarm_stream
-          importance: high
-          notification_icon: mdi:alert-octagon
-          persistent: true
-          priority: high
-          sticky: true
-          tag: mower_restart_recovery
-          ttl: 0
         message: Home Assistant restarted while a mowing cycle was active and the
           attempt to set mowing action back to Zone did not take. It reads {{ states('select.jason_momower_mowing_action')
           }}. Any remaining zone list will be ignored and the mower will run its own
@@ -96,6 +94,14 @@
           and the mower reads {{ states('sensor.jason_momower_state_name') }}. The
           cycle script was also killed, so nothing will close the door.
         title: Restart Landed Mid Mow, Zone Mode NOT Restored
+        tag: mower_restart_recovery
+        channel: alarm_stream
+        importance: high
+        priority: high
+        ttl: 0
+        persistent: true
+        sticky: true
+        icon: mdi:alert-octagon
     - action: tts.speak
       alias: Spoken alert, any hour
       data:
@@ -112,18 +118,9 @@
       entity_id: select.jason_momower_mowing_action
       state: Zone
     then:
-    - action: notify.mobile_app_pixel_9
+    - action: script.notify_alert
       alias: Recovered, but warn about the killed script
       data:
-        data:
-          channel: alarm_stream
-          importance: high
-          notification_icon: mdi:restart-alert
-          persistent: true
-          priority: high
-          sticky: true
-          tag: mower_restart_recovery
-          ttl: 0
         message: 'Home Assistant restarted while a mowing cycle was active. Mowing
           action has been set back to Zone and verified. WARNING: the running cycle
           script was killed by the restart, so the garage door close and the clearance
@@ -131,6 +128,14 @@
           }} and the mower reads {{ states(''sensor.jason_momower_state_name'') }}.
           Check the door yourself.'
         title: Restart Landed Mid Mow, Zone Mode Restored
+        tag: mower_restart_recovery
+        channel: alarm_stream
+        importance: high
+        priority: high
+        ttl: 0
+        persistent: true
+        sticky: true
+        icon: mdi:restart-alert
     - action: tts.speak
       alias: Spoken alert, any hour
       data:

@@ -6,7 +6,15 @@
 
     ENTITY RENAME 2026-08-30: sensor.galaxy_watch7_904t_battery_state became sensor.scott_s_watch_battery_state.
     The watch entities were renamed off the model number so a future watch upgrade
-    drops straight in without editing automations.'
+    drops straight in without editing automations.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id:
     - sensor.scott_s_watch_battery_state
@@ -106,7 +114,7 @@
                 media_content_id: media-source://tts/tts.home_assistant_cloud?message=Watch+is+now+fully+charged&language=en-US&voice=JennyNeural
         action: media_player.play_media
       - data:
-          title: Watch Fully Charged
           message: Your Galaxy Watch is now fully charged and ready to use.
-        action: notify.mobile_app_pixel_9
+          title: Watch Fully Charged
+        action: script.notify_alert
   mode: single

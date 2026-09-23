@@ -1,7 +1,15 @@
 - id: '1764984275601'
   alias: Master Wonkavator Print Finished TTS
-  description: Announce when Wonkavator finishes printing with speaker fallback and
+  description: 'Announce when Wonkavator finishes printing with speaker fallback and
     light cue
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.wonkavator_3d_print_status
     to: finish
@@ -60,7 +68,7 @@
           entity_id: media_player.bedroom_group
           state: unavailable
         sequence:
-        - action: notify.mobile_app_pixel_9
+        - action: script.notify_alert
           data:
             message: 'Wonkavator print {{ states(''sensor.wonkavator_3d_task_name'')
               }} has finished, but the bedroom speaker is unavailable.

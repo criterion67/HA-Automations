@@ -1,10 +1,18 @@
 - id: '1773524065682'
   alias: 'Lock Offline: Possible Dead Battery Alert'
-  description: If any lock stays unavailable past its offline window, send a notification
+  description: 'If any lock stays unavailable past its offline window, send a notification
     with Snooze 24h and Replaced options. The four Z-Wave locks use a 2 hour window.
     The bedroom closet Yale Bluetooth lock uses a 6 hour window because Bluetooth
     dropouts are more frequent and normally self recovering. Uses the same snooze
     store as the low battery alert. Replaced sets a 7 day snooze.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: state
     id: zwave_locks
@@ -44,19 +52,18 @@
         \  {{ store_raw | from_json }}\n{% endif %}"
       offline_window: '{{ ''6 hours'' if trigger.id == ''yale_ble'' else ''2 hours''
         }}'
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      title: Lock Offline - Possible Dead Battery
       message: '{{ lock_name }} has been offline for {{ offline_window }}. Battery
         may need replacing.'
-      data:
-        tag: lock_offline_{{ lock_entity }}
-        persistent: true
-        actions:
-        - action: LOCK_OFFLINE_SNOOZE|{{ lock_entity }}
-          title: Snooze 24h
-        - action: LOCK_OFFLINE_REPLACED|{{ lock_entity }}
-          title: Replaced
+      title: Lock Offline - Possible Dead Battery
+      tag: lock_offline_{{ lock_entity }}
+      actions:
+      - action: LOCK_OFFLINE_SNOOZE|{{ lock_entity }}
+        title: Snooze 24h
+      - action: LOCK_OFFLINE_REPLACED|{{ lock_entity }}
+        title: Replaced
+      persistent: true
   - wait_for_trigger:
     - trigger: event
       event_type: mobile_app_notification_action
@@ -70,11 +77,9 @@
       value_template: '{{ states(lock_entity) != ''unavailable'' }}'
     timeout: '24:00:00'
     continue_on_timeout: false
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_clear
     data:
-      message: clear_notification
-      data:
-        tag: lock_offline_{{ lock_entity }}
+      tag: lock_offline_{{ lock_entity }}
   - choose:
     - conditions:
       - condition: template

@@ -20,7 +20,15 @@
 
 
     The ef_ble Bluetooth integration is intentionally kept for output power readings
-    and device controls, which NUT does not provide.'
+    and device controls, which NUT does not provide.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - below: 20
     entity_id: sensor.efr3p_2_battery_charge
@@ -40,7 +48,7 @@
       message: EFR3P-2 battery at 20%. Shutting down UNAS Pro, UDM Pro Max, and Home
         Assistant host.
       title: ⚡ Power Outage — EFR3P-2 Low Battery
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     alias: 'Notify: mobile push to Pixel 9'
     data:
       message: EFR3P-2 battery at 20%. Shutting down network gear and HA host.

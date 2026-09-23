@@ -1,7 +1,15 @@
 - id: '1759373223573'
   alias: Energy Monitoring Plug Failsafe
-  description: Keeps all energy monitoring plugs ON. If any are turned off, they are
-    restored and a notification is sent.
+  description: 'Keeps all energy monitoring plugs ON. If any are turned off, they
+    are restored and a notification is sent.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - event: start
     id: ha_start
@@ -34,12 +42,12 @@
               entity_id: '{{ off_plugs }}'
             action: switch.turn_on
           - data:
-              title: Energy Plug Failsafe
               message: 'Turned back on at startup: {{ friendly_names | join('', '')
                 }}
 
                 '
-            action: notify.mobile_app_pixel_9
+              title: Energy Plug Failsafe
+            action: script.notify_alert
     default:
     - variables:
         off_plugs: "{{ expand(state_attr('switch.energy_monitoring_plugs_failsafe',\
@@ -57,9 +65,9 @@
             entity_id: '{{ off_plugs }}'
           action: switch.turn_on
         - data:
-            title: Energy Plug Failsafe
             message: 'Turned back on: {{ friendly_names | join('', '') }}
 
               '
-          action: notify.mobile_app_pixel_9
+            title: Energy Plug Failsafe
+          action: script.notify_alert
   mode: restart

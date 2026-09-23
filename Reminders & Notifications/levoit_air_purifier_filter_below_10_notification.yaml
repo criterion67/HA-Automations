@@ -18,7 +18,15 @@
     Dismiss write to the two shared input_datetime helpers, so snoozing one purifier
     snoozes both. Because the two filters sit only a few percent apart they are likely
     to go low around the same time; if that becomes annoying, give each unit its own
-    pair of snooze/dismiss helpers.'
+    pair of snooze/dismiss helpers.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - below: 10
     entity_id:
@@ -85,17 +93,16 @@
         value_template: '{{ as_timestamp(now()) >= (state_attr(''input_datetime.air_purifier_filter_dismiss_until'',''timestamp'')
           | float(0)) }}'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            actions:
-            - action: LEVOIT_FILTER_SNOOZE
-              title: Snooze
-            - action: LEVOIT_FILTER_DISMISS
-              title: Dismiss
           message: '{{ trigger.to_state.name if trigger.to_state is defined else ''An
             air purifier'' }} is low. Time to clean or replace the filter.'
           title: Filter Change Needed
+          actions:
+          - action: LEVOIT_FILTER_SNOOZE
+            title: Snooze
+          - action: LEVOIT_FILTER_DISMISS
+            title: Dismiss
         note: Message names the unit from the trigger, so one automation covers both
           purifiers.
   mode: single

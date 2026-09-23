@@ -54,7 +54,14 @@
     loads are left alone. It only reports silence that begins while it is running.
     So it will not alert on the Foyer temperature sensor or the two fridge humidity
     sensors, which are frozen right now. Spook does this deliberately so reloading
-    automations does not replay every sensor that has ever gone quiet.'
+    automations does not replay every sensor that has ever gone quiet.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions and icon values.
+    Delivery behavior is unchanged; channel and importance policy now lives in the
+    shared script.'
   triggers:
   - id: sensor_silent
     options:
@@ -99,18 +106,17 @@
       wait_for_trigger:
       - at: 08:00:00
         trigger: time
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     alias: Notify on the Sensor Health channel
     data:
-      data:
-        channel: Quiet Notices
-        notification_icon: mdi:timer-alert-outline
-        tag: sensor_silent_{{ trigger.entity_id }}
-        importance: low
       message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
         true) }} has reported nothing since {{ trigger.last_reported | as_local }}.
         It may still be showing a value, but that value is stale. Check its battery.'
       title: Sensor Went Silent
+      tag: sensor_silent_{{ trigger.entity_id }}
+      channel: Quiet Notices
+      importance: low
+      icon: mdi:timer-alert-outline
     note: Names the entity, says when it last spoke, and points at the battery as
       the usual cause. Deliberately NOT alarm_stream. Tag is per entity so a repeat
       for the same sensor replaces the old notification instead of stacking.

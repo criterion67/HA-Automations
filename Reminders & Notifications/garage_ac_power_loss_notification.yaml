@@ -1,9 +1,16 @@
 - id: '1720565781972'
   alias: Garage AC Power Loss Notification
-  description: ''
-  trigger:
-  - platform: state
-    entity_id:
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
+  triggers:
+  - entity_id:
     - sensor.garage_ac_plug_voltage
     attribute: Voltage
     to: '0'
@@ -11,11 +18,11 @@
       hours: 0
       minutes: 1
       seconds: 0
-  condition: []
-  action:
-  - metadata: {}
-    data:
+    trigger: state
+  conditions: []
+  actions:
+  - data:
       message: 'Garage AC Energy monitoring smart plug has detected a power loss! '
       title: 'Garage AC Power Loss! '
-    action: notify.mobile_app_pixel_9
+    action: script.notify_alert
   mode: single

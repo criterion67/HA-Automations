@@ -3,7 +3,14 @@
   description: 'Central controller for garage heat and cool based on button, temperature,
     and freeze protection.
 
-    '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: event
     event_type: zha_event
@@ -114,9 +121,9 @@
           temperature: 78
         action: climate.set_temperature
       - data:
-          title: Garage AC
           message: Garage AC has been activated due to high temperature.
-        action: notify.mobile_app_pixel_9
+          title: Garage AC
+        action: script.notify_alert
     - conditions:
       - condition: trigger
         id: dry_to_cool
@@ -139,9 +146,9 @@
           temperature: 78
         action: climate.set_temperature
       - data:
-          title: Garage AC
           message: Garage AC has switched from dry to cool.
-        action: notify.mobile_app_pixel_9
+          title: Garage AC
+        action: script.notify_alert
     - conditions:
       - condition: trigger
         id: freeze_protect
@@ -166,7 +173,7 @@
           entity_id: climate.garage_ac
         action: climate.turn_off
       - data:
-          title: Garage Heater
           message: Temperature below 42. Heat target set for freeze protection.
-        action: notify.mobile_app_pixel_9
+          title: Garage Heater
+        action: script.notify_alert
   mode: single

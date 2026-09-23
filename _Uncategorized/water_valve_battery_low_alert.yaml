@@ -1,8 +1,16 @@
 - id: '1776626196171'
   alias: Water Valve Battery Low Alert
-  description: Fires when the main water valve battery sensor drops below 15%. Sends
+  description: 'Fires when the main water valve battery sensor drops below 15%. Sends
     a critical mobile notification with battery type and quantity, creates a Google
     Calendar purchase reminder, and posts a persistent dashboard notification.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.main_water_valve_battery
     below: 15
@@ -15,17 +23,16 @@
         id: main_valve_battery
       sequence:
       - data:
-          title: 🔋 Main Water Valve Battery Low
           message: "Main Water Valve battery is at {{ states('sensor.main_water_valve_battery')\
             \ | int }}% — below the 15% threshold.\n\nBattery needed:\n  1× ER26500\
             \ 3.6V 9000mAh C Size\n  Li-SOCl₂ Lithium (Non-Rechargeable)\n\nA purchase\
             \ reminder has been added to your calendar."
-          data:
-            channel: Quiet Notices
-            importance: low
-            ttl: 0
-            priority: high
-        action: notify.mobile_app_pixel_9
+          title: 🔋 Main Water Valve Battery Low
+          channel: Quiet Notices
+          importance: low
+          priority: high
+          ttl: 0
+        action: script.notify_alert
       - target:
           entity_id: calendar.wscottfunk_gmail_com
         data:

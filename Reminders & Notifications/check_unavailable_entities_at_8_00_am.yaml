@@ -1,6 +1,17 @@
 - id: '1742348122871'
   alias: Check Unavailable Entities at 8:00 AM
-  description: ''
+  description: 'Every day at 8:00 AM, lists all entities in the unavailable state
+    and sends them to the Pixel 9. Skips the media_player domain and the entities
+    in ignored_entities, which are unavailable by design (Pixel 9 remaining charge
+    time when not charging, next alarm when none is set).
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: 08:00:00
     trigger: time
@@ -8,19 +19,22 @@
   - variables:
       ignored_domains:
       - media_player
+      ignored_entities:
+      - sensor.pixel_9_remaining_charge_time
+      - sensor.pixel_9_next_alarm
       unavailable_entities: "{{ states\n   | selectattr('state', 'eq', 'unavailable')\n\
         \   | map(attribute='entity_id')\n   | reject('match', '^(%s)\\.' % ignored_domains\
-        \ | join('|'))\n   | list }}\n"
+        \ | join('|'))\n   | reject('in', ignored_entities)\n   | list }}\n"
   - choose:
     - conditions:
       - condition: template
         value_template: '{{ unavailable_entities | length > 0 }}'
       sequence:
       - data:
-          title: Entities Still Unavailable
           message: "{% if unavailable_entities | length == 1 %}\n  The following entity\
             \ is still unavailable:\n  {{ unavailable_entities[0] }}\n{% else %}\n\
             \  The following entities are still unavailable:\n  {{ unavailable_entities\
             \ | join(', ') }}\n{% endif %}\n"
-        action: notify.mobile_app_pixel_9
+          title: Entities Still Unavailable
+        action: script.notify_alert
   mode: single

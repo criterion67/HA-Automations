@@ -55,7 +55,14 @@
 
 
     The snooze defect described above was fixed in the alerting automation on 2026-08-20;
-    its repeat while condition is now and(any sensor on, not snoozed).'
+    its repeat while condition is now and(any sensor on, not snoozed).
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions and icon values.
+    Delivery behavior is unchanged; channel and importance policy now lives in the
+    shared script.'
   triggers:
   - event_data:
       action: SNOOZE_LEAK
@@ -105,16 +112,15 @@
         timeout:
           seconds: 30
         continue_on_timeout: true
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Main Water Valve
           message: '{{ ''Water shut off at the main valve.'' if wait.completed else
             ''WARNING: the main valve did not confirm closed within 30 seconds. Check
             it manually.'' }}'
-          data:
-            channel: alarm_stream
-            importance: high
-            ttl: 0
-            priority: high
+          title: Main Water Valve
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
   max: 10
   mode: parallel

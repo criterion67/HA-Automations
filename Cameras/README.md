@@ -6,7 +6,7 @@
 |---|---|
 | Camera Quiet Mode - Activate | When Camera Quiet Mode is toggled on, disable person detection on all cameras with the Camera Snooze label and start a 1-hour timer to auto re-enable. |
 | Camera Quiet Mode - Deactivate | When the quiet mode timer expires or the toggle is manually turned off, re-enable person detection on all cameras with the Camera Snooze label. |
-| Doorbell Person or Visitor - Tablet Camera View v2.0 | When a person is detected or someone presses the G6 Pro Doorbell, wake all tablets, show the doorbell camera full screen for 30 seconds, then return to the main dashboard and turn the bathroom tablet screen back off. Bedroom and bathroom tablets run Kiosk Satellite and switch views through their dashboard view selects. The office tablet (Galaxy Tab A9+ 2) still runs Fully Kiosk until it is migrated. |
+| Doorbell Person or Visitor - Tablet Camera View v2.0 | When a person is detected or someone presses the G6 Pro Doorbell, wake the bedroom, bathroom and office tablets, show the doorbell camera full screen for 30 seconds, then return each tablet to its own dashboard (bedroom and bathroom to the main tablet dashboard, office to the Pi-hole UPS dashboard) and turn the bathroom tablet screen back off. All three tablets run Kiosk Satellite and switch views through their dashboard view selects. |
 | Water Leak Alert 1 - Triggered Response | Sounds the alarm for a detected water leak: TTS announcement on media_player.all_speakers naming the sensor, a high priority actionable push with Snooze and Dismiss, then three siren pulses on switch.ring_alarm_siren, repeating every 5 minutes until the leak clears or the alert is snoozed.
 
 Mode is restart so a second leak sensor tripping restarts the loop and re-announces with the new sensor name rather than starting a competing siren.
@@ -23,4 +23,6 @@ CLOSE WATER BUTTON ADDED 2026-08-26. The actionable push now carries three butto
 
 This automation still does NOT close the valve on its own, by deliberate choice. Automatic unconditional shutoff would mean a single false positive cuts the water while Scott is away. The shutoff stays human-in-the-loop here, with YoLink Control-D2D providing the unattended failsafe at the radio level for the power-out and internet-out case.
 
-TTS TARGET FIXED 2026-08-29. The announcement step targeted media_player.whole_house, a Music Assistant entity that no longer exists, so the spoken leak warning could not play. It now targets media_player.all_speakers, the house-wide Cast speaker group. Note that Music Assistant duplicates of these speaker groups carry a _2 suffix and are NOT valid TTS targets. |
+TTS TARGET FIXED 2026-08-29. The announcement step targeted media_player.whole_house, a Music Assistant entity that no longer exists, so the spoken leak warning could not play. It now targets media_player.all_speakers, the house-wide Cast speaker group. Note that Music Assistant duplicates of these speaker groups carry a _2 suffix and are NOT valid TTS targets.
+
+NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions and icon values. Delivery behavior is unchanged; channel and importance policy now lives in the shared script. |

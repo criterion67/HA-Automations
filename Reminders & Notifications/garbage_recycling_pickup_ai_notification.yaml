@@ -1,15 +1,23 @@
 - id: '1769749220185'
   alias: Garbage/Recycling Pickup AI Notification
-  description: On Thursday mornings between 6:00 and 7:30, a vehicle detection on
+  description: 'On Thursday mornings between 6:00 and 7:30, a vehicle detection on
     the Driveway 2 camera sends a frame to LLM Vision (Google Gemini) asking for a
     structured JSON verdict on whether the green garbage bin and blue recycling bin
-    have been collected. The prompt tells the model to ignore the homeowner's parked
+    have been collected. The prompt tells the model to ignore the homeowner''s parked
     pickup, visitor vehicles, lawn equipment, neighbors, pets, and passing traffic.
     Nothing is written to the timeline automatically. Only when pickup_detected comes
     back true does the automation create an LLM Vision timeline event labeled Truck
     and push a notification. This replaces the old version, which stored every Thursday-morning
     vehicle detection on the timeline and notified unconditionally, so any passing
     car during that window would alert.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     to: 'on'
@@ -81,12 +89,11 @@
       image_path: '{{ response.key_frame }}'
       label: Truck
       title: '{{ response.structured_response.title }}'
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      data:
-        image: /local/snapshots/garbage_pickup.png
-        tag: garbage_pickup_ai
       message: '{{ response.structured_response.description }}'
       title: Garbage/Recycling Pickup Detected! 🗑️♻️
+      tag: garbage_pickup_ai
+      image: /local/snapshots/garbage_pickup.png
   max_exceeded: silent
   mode: single

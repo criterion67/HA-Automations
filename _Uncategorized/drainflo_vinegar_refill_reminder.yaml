@@ -33,7 +33,15 @@
 
     COMPLETION PATHS. Two actions both call script.drainflo_refilled and mean the
     same thing: the Refilled button on this notification, and a tap on the refill
-    card in the dashboard notification stack.'
+    card in the dashboard notification stack.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: 09:00:00
     id: daily_check
@@ -71,23 +79,22 @@
         alias: Raise the flag that shows the dashboard refill card
         target:
           entity_id: input_boolean.drainflo_refill_active
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Send the actionable push to the Pixel 9
         data:
-          data:
-            actions:
-            - action: DRAINFLO_REFILL_SNOOZE
-              title: Snooze 7d
-            - action: DRAINFLO_REFILLED
-              title: Refilled ✓
-            channel: Quiet Notices
-            importance: low
-            notification_icon: mdi:bottle-tonic-outline
-            tag: drainflo_refill_reminder
           message: '{{ states(''input_number.drainflo_doses_remaining'') | int }}
             doses left in the attic jug. Refill it with distilled white vinegar and
             tap Refilled, or snooze for a week.'
           title: DrainFlo vinegar running low
+          tag: drainflo_refill_reminder
+          channel: Quiet Notices
+          importance: low
+          actions:
+          - action: DRAINFLO_REFILL_SNOOZE
+            title: Snooze 7d
+          - action: DRAINFLO_REFILLED
+            title: Refilled ✓
+          icon: mdi:bottle-tonic-outline
     - alias: Snooze button tapped on the notification
       conditions:
       - condition: trigger

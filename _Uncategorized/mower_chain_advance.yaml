@@ -43,7 +43,14 @@
 
 
     DOES NOT USE input_boolean.mower_full_yard_cycle. That marker enables the old
-    mid-mow gate prompts and is deliberately left alone here.'
+    mid-mow gate prompts and is deliberately left alone here.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
+    and icon values. Delivery behavior is unchanged; channel and importance policy
+    now lives in the shared script.'
   triggers:
   - entity_id: binary_sensor.jason_momower_docked
     for: 00:03:00
@@ -76,18 +83,17 @@
           option: Side Yard
         target:
           entity_id: input_select.mower_chain_leg
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Quiet Notices
-            importance: low
-            notification_icon: mdi:gate
-            priority: high
-            tag: mower_chain
-            ttl: 0
           message: Gate is confirmed closed. Starting the final leg, the side yard.
             Battery is {{ states('sensor.jason_momower_battery') }} percent.
           title: Chain Resuming, Side Yard
+          tag: mower_chain
+          channel: Quiet Notices
+          importance: low
+          priority: high
+          ttl: 0
+          icon: mdi:gate
       - action: script.mower_zone_cycle
         data:
           zone_ids:
@@ -122,23 +128,22 @@
           option: Front Yard
         target:
           entity_id: input_select.mower_chain_leg
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: The gate prompt, now fired off a real dock instead of a lying zone
           sensor
         data:
-          data:
-            channel: alarm_stream
-            importance: high
-            notification_icon: mdi:gate-arrow-right
-            priority: high
-            sticky: true
-            tag: mower_gate
-            ttl: 0
           message: Rear yard is finished and Jason MoMower has docked. Go close the
             side gate now. The front yard leg is starting and takes about 55 minutes,
             so there is no rush, but the gate must be shut before the side yard leg
             begins. Battery is {{ states('sensor.jason_momower_battery') }} percent.
           title: Rear Yard Done, Close The Side Gate
+          tag: mower_gate
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          sticky: true
+          icon: mdi:gate-arrow-right
       - action: tts.speak
         data:
           cache: false
@@ -185,19 +190,18 @@
           option: Side Yard
         target:
           entity_id: input_select.mower_chain_leg
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Quiet Notices
-            importance: low
-            notification_icon: mdi:robot-mower
-            priority: high
-            tag: mower_chain
-            ttl: 0
           message: Front yard is finished and the gate is confirmed closed. Starting
             the final leg, the side yard. Battery is {{ states('sensor.jason_momower_battery')
             }} percent.
           title: Front Yard Done, Starting Side Yard
+          tag: mower_chain
+          channel: Quiet Notices
+          importance: low
+          priority: high
+          ttl: 0
+          icon: mdi:robot-mower
       - action: script.mower_zone_cycle
         data:
           zone_ids:
@@ -232,21 +236,20 @@
           option: Waiting For Gate
         target:
           entity_id: input_select.mower_chain_leg
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: alarm_stream
-            importance: high
-            notification_icon: mdi:gate-alert
-            priority: high
-            sticky: true
-            tag: mower_gate
-            ttl: 0
           message: Front yard is finished and the mower is docked, but the rear yard
             gate reads {{ states('binary_sensor.rear_yard_gate') }} rather than closed.
             The side yard leg is ON HOLD and will start automatically the moment the
             gate sensor reports closed. Nothing is running until then.
           title: Chain Held, Gate Not Confirmed Closed
+          tag: mower_gate
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          sticky: true
+          icon: mdi:gate-alert
       - action: tts.speak
         data:
           cache: false
@@ -286,20 +289,19 @@
           option: Idle
         target:
           entity_id: input_select.mower_chain_leg
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Quiet Notices
-            importance: low
-            notification_icon: mdi:check-decagram
-            priority: high
-            tag: mower_chain
-            ttl: 0
           message: All three legs finished and reported the task complete. Rear, front
             and side are all mowed and Jason MoMower is docked and charging on {{
             states('sensor.jason_momower_battery') }} percent. The chain is back to
             Idle.
           title: Whole Yard Complete
+          tag: mower_chain
+          channel: Quiet Notices
+          importance: low
+          priority: high
+          ttl: 0
+          icon: mdi:check-decagram
       - action: tts.speak
         data:
           cache: false
@@ -337,16 +339,8 @@
           option: Idle
         target:
           entity_id: input_select.mower_chain_leg
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: alarm_stream
-            importance: high
-            notification_icon: mdi:alert-octagon
-            priority: high
-            sticky: true
-            tag: mower_chain
-            ttl: 0
           message: A mowing leg ended without a clean completion, so the chain has
             STOPPED rather than starting the next leg. Status notice reads {{ states('sensor.jason_momower_status_notice')
             }}, error reads {{ states('sensor.jason_momower_error') }}, cycle flag
@@ -355,6 +349,13 @@
             }}. Battery is {{ states('sensor.jason_momower_battery') }} percent. Check
             what got skipped before assuming the yard is done.
           title: Chain Stopped, Leg Did Not Complete
+          tag: mower_chain
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          sticky: true
+          icon: mdi:alert-octagon
       - action: tts.speak
         data:
           cache: false

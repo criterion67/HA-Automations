@@ -27,7 +27,13 @@
     \ because sensor.jason_momower_error already drives two alerts in automation.mower_garage_return\
     \ and a third here would be noise. It does not restart or resume anything. It\
     \ reports, and Scott decides.\n\nThe notification quotes the raw notice text so\
-    \ an unexpected value is diagnosable rather than mysterious."
+    \ an unexpected value is diagnosable rather than mysterious.\n\nNOTIFY WRAPPER\
+    \ 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert\
+    \ (or script.notify_clear for clear_notification) with the same message, title,\
+    \ tag, channel, importance, priority, ttl, actions, sticky, persistent, color,\
+    \ image, url and icon values, and target set to watch or bill where the call went\
+    \ to those devices. Delivery behavior is unchanged; channel and importance policy\
+    \ now lives in the shared scripts."
   triggers:
   - entity_id: sensor.jason_momower_state_name
     id: heading_home
@@ -73,18 +79,17 @@
       state: none
     then:
     - alias: Tell Scott the job ended early, and quote what the mower did say
-      action: notify.mobile_app_pixel_9
+      action: script.notify_alert
       data:
-        title: Mowing Job Ended Early
         message: Jason MoMower docked without reporting the task complete, on {{ states('sensor.jason_momower_battery')
           }} percent battery and with no error. Status notice read "{{ notice_at_return
           }}". Check which zone got shorted before assuming the yard is done.
-        data:
-          tag: mower_incomplete
-          sticky: true
-          importance: low
-          priority: high
-          channel: Quiet Notices
-          ttl: 0
-          notification_icon: mdi:robot-mower-outline
+        title: Mowing Job Ended Early
+        tag: mower_incomplete
+        channel: Quiet Notices
+        importance: low
+        priority: high
+        ttl: 0
+        sticky: true
+        icon: mdi:robot-mower-outline
   mode: single

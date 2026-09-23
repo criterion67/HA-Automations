@@ -1,6 +1,14 @@
 - id: '1718479224079'
   alias: Rudy's Heater Offline Alert (New)
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - device_id: b1d404f2cf619b0becc88158a23fea62
     domain: zha
@@ -10,7 +18,7 @@
     id: Garage Heater
   conditions: []
   actions:
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
       message: 'Rudy''s heater is offline. '
       title: Offline notification

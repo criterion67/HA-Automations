@@ -56,7 +56,15 @@
     which runs a real 110 second dose immediately regardless of the date, verifies
     the relay actually closed, decrements the jug counter and notifies. Scanning the
     bottle therefore doses the drain line rather than just claiming it was done. Note
-    this spends a dose from the counter, same as any other dose.'
+    this spends a dose from the counter, same as any other dose.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - id: front_door
     tag_id: eff1012d-ee57-4eec-838c-9edcd248eb05
@@ -207,7 +215,7 @@
       - action: lock.unlock
         target:
           entity_id: lock.laundry_room_door_deadbolt
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
           message: Garage notification
           title: Garage door open/Laundry room door unlocked

@@ -1,9 +1,10 @@
 - id: '1762155215972'
   alias: Bathroom Lighting Control (Presence + TV v2.3)
   description: Smart bathroom lighting tied to bedroom TV activity and mmWave presence
-    with corrected overnight time handling. The bathroom tablet screen is controlled
-    through Kiosk Satellite (light.bathroom_tablet_kiosk_screen), replacing the retired
-    Fully Kiosk screen switch.
+    with corrected overnight time handling. The bathroom tablet screen (Kiosk Satellite,
+    light.bathroom_tablet_kiosk_screen) turns on when presence is detected and off
+    when presence clears or the bedroom TV starts playing, replacing the camera motion
+    wake the retired Fully Kiosk app used to provide.
   triggers:
   - entity_id: binary_sensor.bathroom_presence_radar_target
     to: 'on'
@@ -45,6 +46,11 @@
         data:
           datetime: '{{ now().isoformat() }}'
         action: input_datetime.set_datetime
+      - alias: Wake bathroom tablet screen
+        action: light.turn_on
+        target:
+          entity_id: light.bathroom_tablet_kiosk_screen
+        continue_on_error: true
       - choose:
         - conditions:
           - condition: or

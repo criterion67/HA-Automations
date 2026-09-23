@@ -1,7 +1,15 @@
 - id: '1745720049235'
   alias: Dishwasher Cycle Timer and Pod Tracker
-  description: Monitors dishwasher cycles, sends notifications, manages pod usage,
+  description: 'Monitors dishwasher cycles, sends notifications, manages pod usage,
     and stores start time for cycle countdown.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.dishwasher_pm_electric_consumption_w
     above: 5
@@ -43,10 +51,10 @@
           - light.bedroom_ceiling_lights
         action: light.turn_on
       - data:
-          title: Dishwasher Status
           message: Dishwasher cycle started running at {{now().strftime('%I:%M %p
             on %b %-d')}}
-        action: notify.mobile_app_pixel_9
+          title: Dishwasher Status
+        action: script.notify_alert
       - data:
           option: Running
         target:
@@ -84,9 +92,9 @@
         state: Running
       sequence:
       - data:
-          title: Dishwasher Status
           message: Dishwasher cycle finished at {{now().strftime('%I:%M %p on %b %-d')}}
-        action: notify.mobile_app_pixel_9
+          title: Dishwasher Status
+        action: script.notify_alert
       - data:
           option: 'Off'
         target:

@@ -1,6 +1,14 @@
 - id: '1759297625936'
   alias: System - Deprecation Warning Alert
-  description: Notifies when a deprecation warning appears in the HA logs.
+  description: 'Notifies when a deprecation warning appears in the HA logs.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - event_type: system_log_event
     event_data:
@@ -13,11 +21,11 @@
       '
   actions:
   - data:
-      title: ⚠️ Home Assistant Deprecation
       message: 'A deprecation warning was logged: {{ trigger.event.data.message }}
 
         '
-    action: notify.mobile_app_pixel_9
+      title: ⚠️ Home Assistant Deprecation
+    action: script.notify_alert
   - data:
       title: Home Assistant Deprecation Warning
       message: '{{ trigger.event.data.message }}

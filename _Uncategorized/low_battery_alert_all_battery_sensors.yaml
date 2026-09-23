@@ -42,7 +42,15 @@
 
     The single template lives in variables so the condition and the notification share
     one scan of the state machine. There is no native condition for counting entities
-    that match a device class, which is why a template is used in the condition position.'
+    that match a device class, which is why a template is used in the condition position.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: 09:30:00
     id: daily_check
@@ -51,15 +59,14 @@
   - condition: template
     value_template: '{{ low_body | trim | length > 0 }}'
   actions:
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      data:
-        channel: Quiet Notices
-        importance: low
-        notification_icon: mdi:battery-alert
-        tag: low_battery_daily
       message: '{{ low_body }}'
       title: Low Battery
+      tag: low_battery_daily
+      channel: Quiet Notices
+      importance: low
+      icon: mdi:battery-alert
   mode: single
   variables:
     low_body: '{%- set ns = namespace(pct=[], flag=[]) -%}

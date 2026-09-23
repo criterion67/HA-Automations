@@ -3,7 +3,15 @@
   description: 'Contact sensor to monitor whether rear yard gate is open or closed.
     SUPPRESSED during a full yard mowing cycle: when input_boolean.mower_full_yard_cycle
     is on, the gate is intentionally open so the mower can reach the rear yard, and
-    automation.mower_gate_reminders owns the messaging.'
+    automation.mower_gate_reminders owns the messaging.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: state
     entity_id: binary_sensor.rear_yard_gate
@@ -39,5 +47,5 @@
   - data:
       message: Side gate was opened at {{ now().strftime('%I:%M %p on %b %-d') }}
       title: Gate Notification
-    action: notify.mobile_app_pixel_9
+    action: script.notify_alert
   mode: single

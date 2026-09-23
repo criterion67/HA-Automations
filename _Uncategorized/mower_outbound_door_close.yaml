@@ -36,7 +36,15 @@
     if the script survived long enough to reach it. A job that both fails to start
     the mower AND raises early would leave the door open with nothing to close it.
     The mower is not outside in that scenario, so it is a security gap rather than
-    a safety one, but it is a real gap and worth closing later.'
+    a safety one, but it is a real gap and worth closing later.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: binary_sensor.jason_momower_docked
     for:
@@ -79,16 +87,15 @@
       value closed the door on the mower. Do not shorten this.'
   - alias: Close the door, but only if it is actually open
     else:
-    - action: notify.mobile_app_pixel_9
+    - action: script.notify_alert
       alias: Door was already shut, say so rather than pulsing it
       data:
-        data:
-          notification_icon: mdi:garage-alert
-          tag: mower_outbound_close
         message: The outbound door close ran but the garage door already read {{ states('cover.garage_door')
           }}, so no pulse was sent. If it reads unavailable the opener has dropped
           off the network and the door may still be open.
         title: Outbound Close Skipped
+        tag: mower_outbound_close
+        icon: mdi:garage-alert
     if:
     - alias: Door reads exactly open
       condition: state

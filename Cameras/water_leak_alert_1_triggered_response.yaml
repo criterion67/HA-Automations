@@ -69,7 +69,14 @@
     a Music Assistant entity that no longer exists, so the spoken leak warning could
     not play. It now targets media_player.all_speakers, the house-wide Cast speaker
     group. Note that Music Assistant duplicates of these speaker groups carry a _2
-    suffix and are NOT valid TTS targets.'
+    suffix and are NOT valid TTS targets.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions and icon values.
+    Delivery behavior is unchanged; channel and importance policy now lives in the
+    shared script.'
   triggers:
   - entity_id:
     - binary_sensor.dishwasher_leak_sensor_1
@@ -139,22 +146,21 @@
           2026-08-29 after that Music Assistant entity was found dead, which had silenced
           this announcement.
       - data:
-          title: 🚨 URGENT - Water Leak Detected!
           message: Leak detected at {{ triggered_sensor }}. Tap Close Water to shut
             off the main valve.
-          data:
-            actions:
-            - action: CLOSE_WATER
-              title: Close Water
-            - action: SNOOZE_LEAK
-              title: Snooze
-            - action: DISMISS_LEAK
-              title: Dismiss
-            channel: alarm_stream
-            importance: high
-            ttl: 0
-            priority: high
-        action: notify.mobile_app_pixel_9
+          title: 🚨 URGENT - Water Leak Detected!
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          actions:
+          - action: CLOSE_WATER
+            title: Close Water
+          - action: SNOOZE_LEAK
+            title: Snooze
+          - action: DISMISS_LEAK
+            title: Dismiss
+        action: script.notify_alert
       - delay: 00:00:10
       - alias: Three siren pulses on the Ring Alarm siren
         repeat:

@@ -70,7 +70,14 @@
 
 
     SAFETY: the opener photo eyes remain the physical backstop and will reverse the
-    door if the mower is in the doorway while it closes.'
+    door if the mower is in the doorway while it closes.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
+    and icon values. Delivery behavior is unchanged; channel and importance policy
+    now lives in the shared script.'
   triggers:
   - entity_id: binary_sensor.jason_momower_returning
     id: returning
@@ -126,14 +133,14 @@
             cache: false
             message: Jason MoMower has finished mowing and is returning to the garage
               to dock.
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Notify Scott that the mower is heading back
         note: Deliberately NOT time gated. The spoken announcement is limited to 07:00-19:00
           so it cannot wake Scott, but a phone notification is quiet enough to be
           useful around the clock.
         data:
-          title: Mower Returning
           message: Jason MoMower has finished mowing and is heading back to the dock.
+          title: Mower Returning
       - condition: state
         entity_id: cover.garage_door
         state: closed
@@ -182,7 +189,7 @@
         alias: Clear the suppression flag, ending the cycle
         target:
           entity_id: input_boolean.mower_cycle_active
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
           message: Jason MoMower has docked and the garage door is closed.
           title: Mower Cycle Complete
@@ -210,26 +217,25 @@
             cache: false
             message: Jason MoMower has reported a problem. The error is {{ states("sensor.jason_momower_error")
               }}.
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Jason MoMower Error
           message: 'The mower reported a problem during a mowing cycle and may not
             make it back to the dock. The garage door is currently {{ states("cover.garage_door")
             }}. Error: {{ states("sensor.jason_momower_error") }}'
-          data:
-            actions:
-            - action: MOWER_CLOSE_GARAGE
-              title: Close Garage
-            - action: MOWER_LEAVE_OPEN
-              title: Leave Open
-            tag: mower_error
-            persistent: true
-            sticky: true
-            importance: high
-            priority: high
-            channel: alarm_stream
-            ttl: 0
-            notification_icon: mdi:robot-mower
+          title: Jason MoMower Error
+          tag: mower_error
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          actions:
+          - action: MOWER_CLOSE_GARAGE
+            title: Close Garage
+          - action: MOWER_LEAVE_OPEN
+            title: Leave Open
+          persistent: true
+          sticky: true
+          icon: mdi:robot-mower
         note: Updated 2026-08-14. channel alarm_stream, priority high and ttl 0 copied
           verbatim from automation.david_mowie_stuck_or_error_alert so this sounds
           through silent mode like the Ecovacs alert does. sticky true means a clear-all
@@ -250,27 +256,26 @@
           entity_id: sensor.jason_momower_state_name
           state: mowing
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Escalated stuck alert
         data:
-          title: Jason MoMower Is Stuck
           message: 'Jason MoMower has been in an error state for over 5 minutes and
             has stopped. Error: {{ states("sensor.jason_momower_error") }}. The garage
             door is currently {{ states("cover.garage_door") }}.'
-          data:
-            actions:
-            - action: MOWER_CLOSE_GARAGE
-              title: Close Garage
-            - action: MOWER_LEAVE_OPEN
-              title: Leave Open
-            tag: mower_stuck
-            persistent: true
-            sticky: true
-            importance: high
-            priority: high
-            channel: alarm_stream
-            ttl: 0
-            notification_icon: mdi:robot-mower
+          title: Jason MoMower Is Stuck
+          tag: mower_stuck
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          actions:
+          - action: MOWER_CLOSE_GARAGE
+            title: Close Garage
+          - action: MOWER_LEAVE_OPEN
+            title: Leave Open
+          persistent: true
+          sticky: true
+          icon: mdi:robot-mower
       - action: tts.speak
         alias: Announce the stall, any hour
         note: Deliberately NOT time gated, unlike the first stage. By this point the

@@ -1,7 +1,15 @@
 - id: '1726420403753'
   alias: Dog Water Bowl Monitor & Reminder
-  description: Monitors dog water bowl level, sends alerts when empty, and notifies
+  description: 'Monitors dog water bowl level, sends alerts when empty, and notifies
     when refilled. Active daily between 7 AM and 10 PM.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: state
     entity_id: binary_sensor.dog_bowl_water_level
@@ -36,9 +44,9 @@
           entity_id: input_boolean.dog_bowl_notification
         action: input_boolean.turn_on
       - data:
-          title: Dog's Water Bowl Alert!
           message: Dog's water bowl is empty. Please refill as soon as possible.
-        action: notify.mobile_app_pixel_9
+          title: Dog's Water Bowl Alert!
+        action: script.notify_alert
       - target:
           entity_id: media_player.bedroom_group
         data:
@@ -58,9 +66,9 @@
           entity_id: input_boolean.dog_bowl_notification
         action: input_boolean.turn_off
       - data:
-          title: Dog's Water Bowl Alert!
           message: Dog's water bowl has been refilled.
-        action: notify.mobile_app_pixel_9
+          title: Dog's Water Bowl Alert!
+        action: script.notify_alert
       - target:
           entity_id: media_player.bedroom_group
         data:

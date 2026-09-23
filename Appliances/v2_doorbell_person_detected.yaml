@@ -1,19 +1,27 @@
 - id: '1746302122163'
   alias: V2- Doorbell - Person Detected
-  description: G6 Pro Doorbell person detection triggers cooldown, bedroom alert light,
-    notification, and camera stream to bedroom TV. Pauses active TV playback before
-    stream and resumes after 1 minute. Only runs when Scott is home. On HA restart,
-    resets any stuck cooldown boolean.
+  description: 'G6 Pro Doorbell person detection triggers cooldown, bedroom alert
+    light, notification, and camera stream to bedroom TV. Pauses active TV playback
+    before stream and resumes after 1 minute. Only runs when Scott is home. On HA
+    restart, resets any stuck cooldown boolean.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
-  - platform: state
-    entity_id:
+  - entity_id:
     - binary_sensor.g6_pro_doorbell_person_detected
     from: 'off'
     to: 'on'
     id: person_detected
-  - platform: homeassistant
-    event: start
+    trigger: state
+  - event: start
     id: ha_start
+    trigger: homeassistant
   actions:
   - choose:
     - conditions:
@@ -101,7 +109,7 @@
         data: {}
       - alias: Send person detected notification
         data:
-          title: Person Detected!
           message: There's a person at the front door!
-        action: notify.mobile_app_pixel_9
+          title: Person Detected!
+        action: script.notify_alert
   mode: single

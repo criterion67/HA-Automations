@@ -40,7 +40,15 @@
     start of a cook, as observed on 2026-08-30 when internal held at 39.2 F from 18:40
     to 19:00 with ambient already past 200 F. Fifteen minutes after any session ends,
     if the oven side probe still reads over 200 F, it warns that the oven may have
-    been left on.'
+    been left on.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: input_select.cook_food_type
     id: food_selected
@@ -123,17 +131,16 @@
       - condition: trigger
         id: session_started
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            color: '#2196F3'
-            notification_icon: mdi:chef-hat
-            tag: cook_status
           message: '{{ states(''input_select.cook_food_type'') }}. Target {{ states(''input_number.cook_target_temp'')
             | int }} F. Probe now reads {{ states(probe) }} F, oven side {{ states(''sensor.kitchen_thermopro_1_probe_1_ambient_temperature'')
             }} F.'
           title: Cooking monitor started
+          tag: cook_status
+          channel: Cooking
+          color: '#2196F3'
+          icon: mdi:chef-hat
     - alias: Ten degrees from target
       conditions:
       - condition: trigger
@@ -142,27 +149,26 @@
         entity_id: input_boolean.cook_session_active
         state: 'on'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            color: '#FF9800'
-            importance: high
-            notification_icon: mdi:thermometer-chevron-up
-            priority: high
-            tag: cook_status
-            ttl: 0
           message: '{{ states(probe) | int }} F internal, target {{ states(''input_number.cook_target_temp'')
             | int }} F. Roughly 10 degrees to go.'
           title: Almost there
-      - action: notify.mobile_app_galaxy_watch7_904t
+          tag: cook_status
+          channel: Cooking
+          importance: high
+          priority: high
+          ttl: 0
+          color: '#FF9800'
+          icon: mdi:thermometer-chevron-up
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            tag: cook_status
           message: '{{ states(probe) | int }} F of {{ states(''input_number.cook_target_temp'')
             | int }} F'
           title: Almost there
+          tag: cook_status
+          channel: Cooking
+          target: watch
       - action: media_player.volume_set
         alias: Set the bedroom speaker level
         continue_on_error: true
@@ -202,34 +208,33 @@
         entity_id: input_boolean.cook_session_active
         state: 'on'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            actions:
-            - action: COOK_DISARM
-              title: Done, stop alerts
-            channel: Cooking
-            color: '#4CAF50'
-            importance: high
-            notification_icon: mdi:thermometer-check
-            priority: high
-            sticky: true
-            tag: cook_status
-            ttl: 0
           message: '{{ states(''input_select.cook_food_type'') }} hit {{ states(probe)
             | int }} F, target {{ states(''input_number.cook_target_temp'') | int
             }} F.{{ '' Rest at least 3 minutes before carving.'' if states(''input_number.cook_target_temp'')
             | float(0) == 145 else '''' }}'
           title: Pull it now
-      - action: notify.mobile_app_galaxy_watch7_904t
+          tag: cook_status
+          channel: Cooking
+          importance: high
+          priority: high
+          ttl: 0
+          actions:
+          - action: COOK_DISARM
+            title: Done, stop alerts
+          sticky: true
+          color: '#4CAF50'
+          icon: mdi:thermometer-check
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            importance: high
-            tag: cook_status
-            ttl: 0
           message: '{{ states(probe) | int }} F, target reached'
           title: Pull it now
+          tag: cook_status
+          channel: Cooking
+          importance: high
+          ttl: 0
+          target: watch
       - action: media_player.volume_set
         alias: Set the bedroom speaker level
         continue_on_error: true
@@ -273,32 +278,31 @@
       sequence:
       - repeat:
           sequence:
-          - action: notify.mobile_app_pixel_9
+          - action: script.notify_alert
             data:
-              data:
-                actions:
-                - action: COOK_DISARM
-                  title: Done, stop alerts
-                channel: Cooking
-                color: '#E53935'
-                importance: high
-                notification_icon: mdi:thermometer-alert
-                priority: high
-                sticky: true
-                tag: cook_status
-                ttl: 0
               message: '{{ states(probe) | int }} F is past the {{ states(''input_number.cook_target_temp'')
                 | int }} F target. Take it out of the oven.'
               title: Overcooking
-          - action: notify.mobile_app_galaxy_watch7_904t
+              tag: cook_status
+              channel: Cooking
+              importance: high
+              priority: high
+              ttl: 0
+              actions:
+              - action: COOK_DISARM
+                title: Done, stop alerts
+              sticky: true
+              color: '#E53935'
+              icon: mdi:thermometer-alert
+          - action: script.notify_alert
             data:
-              data:
-                channel: Cooking
-                importance: high
-                tag: cook_status
-                ttl: 0
               message: '{{ states(probe) | int }} F, over target'
               title: Overcooking
+              tag: cook_status
+              channel: Cooking
+              importance: high
+              ttl: 0
+              target: watch
           - action: media_player.volume_set
             alias: Set the bedroom speaker level
             continue_on_error: true
@@ -360,15 +364,14 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.cook_session_active
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            notification_icon: mdi:chef-hat-off
-            tag: cook_autoreset
           message: The probe went offline for 30 minutes, so the cooking monitor disarmed
             itself. Nothing is being watched now.
           title: Cooking monitor auto reset
+          tag: cook_autoreset
+          channel: Cooking
+          icon: mdi:chef-hat-off
     - alias: Midnight backstop, disarm only if the cook is clearly finished
       conditions:
       - condition: trigger
@@ -387,30 +390,26 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.cook_session_active
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            notification_icon: mdi:chef-hat-off
-            tag: cook_autoreset
           message: The cooking monitor was still armed at midnight and the cook looked
             finished, so it disarmed itself. The probe reads {{ states(probe) }}.
           title: Cooking monitor auto reset
+          tag: cook_autoreset
+          channel: Cooking
+          icon: mdi:chef-hat-off
     - alias: Session ended, clear notifications then check the oven
       conditions:
       - condition: trigger
         id: session_ended
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_clear
         data:
-          data:
-            tag: cook_status
-          message: clear_notification
-      - action: notify.mobile_app_galaxy_watch7_904t
+          tag: cook_status
+      - action: script.notify_clear
         data:
-          data:
-            tag: cook_status
-          message: clear_notification
+          tag: cook_status
+          target: watch
       - delay:
           minutes: 15
       - if:
@@ -418,20 +417,19 @@
           entity_id: sensor.kitchen_thermopro_1_probe_1_ambient_temperature
           above: 200
         then:
-        - action: notify.mobile_app_pixel_9
+        - action: script.notify_alert
           data:
-            title: Oven may still be on
             message: The cooking monitor is off but the oven side probe still reads
               {{ states('sensor.kitchen_thermopro_1_probe_1_ambient_temperature')
               | int }} F. Check whether the oven is still running.
-            data:
-              channel: Cooking
-              tag: cook_oven_hot
-              importance: high
-              priority: high
-              ttl: 0
-              color: '#E53935'
-              notification_icon: mdi:stove
+            title: Oven may still be on
+            tag: cook_oven_hot
+            channel: Cooking
+            importance: high
+            priority: high
+            ttl: 0
+            color: '#E53935'
+            icon: mdi:stove
         alias: Fifteen minutes after the session ends, warn if the oven is still hot
     - alias: Probe offline for 5 minutes during a session
       conditions:
@@ -441,33 +439,31 @@
         entity_id: input_boolean.cook_session_active
         state: 'on'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            color: '#FF5722'
-            importance: high
-            notification_icon: mdi:bluetooth-off
-            priority: high
-            tag: cook_probe_lost
-            ttl: 0
           message: The meat probe has reported nothing for 5 minutes. Check that the
             transmitter is powered and in range of the kitchen Bluetooth proxy.
           title: Probe lost
+          tag: cook_probe_lost
+          channel: Cooking
+          importance: high
+          priority: high
+          ttl: 0
+          color: '#FF5722'
+          icon: mdi:bluetooth-off
     - alias: Probe battery low
       conditions:
       - condition: trigger
         id: battery_low
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            channel: Cooking
-            notification_icon: mdi:battery-alert
-            tag: cook_probe_battery
           message: The meat probe battery is at {{ states('sensor.kitchen_thermopro_1_probe_1_battery')
             }} percent.
           title: Meat probe battery low
+          tag: cook_probe_battery
+          channel: Cooking
+          icon: mdi:battery-alert
     - alias: Internal temp stalled while the oven is hot
       conditions:
       - condition: trigger
@@ -482,21 +478,20 @@
         entity_id: sensor.kitchen_thermopro_1_probe_1_internal_temperature
         above: 60
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Cook has stalled
           message: Internal temp has barely moved for 20 minutes at {{ states(probe)
             | int }} F while the oven side still reads {{ states('sensor.kitchen_thermopro_1_probe_1_ambient_temperature')
             | int }} F. Check the oven door, the oven itself, and that the probe has
             not worked loose.
-          data:
-            channel: Cooking
-            tag: cook_stall
-            importance: high
-            priority: high
-            ttl: 0
-            color: '#FF5722'
-            notification_icon: mdi:thermometer-off
+          title: Cook has stalled
+          tag: cook_stall
+          channel: Cooking
+          importance: high
+          priority: high
+          ttl: 0
+          color: '#FF5722'
+          icon: mdi:thermometer-off
   max: 10
   mode: parallel
   variables:

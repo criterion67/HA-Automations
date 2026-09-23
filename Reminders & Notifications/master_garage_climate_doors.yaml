@@ -45,7 +45,15 @@
 
 
     KNOWN LIMITATION: resume always returns to cool. If the AC was in dry when the
-    garage door opened, it comes back in cool.'
+    garage door opened, it comes back in cool.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: cover.garage_door
     for: 00:03:00
@@ -110,19 +118,16 @@
         alias: Clear the off-notified flag
         target:
           entity_id: input_boolean.garage_ac_off_notified
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_clear
         alias: Clear any standing safety-net alert
         data:
-          data:
-            tag: garage_climate_alert
-          message: clear_notification
-      - action: notify.mobile_app_pixel_9
+          tag: garage_climate_alert
+      - action: script.notify_alert
         alias: Tell Scott the AC is back on
         data:
-          data:
-            channel: Garage Safety
-            importance: high
-            tag: garage_climate_resume
           message: Garage door closed. Garage AC has resumed cooling.
           title: Garage Climate
+          tag: garage_climate_resume
+          channel: Garage Safety
+          importance: high
   mode: single

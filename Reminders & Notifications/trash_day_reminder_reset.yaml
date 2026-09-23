@@ -1,7 +1,15 @@
 - id: '1726712803952'
   alias: Trash Day Reminder & Reset
-  description: Trash day is Thursday. Tomorrow chip shows Wed, Today chip shows Thu.
+  description: 'Trash day is Thursday. Tomorrow chip shows Wed, Today chip shows Thu.
     Safety reset runs Fri midnight.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: '18:00:00'
     id: 6pm
@@ -74,10 +82,10 @@
         target:
           entity_id: input_boolean.trash_day_tomorrow
         data: {}
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Trash Day Reminder
           message: Trash Day is Tomorrow
+          title: Trash Day Reminder
     - conditions:
       - condition: trigger
         id: 10pm
@@ -139,10 +147,10 @@
         weekday:
         - thu
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Trash Day Reminder
           message: Trash Day is Today
+          title: Trash Day Reminder
     - conditions:
       - condition: trigger
         id: 830am

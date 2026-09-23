@@ -18,7 +18,15 @@
     TTS TRUNCATION TEST, 2026-08-30: the TTS step was converted from media_player.play_media
     to tts.speak with cache true and preferred_sample_rate 44100, to test whether
     the sample rate is why the Cast speakers cut the sentence short. If this does
-    not fix it, shorten the message instead.'
+    not fix it, shorten the message instead.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - id: parcel_box_open
     entity_id: binary_sensor.parcel_box_contact
@@ -135,22 +143,22 @@
           a media_player.play_media step with media_content_id media-source://tts/tts.home_assistant_cloud?message=A+delivery+has+been+made+to+the+parcel+box+on+the+front+porch+&language=en-US&voice=JennyNeural
           and media_content_type provider.
       - data:
-          title: Parcel Delivery
           message: A package was delivered to the front porch parcel box at {{ now().strftime('%I:%M
             %p on %b %-d') }}
-          data:
-            tag: parcel_delivery_scott
-            actions:
-            - action: PARCEL_RESET
-              title: Reset
-            - action: PARCEL_DISMISS
-              title: Dismiss
-        action: notify.mobile_app_pixel_9
+          title: Parcel Delivery
+          tag: parcel_delivery_scott
+          actions:
+          - action: PARCEL_RESET
+            title: Reset
+          - action: PARCEL_DISMISS
+            title: Dismiss
+        action: script.notify_alert
       - data:
-          title: Parcel Delivery
           message: A package was delivered to the front porch parcel box at {{ now().strftime('%I:%M
             %p on %b %-d') }}
-        action: notify.mobile_app_bills_phone
+          title: Parcel Delivery
+          target: bill
+        action: script.notify_alert
     - conditions:
       - condition: trigger
         id: manual_reset
@@ -164,10 +172,8 @@
         action: input_boolean.turn_off
         data: {}
       - data:
-          message: clear_notification
-          data:
-            tag: parcel_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: parcel_delivery_scott
+        action: script.notify_clear
     - conditions:
       - condition: trigger
         id: daily_reset
@@ -177,10 +183,8 @@
         action: input_boolean.turn_off
         data: {}
       - data:
-          message: clear_notification
-          data:
-            tag: parcel_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: parcel_delivery_scott
+        action: script.notify_clear
     - conditions:
       - condition: trigger
         id: mobile_reset
@@ -190,17 +194,13 @@
         action: input_boolean.turn_off
         data: {}
       - data:
-          message: clear_notification
-          data:
-            tag: parcel_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: parcel_delivery_scott
+        action: script.notify_clear
     - conditions:
       - condition: trigger
         id: mobile_dismiss
       sequence:
       - data:
-          message: clear_notification
-          data:
-            tag: parcel_delivery_scott
-        action: notify.mobile_app_pixel_9
+          tag: parcel_delivery_scott
+        action: script.notify_clear
   mode: single

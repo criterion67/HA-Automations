@@ -45,23 +45,30 @@
 
     This reminder repeats daily at 9:00 AM on purpose rather than firing once, because
     a single missed notification would leave a safety gap open indefinitely. Scott
-    turns it off himself when the work is done.'
+    turns it off himself when the work is done.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: 09:00:00
     trigger: time
   actions:
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      data:
-        channel: Quiet Notices
-        importance: low
-        priority: high
-        ttl: 0
       message: The water leak sensors are still not D2D paired to the main valve.
         Until they are, there is no automatic water shutoff when the power or internet
         is down. Close the valve first, then hold SET 5-10s on each sensor followed
         by SET 5-10s on the valve. Nine sensors. Turn this reminder off when done.
       title: Re-pair YoLink D2D Leak Sensors
+      channel: Quiet Notices
+      importance: low
+      priority: high
+      ttl: 0
   - action: persistent_notification.create
     data:
       message: '**No unattended water shutoff until this is done.**

@@ -1,9 +1,17 @@
 - id: '1755733082034'
   alias: 'Ecovacs Mower: Battery Charge Alert'
-  description: Notify when mower recharges to 80%+ after being used (battery < 50%)
+  description: 'Notify when mower recharges to 80%+ after being used (battery < 50%)
     and when battery drops to 17%. This automation triggers notifications and audio
     alerts  to inform you of both low battery (17%) and successful charging (80%)
     events.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.david_mowie_battery
     below: 50
@@ -49,10 +57,10 @@
         before: '19:00:00'
       sequence:
       - data:
-          title: Ecovacs Battery Level
           message: David Mowie has recharged to 83% and will now finish mowing. {{
             now().strftime('%I:%M %p on %b %-d') }}
-        action: notify.mobile_app_pixel_9
+          title: Ecovacs Battery Level
+        action: script.notify_alert
       - target:
           entity_id:
           - media_player.bedroom_group
@@ -78,15 +86,16 @@
         before: '19:00:00'
       sequence:
       - data:
+          message: David Mowie's battery has discharged to 17% and will now return
+            to the dock to charge. {{ now().strftime('%I:%M %p on %b %-d') }}
           title: Ecovacs Low Battery Alert
-          message: David Mowie's battery has discharged to 17% and will now return
-            to the dock to charge. {{ now().strftime('%I:%M %p on %b %-d') }}
-        action: notify.mobile_app_pixel_9
-      - action: notify.mobile_app_galaxy_watch7_904t
+        action: script.notify_alert
+      - action: script.notify_alert
         data:
-          title: Mower Battery Recharge Alert
           message: David Mowie's battery has discharged to 17% and will now return
             to the dock to charge. {{ now().strftime('%I:%M %p on %b %-d') }}
+          title: Mower Battery Recharge Alert
+          target: watch
       - target:
           entity_id:
           - media_player.bedroom_group

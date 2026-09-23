@@ -12,7 +12,15 @@
     and input_number.last_known_systolic; the value-change guard on that branch prevents
     Health Connect resyncs and restarts from being mistaken for fresh readings. Replaces
     four earlier automations: the 30 minute time_pattern morning reminder, the midnight
-    and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation.'
+    and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - at: 07:00:00
     id: morning
@@ -45,15 +53,14 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.bp_reminder_dismissed
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            actions:
-            - action: DISMISS_BP_REMINDER
-              title: Dismiss
-            tag: bp_reminder
           message: Time for your morning blood pressure reading.
           title: Blood Pressure Reminder
+          tag: bp_reminder
+          actions:
+          - action: DISMISS_BP_REMINDER
+            title: Dismiss
     - alias: Evening reminder
       conditions:
       - condition: trigger
@@ -62,15 +69,14 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.bp_reminder_dismissed
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          data:
-            actions:
-            - action: DISMISS_BP_REMINDER
-              title: Dismiss
-            tag: bp_reminder
           message: Time for your evening blood pressure reading.
           title: Blood Pressure Reminder
+          tag: bp_reminder
+          actions:
+          - action: DISMISS_BP_REMINDER
+            title: Dismiss
     - alias: New reading arrived
       conditions:
       - condition: trigger
@@ -82,11 +88,9 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.bp_reminder_dismissed
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_clear
         data:
-          data:
-            tag: bp_reminder
-          message: clear_notification
+          tag: bp_reminder
       - action: input_datetime.set_datetime
         data:
           datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
@@ -105,20 +109,16 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.bp_reminder_dismissed
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_clear
         data:
-          data:
-            tag: bp_reminder
-          message: clear_notification
+          tag: bp_reminder
     - alias: Dismissed from dashboard card
       conditions:
       - condition: trigger
         id: flag_dismissed
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_clear
         data:
-          data:
-            tag: bp_reminder
-          message: clear_notification
+          tag: bp_reminder
   max: 10
   mode: parallel

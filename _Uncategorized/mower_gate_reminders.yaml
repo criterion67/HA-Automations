@@ -50,7 +50,14 @@
     the friendly form and the raw form, because an integration reload or HA restart
     makes the sensor drop friendly names. Each also carries not_from with the same
     pair, so a label flip mid-run is not read as a fresh zone entry. If a fourth zone
-    is ever added, both forms must be listed here or the branch silently never fires.'
+    is ever added, both forms must be listed here or the branch silently never fires.
+
+
+    NOTIFY WRAPPER 2026-09-22: every notify.mobile_app_pixel_9 call was replaced by
+    script.notify_alert (or script.notify_clear for clear_notification) with the same
+    message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
+    and icon values. Delivery behavior is unchanged; channel and importance policy
+    now lives in the shared script.'
   triggers:
   - entity_id: sensor.jason_momower_current_zone
     id: reached_front
@@ -158,23 +165,22 @@
           cache: false
           message: Jason MoMower has been paused. It is entering the rear yard but
             the side gate is not reading open.
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Hard phone alert
         data:
-          title: Mower Paused, Rear Gate Not Open
           message: Jason MoMower is entering the rear yard but the side gate reads
             {{ states("binary_sensor.rear_yard_gate") }}. It has been paused. Open
             the gate and resume manually. If the gate reads unavailable or unknown,
             check the contact sensor battery and signal.
-          data:
-            tag: mower_gate_blocked
-            sticky: true
-            persistent: true
-            importance: high
-            priority: high
-            channel: alarm_stream
-            ttl: 0
-            notification_icon: mdi:gate-alert
+          title: Mower Paused, Rear Gate Not Open
+          tag: mower_gate_blocked
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          persistent: true
+          sticky: true
+          icon: mdi:gate-alert
     - alias: Rear yard done, time to close the gate
       conditions:
       - condition: trigger
@@ -198,20 +204,19 @@
           to prevent.
         target:
           entity_id: tts.home_assistant_cloud
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Phone prompt with the same message
         data:
-          data:
-            channel: alarm_stream
-            importance: high
-            notification_icon: mdi:gate
-            priority: high
-            sticky: true
-            tag: mower_gate
-            ttl: 0
           message: Rear yard is done and Jason MoMower is on the front yard now. Close
             the side gate before it reaches the side yard, roughly 55 minutes.
           title: Close The Side Gate
+          tag: mower_gate
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          sticky: true
+          icon: mdi:gate
     - alias: Gate closed, acknowledge it
       conditions:
       - condition: trigger
@@ -237,19 +242,18 @@
           and its behaviour on a paused ZONE session is unverified. Once tested, this
           branch is where an automatic resume would go.
         then:
-        - action: notify.mobile_app_pixel_9
+        - action: script.notify_alert
           data:
-            data:
-              channel: alarm_stream
-              importance: high
-              notification_icon: mdi:gate
-              priority: high
-              sticky: true
-              tag: mower_gate
-              ttl: 0
             message: The side gate is now closed and Jason MoMower is paused. Resume
               it manually when you are ready.
             title: Gate Closed, Mower Is Paused
+            tag: mower_gate
+            channel: alarm_stream
+            importance: high
+            priority: high
+            ttl: 0
+            sticky: true
+            icon: mdi:gate
     - alias: Entering the side yard to MOW it with the gate still open, pause and
         alert. NOT gated on the full yard marker.
       conditions:
@@ -284,20 +288,19 @@
             side gate is still open. Please close the gate.
         target:
           entity_id: tts.home_assistant_cloud
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         alias: Hard phone alert
         data:
-          data:
-            channel: alarm_stream
-            importance: high
-            notification_icon: mdi:gate-alert
-            priority: high
-            sticky: true
-            tag: mower_gate_blocked
-            ttl: 0
           message: Jason MoMower reached the side yard with the side gate still open
             and has been paused. Close the gate, then resume it manually.
           title: Mower Paused, Gate Still Open
+          tag: mower_gate_blocked
+          channel: alarm_stream
+          importance: high
+          priority: high
+          ttl: 0
+          sticky: true
+          icon: mdi:gate-alert
       note: UNGATED on input_boolean.mower_full_yard_cycle as of 2026-08-18, at Scott's
         request. Previously this branch only protected a Full Yard preset run, which
         meant it never fired during Scott's actual workflow of pressing individual

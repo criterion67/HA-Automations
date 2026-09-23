@@ -64,7 +64,15 @@
     the default branch whenever nothing was pending, which sent a stale Update Completed
     notification and turned the lamp royalblue every morning. The default branch now
     also requires trigger id updates_changed, so an 8 AM run with zero pending does
-    nothing.'
+    nothing.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -171,7 +179,7 @@
           after: 08:00:00
           before: '22:00:00'
         then:
-        - action: notify.mobile_app_pixel_9
+        - action: script.notify_alert
           data:
             message: '{{ title_word }} for {{ clean_name }}'
             title: Update {{ title_word }}
@@ -200,7 +208,7 @@
           after: 08:00:00
           before: '22:00:00'
         then:
-        - action: notify.mobile_app_pixel_9
+        - action: script.notify_alert
           data:
             message: '{{ title_word }} for {{ clean_name }}'
             title: Update {{ title_word }}
@@ -225,7 +233,7 @@
         after: 08:00:00
         before: '22:00:00'
       then:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
           message: '{{ title_word }} for {{ clean_name }}'
           title: Update {{ title_word }}

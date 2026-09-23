@@ -1,7 +1,15 @@
 - id: plant_watering_pct_crossing_specific
   alias: Plant Watering Reminder by Moisture Percentage
-  description: Notify when a plant drops below its moisture threshold, with Watered
+  description: 'Notify when a plant drops below its moisture threshold, with Watered
     action and specific plant name. 24-hour cooldown to prevent duplicate notifications.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.soil_sensor_1_soil_moisture
     below: 25
@@ -29,10 +37,8 @@
           == ''PLANT_WATERED'' }}'
       sequence:
       - data:
-          message: clear_notification
-          data:
-            tag: plant_watering
-        action: notify.mobile_app_pixel_9
+          tag: plant_watering
+        action: script.notify_clear
       - data:
           name: Plants
           message: Watered acknowledged
@@ -61,7 +67,6 @@
             \  {% endif %}\n{% endfor %}\n{{ ns.text[:-2] if ns.text != '' else ''\
             \ }}"
       - data:
-          title: '{{ trigger_name }} needs water'
           message: '{% if low_list != '''' %}
 
             {{ trigger_name }} is at {{ trigger_value }}% which is below its {{ trigger_threshold
@@ -73,14 +78,14 @@
             }}% threshold.
 
             {% endif %}'
-          data:
-            tag: plant_watering
-            ttl: 0
-            priority: high
-            action:
-            - action: PLANT_WATERED
-              title: Watered
-        action: notify.mobile_app_pixel_9
+          title: '{{ trigger_name }} needs water'
+          tag: plant_watering
+          priority: high
+          ttl: 0
+          actions:
+          - action: PLANT_WATERED
+            title: Watered
+        action: script.notify_alert
       - delay:
           hours: 24
   mode: single

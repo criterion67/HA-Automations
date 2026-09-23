@@ -1,6 +1,14 @@
 - id: '1768404848896'
   alias: 'Lock Batteries: Alert below 15% with Snooze and Dismiss'
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id:
     - sensor.bedroom_closet_door_deadbolt_battery
@@ -31,18 +39,17 @@
       store_raw: '{{ states(''input_text.lock_battery_alert_snoozed_until'') }}'
       store: '{% if store_raw in [''unknown'',''unavailable'',''''] %} {} {% else
         %} {{ store_raw | from_json }} {% endif %}'
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_alert
     data:
-      title: Lock battery low
       message: '{{ lock_name }} is at {{ battery_level }}%.'
-      data:
-        tag: lock_batt_{{ battery_entity }}
-        persistent: true
-        actions:
-        - action: LOCK_BATT_SNOOZE|{{ battery_entity }}
-          title: Snooze 12h
-        - action: LOCK_BATT_DISMISS|{{ battery_entity }}
-          title: Dismiss 48h
+      title: Lock battery low
+      tag: lock_batt_{{ battery_entity }}
+      actions:
+      - action: LOCK_BATT_SNOOZE|{{ battery_entity }}
+        title: Snooze 12h
+      - action: LOCK_BATT_DISMISS|{{ battery_entity }}
+        title: Dismiss 48h
+      persistent: true
   - wait_for_trigger:
     - trigger: event
       event_type: mobile_app_notification_action
@@ -66,10 +73,8 @@
       entity_id: input_text.lock_battery_alert_snoozed_until
     data:
       value: '{{ new_store }}'
-  - action: notify.mobile_app_pixel_9
+  - action: script.notify_clear
     data:
-      message: clear_notification
-      data:
-        tag: lock_batt_{{ battery_entity }}
+      tag: lock_batt_{{ battery_entity }}
   mode: parallel
   max: 10

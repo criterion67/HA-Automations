@@ -1,6 +1,14 @@
 - id: '1766497249465'
   alias: Wonkavator Print Almost Done Notification
-  description: ''
+  description: '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - entity_id: sensor.wonkavator_3d_remaining_time
     below: 0.034
@@ -12,8 +20,8 @@
     state: running
   actions:
   - data:
-      title: Wonkavator Almost Finished
       message: Another pure imagination creation will be ready to come out of the
         oven in about 2 minutes!
-    action: notify.mobile_app_pixel_9
+      title: Wonkavator Almost Finished
+    action: script.notify_alert
   mode: single

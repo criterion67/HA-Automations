@@ -24,4 +24,6 @@ ORIGINAL INTENT, recalled by Scott 2026-08-26. This exists for when a family mem
 
 That makes the alarm-disabled path the carer's normal path, which is exactly why the 02:00 nightly reset now applies there too. Under the old code, if the carer forgot to lock the deadbolt on their way out, the water stayed on all night with nobody in the house, and the nightly backstop could not close it in that mode. This is the single most likely real-world failure this automation is meant to prevent.
 
-The disabled conditions were most likely a deliberate override during a four day trip, to force the water to stay on regardless of state, and were never re-enabled afterwards. |
+The disabled conditions were most likely a deliberate override during a four day trip, to force the water to stay on regardless of state, and were never re-enabled afterwards.
+
+NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |

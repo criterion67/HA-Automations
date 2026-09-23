@@ -4,7 +4,14 @@
     for locks and lights, retry logic, actionable notifications, and safeguards for
     jammed/unavailable devices.
 
-    '
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - trigger: time
     at: '22:00:00'
@@ -50,12 +57,12 @@
             value_template: '{{ just_locked | length > 0 }}'
           then:
           - data:
-              title: Evening Routine
               message: '🔒 Locked: {{ expand(just_locked) | map(attribute=''name'')
                 | list | join('', '') }}
 
                 '
-            action: notify.mobile_app_pixel_9
+              title: Evening Routine
+            action: script.notify_alert
         - variables:
             still_unlocked: "{{ expand(scene_locks)\n   | rejectattr('state','in',['jammed','unavailable'])\n\
               \   | selectattr('state','eq','unlocked')\n   | map(attribute='entity_id')\
@@ -65,18 +72,17 @@
             value_template: '{{ still_unlocked | length > 0 }}'
           then:
           - data:
-              title: Evening Routine – Door Lock Issue
               message: '❌ Still unlocked: {{ expand(still_unlocked) | map(attribute=''name'')
                 | list | join('', '') }}
 
                 '
-              data:
-                actions:
-                - action: RETRY_LOCKS
-                  title: Retry Locks
-                - action: IGNORE_LOCKS
-                  title: Dismiss
-            action: notify.mobile_app_pixel_9
+              title: Evening Routine – Door Lock Issue
+              actions:
+              - action: RETRY_LOCKS
+                title: Retry Locks
+              - action: IGNORE_LOCKS
+                title: Dismiss
+            action: script.notify_alert
     - conditions:
       - condition: trigger
         id: lights_off
@@ -96,18 +102,17 @@
           value_template: '{{ still_on | length > 0 }}'
         then:
         - data:
-            title: Evening Routine – Lights Remaining
             message: '❌ The following lights or switches remained on: {{ expand(still_on)
               | map(attribute=''name'') | list | join('', '') }}
 
               '
-            data:
-              actions:
-              - action: RETRY_LIGHTS
-                title: Retry Lights
-              - action: IGNORE_LIGHTS
-                title: Dismiss
-          action: notify.mobile_app_pixel_9
+            title: Evening Routine – Lights Remaining
+            actions:
+            - action: RETRY_LIGHTS
+              title: Retry Lights
+            - action: IGNORE_LIGHTS
+              title: Dismiss
+          action: script.notify_alert
     - conditions:
       - condition: trigger
         id: midnight_lights_off
@@ -127,18 +132,17 @@
           value_template: '{{ still_on_midnight | length > 0 }}'
         then:
         - data:
-            title: Evening Routine – Midnight Lights
             message: '❌ These lights or switches stayed on: {{ expand(still_on_midnight)
               | map(attribute=''name'') | list | join('', '') }}
 
               '
-            data:
-              actions:
-              - action: RETRY_MIDNIGHT
-                title: Retry Lights
-              - action: IGNORE_MIDNIGHT
-                title: Dismiss
-          action: notify.mobile_app_pixel_9
+            title: Evening Routine – Midnight Lights
+            actions:
+            - action: RETRY_MIDNIGHT
+              title: Retry Lights
+            - action: IGNORE_MIDNIGHT
+              title: Dismiss
+          action: script.notify_alert
     - conditions:
       - condition: template
         value_template: '{{ trigger.event.data.action == ''RETRY_LOCKS'' }}'
@@ -168,25 +172,25 @@
             value_template: '{{ retry_unlocked | length == 0 }}'
           then:
           - data:
-              title: Locks Retried
               message: '✅ Locked: {{ expand(retry_locked) | map(attribute=''name'')
                 | list | join('', '') }}
 
                 '
-            action: notify.mobile_app_pixel_9
+              title: Locks Retried
+            action: script.notify_alert
           else:
           - data:
-              title: Locks Retried
               message: '❌ Still unlocked: {{ expand(retry_unlocked) | map(attribute=''name'')
                 | list | join('', '') }}
 
                 '
-            action: notify.mobile_app_pixel_9
+              title: Locks Retried
+            action: script.notify_alert
         else:
         - data:
-            title: Locks Retried
             message: All doors are already locked.
-          action: notify.mobile_app_pixel_9
+            title: Locks Retried
+          action: script.notify_alert
     - conditions:
       - condition: template
         value_template: '{{ trigger.event.data.action == ''RETRY_LIGHTS'' }}'
@@ -207,17 +211,17 @@
           value_template: '{{ retry_on | length == 0 }}'
         then:
         - data:
-            title: Lights Retried
             message: ✅ All lights now off.
-          action: notify.mobile_app_pixel_9
+            title: Lights Retried
+          action: script.notify_alert
         else:
         - data:
-            title: Lights Retried
             message: '❌ Some lights still on: {{ expand(retry_on) | map(attribute=''name'')
               | list | join('', '') }}
 
               '
-          action: notify.mobile_app_pixel_9
+            title: Lights Retried
+          action: script.notify_alert
     - conditions:
       - condition: template
         value_template: '{{ trigger.event.data.action == ''RETRY_MIDNIGHT'' }}'
@@ -238,15 +242,15 @@
           value_template: '{{ retry_midnight | length == 0 }}'
         then:
         - data:
-            title: Midnight Lights Retried
             message: ✅ All midnight lights now off.
-          action: notify.mobile_app_pixel_9
+            title: Midnight Lights Retried
+          action: script.notify_alert
         else:
         - data:
-            title: Midnight Lights Retried
             message: '❌ Some lights still on: {{ expand(retry_midnight) | map(attribute=''name'')
               | list | join('', '') }}
 
               '
-          action: notify.mobile_app_pixel_9
+            title: Midnight Lights Retried
+          action: script.notify_alert
   mode: single

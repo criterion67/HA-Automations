@@ -1,10 +1,18 @@
 - id: '1757264925777'
   alias: NFC - Toggle Garage Door from Truck
-  description: NFC tag on dashboard will toggle garage door and lock/unlock laundry
+  description: 'NFC tag on dashboard will toggle garage door and lock/unlock laundry
     room door with failsafe notification.
+
+
+    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
+    by script.notify_alert (or script.notify_clear for clear_notification) with the
+    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
+    persistent, color, image, url and icon values, and target set to watch or bill
+    where the call went to those devices. Delivery behavior is unchanged; channel
+    and importance policy now lives in the shared scripts.'
   triggers:
   - tag_id: b38fed34-ef7f-4575-a5ba-f28347be2b49
-    platform: tag
+    trigger: tag
   actions:
   - action: cover.toggle
     target:
@@ -30,10 +38,10 @@
       - action: lock.unlock
         target:
           entity_id: lock.laundry_room_door_deadbolt
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Garage Door + Laundry Lock
           message: Garage door is open and laundry door unlocked.
+          title: Garage Door + Laundry Lock
     - conditions:
       - condition: state
         entity_id: binary_sensor.garage_door_contact
@@ -45,16 +53,16 @@
       - action: lock.lock
         target:
           entity_id: lock.laundry_room_door_deadbolt
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Garage Door + Laundry Lock
           message: Garage door is closed and laundry door locked.
+          title: Garage Door + Laundry Lock
     - conditions:
       - condition: template
         value_template: '{{ wait.completed == false }}'
       sequence:
-      - action: notify.mobile_app_pixel_9
+      - action: script.notify_alert
         data:
-          title: Garage Door + Laundry Lock
           message: Garage door state unknown — laundry lock unchanged.
+          title: Garage Door + Laundry Lock
   mode: single
