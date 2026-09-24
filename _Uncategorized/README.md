@@ -25,6 +25,7 @@ The NWS branch keeps its extra condition because unlike the other five it trigge
 Note on the mower trigger: it fires on leaving error with no to state specified, which is how the original behaved, so it also fires on a transition from error to unavailable. |
 | Dawn Dusk Routine (Illuminance Based v5) | Illuminance-based test that replaces the sun elevation offsets. Dawn opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance. Test version running while v4 (elevation based) is disabled. |
 | Dawn Dusk Routine (Sun Based) | Sun-based dawn/dusk routine. Temporary replacement for the illuminance-based v5 while the WS90 lux sensor is unreliable. Dawn opens the bedroom curtains and activates the dawn scene at sunrise. Dusk closes the curtains and activates the dusk scene at sunset. Re-enable v5 and disable this automation once the weather station is fixed. |
+| Dishwasher Unload Reminder | Drives input_boolean.dishwasher_needs_unloading for the dashboard 'dishes need to be removed' notification card. Turns it on when the Bosch (Home Connect) reports the program finished; the Bosch only holds 'finished' for about 10 minutes before reverting to 'ready', so the helper keeps the reminder up. Clears it on the first door open after a finish, or when a new cycle starts. The card itself clears it on tap. |
 | DrainFlo Dosing | OFFLINE WARNING WATCHES BOTH RADIOS, DELIBERATELY. This automation drives the relay over Zigbee as switch.drainflo, and everything that commands the pump uses that entity. The offline warning branch is the one exception: it triggers on switch.drainflo AND on switch.shelly1g4_acebe6f5bfd8, the same physical relay seen by the Shelly WiFi integration at 192.168.30.130. The watched entity and the controlled entity are therefore deliberately not the same. That is safe because this branch only raises a flag and sends a push, it never commands the pump, so an unreachable signal from either radio is worth having.
 
 WHY THE ZIGBEE SIDE ALONE WAS NOT ENOUGH. Z2M reports broker side availability, not device reachability. switch.drainflo does reach unavailable when Z2M or MQTT reconnects, in brief transitions that run unavailable to unknown to off, but it does not go unavailable when the relay itself loses power or drops off the mesh. Tested 2026-09-17 by unplugging the relay for an hour: the entity never changed. The Shelly integration tracks reachability properly, so the WiFi trigger is the one expected to actually fire. The Zigbee trigger is kept because a Z2M or broker outage is also worth knowing about before a dose window.
@@ -341,25 +342,6 @@ The ef_ble Bluetooth integration is intentionally kept for output power readings
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
 | Power Restored — Recovery Notification | On HA startup, checks if the power outage shutdown flag is set. If so, sends a mobile and dashboard notification that power is restored and systems are back online, then clears the flag. Prevents false notifications on routine HA restarts.
-
-NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
-| Reminder - Re-pair YoLink D2D Leak Sensors to Water Valve | TEMPORARY REMINDER, created 2026-08-26. Delete or turn off this automation once the D2D re-pairing is finished.
-
-WHY THIS EXISTS: the YoLink local hub migration on 2026-08-26 appears to have broken every Control-D2D binding between the nine water leak sensors and the main water valve. A wet sensor 8 failed to close the valve, and the valve was verified working minutes earlier by a manual test, which isolates the fault to the D2D binding rather than the valve.
-
-Until those bindings are rebuilt the house has NO unattended automatic water shutoff. Home Assistant never closed the valve on a leak; it only announces, notifies and sirens. D2D was the entire automatic shutoff mechanism, and it is the only one that works with the power out and the internet down. A Close Water button was added to the leak notification on 2026-08-26 as a stopgap, but that requires Scott to see and tap a phone notification.
-
-RE-PAIRING PROCEDURE, from YoLink's YS7906-UC manual. No app and no internet needed; it is all SET buttons on the devices.
-1. Close the main water valve and confirm it reads closed. Do this ONCE. Nothing reopens it on its own, so it stays closed through all nine pairings.
-2. On the leak sensor, hold SET for 5 to 10 seconds until the green LED blinks rapidly, then release.
-3. On the valve controller, hold SET for 5 to 10 seconds until its green LED blinks rapidly, then release.
-4. Pairing is confirmed when the LED stops blinking, which may be after only two or three blinks.
-5. Repeat steps 2 and 3 for each of the nine sensors.
-6. Open the valve when finished.
-
-Test the FIRST pair before doing the other eight, so a broken procedure is not repeated nine times. Do not hold SET for 20 to 30 seconds; that is a factory reset.
-
-This reminder repeats daily at 9:00 AM on purpose rather than firing once, because a single missed notification would leave a safety gap open indefinitely. Scott turns it off himself when the work is done.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
 | Sensor Went Silent Alert | Alerts when a battery powered temperature, humidity or leak sensor stops reporting altogether while still serving a healthy looking value.

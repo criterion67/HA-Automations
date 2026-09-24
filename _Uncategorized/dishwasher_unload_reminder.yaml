@@ -1,0 +1,45 @@
+- id: '1790223278866'
+  alias: Dishwasher Unload Reminder
+  description: Drives input_boolean.dishwasher_needs_unloading for the dashboard 'dishes
+    need to be removed' notification card. Turns it on when the Bosch (Home Connect)
+    reports the program finished; the Bosch only holds 'finished' for about 10 minutes
+    before reverting to 'ready', so the helper keeps the reminder up. Clears it on
+    the first door open after a finish, or when a new cycle starts. The card itself
+    clears it on tap.
+  triggers:
+  - trigger: state
+    entity_id: sensor.dishwasher_operation_state
+    to: finished
+    id: finished
+  - trigger: state
+    entity_id: sensor.dishwasher_door
+    to: open
+    id: door_open
+  - trigger: state
+    entity_id: sensor.dishwasher_operation_state
+    to: run
+    id: cycle_start
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: finished
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.dishwasher_needs_unloading
+    - conditions:
+      - condition: trigger
+        id:
+        - door_open
+        - cycle_start
+      - condition: state
+        entity_id: input_boolean.dishwasher_needs_unloading
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.dishwasher_needs_unloading
+  mode: parallel
+  max: 5
