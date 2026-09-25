@@ -7,45 +7,47 @@
     is not rendered correctly by Chromecast. TTS TARGET FIXED 2026-08-29: the garage
     door announcements targeted media_player.whole_house, a Music Assistant entity
     that no longer exists. They now use media_player.all_speakers, the house-wide
-    Cast speaker group.'
+    Cast speaker group. LOG FIX 2026-09-24: all 8 MQTT triggers now use value_json.action
+    with a default, so battery and link quality messages from the remote no longer
+    log template warnings.'
   triggers:
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 1_single
     id: 1st pressed 1x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 1_double
     id: 1st pressed 2x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 2_single
     id: 2nd pressed 1x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 2_double
     id: 2nd pressed 2x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 3_single
     id: 3rd pressed 1x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 3_double
     id: 3rd pressed 2x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 4_single
     id: 4th pressed 1x
     trigger: mqtt
   - topic: zigbee2mqtt/Aqara 4 button remote
-    value_template: '{{ value_json.action }}'
+    value_template: '{{ value_json.action | default('''') }}'
     payload: 4_double
     id: 4th pressed 2x
     trigger: mqtt

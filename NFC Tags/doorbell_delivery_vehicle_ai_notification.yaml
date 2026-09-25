@@ -39,7 +39,12 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    RETRY 2026-09-24: the LLM Vision call now retries once after 30 seconds when Gemini
+    is overloaded (503). On 2026-09-24 five delivery checks failed outright on that
+    error.'
   triggers:
   - entity_id: binary_sensor.driveway_2_vehicle_detected_2
     for:
@@ -164,6 +169,103 @@
       target_width: 1280
       title_field: title
     response_variable: response
+    continue_on_error: true
+    note: First attempt. Gemini free tier returns 503 high demand errors at times;
+      a failure here falls through to the single retry below.
+  - if:
+    - condition: template
+      value_template: '{{ response is not defined }}'
+      note: response is only set when the first vision call succeeded.
+    then:
+    - delay: 00:00:30
+    - action: llmvision.image_analyzer
+      data:
+        description_field: description
+        expose_images: true
+        generate_title: false
+        image_entity:
+        - camera.driveway_2_high_resolution_channel
+        - camera.g6_pro_entry_high_resolution_channel
+        - camera.g6_pro_entry_package_camera
+        include_filename: false
+        max_tokens: 300
+        message: 'You are seeing three camera views of the same residential property,
+          taken at the same moment.
+
+
+          IMAGE 1 is a wide driveway and street view.
+
+          IMAGE 2 is the front porch, seen from the doorbell at eye level.
+
+          IMAGE 3 is a downward facing package camera in the same doorbell, aimed
+          straight at the doorstep. It is the closest and clearest view of the ground
+          directly in front of the door. When image 2 and image 3 disagree about whether
+          something is sitting on the porch floor, trust image 3.
+
+
+          LOCATION RULE, apply this strictly and above everything else: delivery vehicles
+          NEVER pull into this driveway. They always stop on the street, either in
+          front of the driveway, in front of the mailbox, or in front of the house.
+          Therefore any vehicle sitting in the driveway itself is a resident or visitor
+          vehicle and must be ignored completely, whatever its make, color, size or
+          type.
+
+
+          Also ignore lawn care equipment and people mowing, neighbors, pets, and
+          vehicles simply driving past without stopping.
+
+
+          WHERE PACKAGES APPEAR: a BROWN PARCEL BOX sits in the BOTTOM RIGHT corner
+          of image 2, partly cut off by the edge. Around 95 percent of deliveries
+          go into that box, so a courier reaching toward the bottom right of the porch
+          is almost always making a delivery. The remainder are set down on the concrete
+          porch floor: on or beside the doormat directly in front of the door, at
+          the base of the white porch column, or a little further out on the walkway
+          leading away from the porch. Image 3 covers the doormat and door area directly,
+          so check it carefully for anything resting on the ground. Treat any box,
+          envelope, padded mailer or bag on the porch floor as a package.
+
+
+          A package counts whether or not anyone is visible. You may be seeing the
+          scene after the courier has already left, so do not require a person, a
+          vehicle, or any sign of recent activity in order to report a package that
+          is plainly sitting there.
+
+
+          Set delivery to true if ANY of the following hold: a delivery vehicle from
+          USPS, FedEx, UPS, or Amazon is stopped on the street; a uniformed courier
+          is on foot approaching the property; or a package is present in any of the
+          places listed above. Otherwise set delivery to false.
+
+
+          Set resident_retrieving to true only if a person is visible AND that person
+          is clearly a resident of the house collecting mail or a package rather than
+          delivering one, for example someone walking out from the front door toward
+          the parcel box or the mailbox. If no person is visible, set resident_retrieving
+          to false.'
+        provider: 01KZ2A24SYVPMCX8DTYVJTZTVV
+        response_format: json
+        store_in_timeline: false
+        structure: '{"type": "object", "properties": {"delivery": {"type": "boolean",
+          "description": "true only if a carrier vehicle is stopped on the street,
+          a courier is on foot, or a package appears newly left"}, "carrier": {"type":
+          "string", "description": "USPS, FedEx, UPS, Amazon, or none"}, "package_left":
+          {"type": "boolean", "description": "true if a package appears to have been
+          left on the porch, at the door, by the column, or on the sidewalk"}, "package_location":
+          {"type": "string", "description": "where the package is: parcel box, front
+          door, white column, sidewalk, or none"}, "resident_retrieving": {"type":
+          "boolean", "description": "true if the person visible is a resident collecting
+          mail or a package rather than delivering one"}, "title": {"type": "string",
+          "description": "Short event title, under 6 words"}, "description": {"type":
+          "string", "description": "One or two sentence description of what was seen"}},
+          "required": ["delivery", "carrier", "package_left", "package_location",
+          "resident_retrieving", "title", "description"], "additionalProperties":
+          false}'
+        target_width: 1280
+        title_field: title
+      response_variable: response
+    note: One retry after 30 seconds with the same snapshots. If the retry also fails
+      the run stops as before.
   - condition: template
     value_template: '{% set t = trigger.id | default('''') %}{% set r = response.structured_response
       %}{{ (t in [''parcel_box'', ''mailbox'', ''package''] and not (r.resident_retrieving

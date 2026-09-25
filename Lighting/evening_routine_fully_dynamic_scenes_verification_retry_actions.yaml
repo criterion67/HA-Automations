@@ -11,7 +11,13 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    STARTUP CATCH-UP 2026-09-24: if Home Assistant starts between 11 PM and 5 AM,
+    the 11 PM Lights-Off scene runs again one minute after startup, with the same
+    verification and retry notification. Outside that window the startup trigger stops
+    immediately.'
   triggers:
   - trigger: time
     at: '22:00:00'
@@ -24,6 +30,12 @@
     id: midnight_lights_off
   - trigger: event
     event_type: mobile_app_notification_action
+  - trigger: homeassistant
+    event: start
+    id: startup_catchup
+    note: Catch-up for a restart during the night. On 2026-09-23 the watchdog restarted
+      Core at 11:02 PM and the 11 PM run fired mid-startup, leaving the outdoor lights
+      on.
   conditions: []
   actions:
   - choose:
@@ -85,8 +97,27 @@
             action: script.notify_alert
     - conditions:
       - condition: trigger
-        id: lights_off
+        id:
+        - lights_off
+        - startup_catchup
       sequence:
+      - if:
+        - condition: trigger
+          id: startup_catchup
+        - condition: not
+          conditions:
+          - condition: time
+            after: '23:00:00'
+            before: 05:00:00
+        then:
+        - stop: HA started outside the 11 PM to 5 AM catch-up window
+      - if:
+        - condition: trigger
+          id: startup_catchup
+        then:
+        - delay: 00:01:00
+          note: Give Lutron and the other integrations time to finish loading after
+            startup.
       - target:
           entity_id: scene.2300_lights_off
         action: scene.turn_on
