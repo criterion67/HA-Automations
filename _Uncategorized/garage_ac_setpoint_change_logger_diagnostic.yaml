@@ -1,0 +1,76 @@
+- id: '1790548106400'
+  alias: Garage AC Setpoint Change Logger (Diagnostic)
+  description: 'TEMPORARY DIAGNOSTIC, created 2026-09-27. Scott found the garage AC
+    setpoint reverting from 77 to 76 (15:03:13 on 2026-09-27) with no Home Assistant
+    automation, script or scene writing 76, and the physical remote never used (no
+    batteries). Two logbook entries on climate.garage_ac: (1) ''Garage AC action''
+    logs every climate action sent to it (UI, Google, Assist, automations, scripts,
+    API) with its data and caller; (2) ''Garage AC setpoint'' logs every target temperature
+    change. Read them together: a setpoint change with a matching ''Garage AC action''
+    just before it came from Home Assistant; a setpoint change with no action before
+    it came from the ESPHome node or the unit itself. The setpoint entry''s own ''device
+    side'' label is NOT reliable on its own, because service calls with no user attached
+    (for example the HA MCP tools) also carry no user or parent. Added the action
+    trigger the same day after a 76 to 77 change made through the MCP tools logged
+    as device side. Transitions to or from unavailable are ignored. Category Testing.
+    Remove once the source is identified.'
+  triggers:
+  - attribute: temperature
+    entity_id: climate.garage_ac
+    trigger: state
+    id: setpoint_changed
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: climate
+    id: climate_action
+  conditions: []
+  actions:
+  - choose:
+    - alias: A climate action was sent to the garage AC
+      conditions:
+      - condition: trigger
+        id: climate_action
+      - '{% set e = trigger.event.data.service_data.entity_id | default([]) %}{{ ''climate.garage_ac''
+        in ([e] if e is string else e | list) }}'
+      sequence:
+      - action: logbook.log
+        alias: Log the action, its data and its caller
+        data:
+          entity_id: climate.garage_ac
+          name: Garage AC action
+          message: '{% set sd = trigger.event.data.service_data %}{% set c = trigger.event.context
+            %}{% set p = states.person | selectattr(''attributes.user_id'',''eq'',
+            c.user_id) | map(attribute=''name'') | list if c.user_id else [] %}{%
+            set a = (states.automation | list + states.script | list) | selectattr(''context.id'',''eq'',
+            c.parent_id) | map(attribute=''name'') | list if c.parent_id else [] %}action
+            climate.{{ trigger.event.data.service }} with {{ sd | dictsort | rejectattr(0,''eq'',''entity_id'')
+            | list }}. Caller: {% if p %}user {{ p[0] }}{% elif c.user_id %}user id
+            {{ c.user_id }} (no matching person){% elif a %}{{ a[0] }}{% elif c.parent_id
+            %}unresolved parent context {{ c.parent_id }}{% else %}no user attached
+            (API or integration call){% endif %}. Context {{ c.id }}'
+    - alias: The garage AC setpoint changed
+      conditions:
+      - condition: trigger
+        id: setpoint_changed
+      - '{{ trigger.from_state is not none and trigger.to_state is not none and trigger.from_state.attributes.temperature
+        is not none and trigger.to_state.attributes.temperature is not none }}'
+      sequence:
+      - action: logbook.log
+        alias: Write the setpoint change and its source to the logbook
+        data:
+          entity_id: climate.garage_ac
+          message: '{% set c = trigger.to_state.context %}{% set p = states.person
+            | selectattr(''attributes.user_id'',''eq'', c.user_id) | map(attribute=''name'')
+            | list if c.user_id else [] %}{% set a = (states.automation | list + states.script
+            | list) | selectattr(''context.id'',''eq'', c.parent_id) | map(attribute=''name'')
+            | list if c.parent_id else [] %}changed {{ trigger.from_state.attributes.temperature
+            }} to {{ trigger.to_state.attributes.temperature }} (mode {{ trigger.to_state.state
+            }}, preset {{ trigger.to_state.attributes.preset_mode }}). Source: {%
+            if p %}user {{ p[0] }}{% elif c.user_id %}user id {{ c.user_id }} (no
+            matching person){% elif a %}{{ a[0] }}{% elif c.parent_id %}unresolved
+            parent context {{ c.parent_id }}{% else %}no Home Assistant user or automation,
+            device side{% endif %}. Context {{ c.id }}'
+          name: Garage AC setpoint
+  max: 10
+  mode: queued

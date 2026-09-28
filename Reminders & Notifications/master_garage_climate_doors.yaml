@@ -53,7 +53,18 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    RACE FIX 2026-09-27: at 17:53:23 the garage door closed 183 ms after the 3 minute
+    open trigger fired. The shutoff run sent climate.turn_off, the close run started
+    immediately, but the unit still reported cool (the off state arrived about a second
+    later), so the resume condition failed and the AC stayed off with the garage at
+    84.6 F. Fix: mode changed from single to queued (max 10), and the shutoff branch
+    now waits up to 15 seconds for climate.garage_ac to report off before finishing.
+    A close that lands during a shutoff now runs after it, sees the AC off, and resumes
+    cooling. wait_template is used instead of wait_for_trigger on purpose, because
+    the AC may already read off by the time the wait starts.'
   triggers:
   - entity_id: cover.garage_door
     for: 00:03:00
@@ -90,6 +101,11 @@
         alias: Turn the AC off
         target:
           entity_id: climate.garage_ac
+      - alias: Wait for the AC to actually report off, so a door close that lands
+          mid shutoff queues behind this run and can resume cooling
+        wait_template: '{{ is_state(''climate.garage_ac'', ''off'') }}'
+        timeout: 00:00:15
+        continue_on_timeout: true
       - action: input_boolean.turn_off
         alias: Clear the off-notified flag so the safety net can alert fresh
         target:
@@ -130,4 +146,5 @@
           tag: garage_climate_resume
           channel: Garage Safety
           importance: high
-  mode: single
+  mode: queued
+  max: 10

@@ -1,6 +1,6 @@
 # _Uncategorized
 
-52 automation(s) in this category.
+53 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -75,6 +75,7 @@ NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by
 | Fridge Filters Weekly Countdown | Decrements the fresh air filter and water filter week counters by one every Monday morning. Each filter has a 26 week (6 month) service life, so the counters run 26 down to 0 and stop at the input_number minimum of 0. The M3 Supply Card on the Appliances view of the Mobile dashboard shows these as dots and its Pack refilled button sets the counter back to 26 when a filter is physically changed. |
 | Garage AC - Apply Bill Setpoint | When Bill adjusts the dummy thermostat helper, apply the value to the real garage AC only if it is 80°F or above. Values below 80 are silently ignored — the restore automation handles snapping the AC back. |
 | Garage AC - Restore Setpoint After Unauthorized Adjustment | If the garage AC temperature setpoint is lowered below 80°F while in cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer if adjusted again before the delay expires. |
+| Garage AC Setpoint Change Logger (Diagnostic) | TEMPORARY DIAGNOSTIC, created 2026-09-27. Scott found the garage AC setpoint reverting from 77 to 76 (15:03:13 on 2026-09-27) with no Home Assistant automation, script or scene writing 76, and the physical remote never used (no batteries). Two logbook entries on climate.garage_ac: (1) 'Garage AC action' logs every climate action sent to it (UI, Google, Assist, automations, scripts, API) with its data and caller; (2) 'Garage AC setpoint' logs every target temperature change. Read them together: a setpoint change with a matching 'Garage AC action' just before it came from Home Assistant; a setpoint change with no action before it came from the ESPHome node or the unit itself. The setpoint entry's own 'device side' label is NOT reliable on its own, because service calls with no user attached (for example the HA MCP tools) also carry no user or parent. Added the action trigger the same day after a 76 to 77 change made through the MCP tools logged as device side. Transitions to or from unavailable are ignored. Category Testing. Remove once the source is identified. |
 | Garage Safety Net: Rudy | Independent safety net for the garage where Rudy stays. Owns all garage climate monitoring and alerting so that no single failure, sensor, automation or otherwise, can leave the garage hot without Scott knowing.
 
 Built 2026-09-11 after binary_sensor.rear_door stuck in the open state from 08:15:25 to 13:43:22. Master: Garage Climate Doors turned the AC off at 08:18:26 on that stale reading, the resume never ran, the door-open alert was silenced by an unavailable heater switch, and the garage reached 86.9 F before Scott noticed. Nothing here depends on the door sensors being truthful or on the heater existing.
