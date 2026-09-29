@@ -1860,12 +1860,12 @@
       - alias: Pause TV if currently playing
         if:
         - condition: state
-          entity_id: media_player.bedroom_tv_1_2
+          entity_id: media_player.bedroom_tv_remote
           state: playing
         then:
         - action: media_player.media_pause
           target:
-            entity_id: media_player.bedroom_tv_1_2
+            entity_id: media_player.bedroom_tv_remote
           data: {}
       - alias: Play doorbell camera stream on Bedroom TV immediately
         metadata: {}
@@ -1893,7 +1893,7 @@
       - alias: Resume previous TV playback
         action: media_player.media_play
         target:
-          entity_id: media_player.bedroom_tv_1_2
+          entity_id: media_player.bedroom_tv_remote
         data: {}
       - alias: Restore bedroom alert light
         target:
