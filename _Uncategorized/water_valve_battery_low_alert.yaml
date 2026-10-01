@@ -1,8 +1,8 @@
 - id: '1776626196171'
   alias: Water Valve Battery Low Alert
   description: 'Fires when the main water valve battery sensor drops below 15%. Sends
-    a critical mobile notification with battery type and quantity, creates a Google
-    Calendar purchase reminder, and posts a persistent dashboard notification.
+    a mobile notification with battery type and quantity, creates a Google Calendar
+    purchase reminder, and posts a persistent dashboard notification.
 
 
     NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
@@ -10,12 +10,32 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    FALSE ALERT FIX 2026-09-30: YoLink Local writes 0 to the battery sensor for about
+    half a second whenever the valve briefly drops offline (seen 2026-09-28 11:14,
+    2026-09-28 23:01 and 2026-09-30 08:27 while the battery read 100). The trigger
+    now requires the reading to stay below 15 for 10 minutes, and a condition skips
+    the alert while valve.main_water_valve is unavailable. A real low battery still
+    alerts.
+
+
+    BATTERY TYPE CORRECTED 2026-09-30: the valve takes 2x AA lithium batteries, not
+    the ER26500 C size cell the alert text previously listed (confirmed by Scott).'
   triggers:
   - entity_id: sensor.main_water_valve_battery
     below: 15
     id: main_valve_battery
     trigger: numeric_state
+    for:
+      minutes: 10
+  conditions:
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: valve.main_water_valve
+      state: unavailable
   actions:
   - choose:
     - conditions:
@@ -24,9 +44,8 @@
       sequence:
       - data:
           message: "Main Water Valve battery is at {{ states('sensor.main_water_valve_battery')\
-            \ | int }}% — below the 15% threshold.\n\nBattery needed:\n  1× ER26500\
-            \ 3.6V 9000mAh C Size\n  Li-SOCl₂ Lithium (Non-Rechargeable)\n\nA purchase\
-            \ reminder has been added to your calendar."
+            \ | int }}%, below the 15% threshold.\n\nBatteries needed:\n  2x AA Lithium\
+            \ (Non-Rechargeable)\n\nA purchase reminder has been added to your calendar."
           title: 🔋 Main Water Valve Battery Low
           channel: Quiet Notices
           importance: low
@@ -36,13 +55,11 @@
       - target:
           entity_id: calendar.wscottfunk_gmail_com
         data:
-          summary: 🔋 Buy Battery — Main Water Valve
+          summary: '🔋 Buy Batteries: Main Water Valve'
           description: 'The Main Water Valve battery dropped below 15% and needs replacement.
 
 
-            Battery required: 1× ER26500 3.6V 9000mAh C Size Lithium Battery
-
-            Type: Li-SOCl₂ (High Capacity, Non-Rechargeable)
+            Batteries required: 2x AA Lithium (Non-Rechargeable)
 
 
             Level at time of alert: {{ states(''sensor.main_water_valve_battery'')
@@ -56,8 +73,7 @@
             int }}%.
 
 
-            Replace with: 1× ER26500 3.6V 9000mAh C Size Li-SOCl₂ Lithium Battery
-            (Non-Rechargeable).
+            Replace with: 2x AA Lithium batteries (Non-Rechargeable).
 
 
             A purchase reminder has been added to your Google Calendar.'
