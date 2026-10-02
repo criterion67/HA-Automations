@@ -13123,6 +13123,7 @@
       - sensor.temp_sensor_primary_bath_temperature
       - sensor.temp_sensor_foyer_temperature
       - sensor.temp_sensor_bedroom_temperature
+      - sensor.temp_sensor_bedroom_temperature2
       - sensor.temp_sensor_living_room_temperature
       - sensor.temp_sensor_outside_temperature
       - sensor.temp_sensor_garage
