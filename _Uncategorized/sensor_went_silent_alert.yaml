@@ -61,7 +61,15 @@
     script.notify_alert (or script.notify_clear for clear_notification) with the same
     message, title, tag, channel, importance, priority, ttl, actions and icon values.
     Delivery behavior is unchanged; channel and importance policy now lives in the
-    shared script.'
+    shared script.
+
+
+    FRIDGE FIX 2026-10-02: removed sensor.humidity_sensor_fridge and sensor.bedroom_fridge_humidity.
+    Both fridges use the Govee H5108, which is temperature only; govee_ble still creates
+    a humidity entity that sits at a fixed 60.0 and never reports, so it tripped this
+    alert daily. Both humidity entities were disabled in the entity registry. Added
+    sensor.bedroom_fridge_temperature, which was not being watched. Same day, the
+    Foyer sensor alerts were genuine: dead CR2032, replaced by Scott.'
   triggers:
   - id: sensor_silent
     options:
@@ -77,8 +85,7 @@
       - sensor.temp_sensor_garage
       - sensor.govee_bt_temp_sensor
       - sensor.temp_sensor_fridge
-      - sensor.humidity_sensor_fridge
-      - sensor.bedroom_fridge_humidity
+      - sensor.bedroom_fridge_temperature
       - binary_sensor.bathroom_sink_leak_sensor_6
       - binary_sensor.bathroom_2_sink_leak_sensor_8
       - binary_sensor.bathroom_2_toilet_leak_sensor_7
