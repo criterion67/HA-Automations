@@ -12522,13 +12522,16 @@
 
     - binary_sensor.dog_door to on clears input_boolean.dog_door_closed_dismissed
 
-    - sensor.nws_alerts_alerts any state change, gated on the count not being 0, clears
-    input_boolean.nws_alert_dismissed
+    - sensor.nws_alerts_alerts any state or attribute change clears input_boolean.nws_alert_dismissed
+    only when an alert ID appears that was not in the previous state
 
 
-    The NWS branch keeps its extra condition because unlike the other five it triggers
-    on any state change of the sensor rather than on one specific target state, so
-    it needs the not-zero guard to avoid clearing the flag when alerts drop to none.
+    The NWS branch compares alert IDs between the old and new state (changed 2026-10-03).
+    NWS reissues and updates to an existing alert change the sensor attributes, which
+    previously brought a dismissed card back. Now the card only returns for a genuinely
+    new alert. Changes coming from unavailable or unknown are ignored so an HA restart
+    or integration reload does not undo a dismiss. A native condition cannot compare
+    attribute lists, so a template condition is used here.
 
 
     Note on the mower trigger: it fires on leaving error with no to state specified,
@@ -12600,15 +12603,16 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.dog_door_closed_dismissed
-    - alias: NWS alert count is non-zero
+    - alias: New NWS alert ID appeared
       conditions:
       - condition: trigger
         id: nws
-      - condition: not
-        conditions:
-        - condition: state
-          entity_id: sensor.nws_alerts_alerts
-          state: '0'
+      - condition: template
+        value_template: '{% set ok = trigger.from_state is not none and trigger.from_state.state
+          not in [''unavailable'',''unknown''] %}{% set old = (trigger.from_state.attributes.get(''Alerts'')
+          or []) | map(attribute=''ID'') | list if ok else [] %}{% set new = (trigger.to_state.attributes.get(''Alerts'')
+          or []) | map(attribute=''ID'') | list %}{{ ok and (new | reject(''in'',
+          old) | list | count > 0) }}'
       sequence:
       - action: input_boolean.turn_off
         target:

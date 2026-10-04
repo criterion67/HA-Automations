@@ -18,9 +18,9 @@ Mappings, all carried over unchanged:
 - cover.garage_door to closed clears input_boolean.garage_door_open_dismissed
 - sensor.dog_bowl_water_level to Full clears input_boolean.dog_bowl_empty_dismissed
 - binary_sensor.dog_door to on clears input_boolean.dog_door_closed_dismissed
-- sensor.nws_alerts_alerts any state change, gated on the count not being 0, clears input_boolean.nws_alert_dismissed
+- sensor.nws_alerts_alerts any state or attribute change clears input_boolean.nws_alert_dismissed only when an alert ID appears that was not in the previous state
 
-The NWS branch keeps its extra condition because unlike the other five it triggers on any state change of the sensor rather than on one specific target state, so it needs the not-zero guard to avoid clearing the flag when alerts drop to none.
+The NWS branch compares alert IDs between the old and new state (changed 2026-10-03). NWS reissues and updates to an existing alert change the sensor attributes, which previously brought a dismissed card back. Now the card only returns for a genuinely new alert. Changes coming from unavailable or unknown are ignored so an HA restart or integration reload does not undo a dismiss. A native condition cannot compare attribute lists, so a template condition is used here.
 
 Note on the mower trigger: it fires on leaving error with no to state specified, which is how the original behaved, so it also fires on a transition from error to unavailable. |
 | Dawn Dusk Routine (Illuminance Based v5) | Illuminance-based test that replaces the sun elevation offsets. Dawn opens the bedroom curtains and runs the dawn scene when outdoor illuminance rises above 500 lx for 2 minutes. Dusk closes the curtains and runs the dusk scene when illuminance falls below 400 lx for 2 minutes. Reads sensor.weather_station_illuminance. Test version running while v4 (elevation based) is disabled. |
