@@ -28,15 +28,19 @@
     - binary_sensor.dog_door to on clears input_boolean.dog_door_closed_dismissed
 
     - sensor.nws_alerts_alerts any state or attribute change clears input_boolean.nws_alert_dismissed
-    only when an alert ID appears that was not in the previous state
+    only when an alert type (the Event field, e.g. Flood Watch) appears that was not
+    in the previous state
 
 
-    The NWS branch compares alert IDs between the old and new state (changed 2026-10-03).
-    NWS reissues and updates to an existing alert change the sensor attributes, which
-    previously brought a dismissed card back. Now the card only returns for a genuinely
-    new alert. Changes coming from unavailable or unknown are ignored so an HA restart
-    or integration reload does not undo a dismiss. A native condition cannot compare
-    attribute lists, so a template condition is used here.
+    The NWS branch compares alert types (Event) between the old and new state (changed
+    2026-10-04). It first compared alert IDs (2026-10-03), but NWS assigns a new ID
+    every time it issues an Update to an existing alert, so routine updates kept bringing
+    a dismissed card back. Comparing Event names means updates to an alert already
+    showing stay dismissed, and the card only returns when a different kind of alert
+    appears, such as a Tornado Warning during a Flood Watch. Changes coming from unavailable
+    or unknown are ignored so an HA restart or integration reload does not undo a
+    dismiss. A native condition cannot compare attribute lists, so a template condition
+    is used here.
 
 
     Note on the mower trigger: it fires on leaving error with no to state specified,
@@ -108,15 +112,15 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.dog_door_closed_dismissed
-    - alias: New NWS alert ID appeared
+    - alias: New NWS alert type appeared
       conditions:
       - condition: trigger
         id: nws
       - condition: template
         value_template: '{% set ok = trigger.from_state is not none and trigger.from_state.state
           not in [''unavailable'',''unknown''] %}{% set old = (trigger.from_state.attributes.get(''Alerts'')
-          or []) | map(attribute=''ID'') | list if ok else [] %}{% set new = (trigger.to_state.attributes.get(''Alerts'')
-          or []) | map(attribute=''ID'') | list %}{{ ok and (new | reject(''in'',
+          or []) | map(attribute=''Event'') | list if ok else [] %}{% set new = (trigger.to_state.attributes.get(''Alerts'')
+          or []) | map(attribute=''Event'') | list %}{{ ok and (new | reject(''in'',
           old) | list | count > 0) }}'
       sequence:
       - action: input_boolean.turn_off
