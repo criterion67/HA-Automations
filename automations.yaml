@@ -12157,6 +12157,10 @@
       minutes: 20
     id: fridge_high
     trigger: numeric_state
+    enabled: false
+    note: 'TEMPORARILY DISABLED 2026-10-07: sensor.temp_sensor_fridge (Govee H5108
+      probe) moved into the Carfrozen car fridge for a bench test. Re-enable when
+      the probe returns to the kitchen fridge. Tracked in criterion67/home-tasks #40.'
   - above: 15
     entity_id: sensor.inkbird_kitchen_freezer_temperature
     for:
@@ -12169,6 +12173,10 @@
       minutes: 10
     id: fridge_rising
     trigger: numeric_state
+    enabled: false
+    note: 'TEMPORARILY DISABLED 2026-10-07: sensor.temp_sensor_fridge (Govee H5108
+      probe) moved into the Carfrozen car fridge for a bench test. Re-enable when
+      the probe returns to the kitchen fridge. Tracked in criterion67/home-tasks #40.'
   - above: 10
     entity_id: sensor.inkbird_kitchen_freezer_temperature
     for:
@@ -12181,6 +12189,10 @@
       minutes: 20
     id: fridge_low
     trigger: numeric_state
+    enabled: false
+    note: 'TEMPORARILY DISABLED 2026-10-07: sensor.temp_sensor_fridge (Govee H5108
+      probe) moved into the Carfrozen car fridge for a bench test. Re-enable when
+      the probe returns to the kitchen fridge. Tracked in criterion67/home-tasks #40.'
   - below: -10
     entity_id: sensor.inkbird_kitchen_freezer_temperature
     for:
@@ -12193,12 +12205,20 @@
     id: fridge_unavail
     to: unavailable
     trigger: state
+    enabled: false
+    note: 'TEMPORARILY DISABLED 2026-10-07: sensor.temp_sensor_fridge (Govee H5108
+      probe) moved into the Carfrozen car fridge for a bench test. Re-enable when
+      the probe returns to the kitchen fridge. Tracked in criterion67/home-tasks #40.'
   - entity_id: sensor.temp_sensor_fridge
     for:
       minutes: 30
     id: fridge_unknown
     to: unknown
     trigger: state
+    enabled: false
+    note: 'TEMPORARILY DISABLED 2026-10-07: sensor.temp_sensor_fridge (Govee H5108
+      probe) moved into the Carfrozen car fridge for a bench test. Re-enable when
+      the probe returns to the kitchen fridge. Tracked in criterion67/home-tasks #40.'
   - entity_id: sensor.inkbird_kitchen_freezer_temperature
     for:
       minutes: 30
