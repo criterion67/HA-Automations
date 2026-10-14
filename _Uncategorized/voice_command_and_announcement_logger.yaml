@@ -1,0 +1,103 @@
+- id: '1791911244957'
+  alias: Voice Command and Announcement Logger
+  description: 'Temporary usage study started 2026-10-13. Every time Google Assistant
+    (cloud or local, including Bill''s Google display) sends a command to Home Assistant,
+    HA fires the google_assistant_command event. This automation adds one item to
+    todo.voice_command_log per command, with the time, the friendly names of the targeted
+    entities, and the command in the summary, and the raw entity ids, command parameters
+    and source in the description. Timers and questions handled entirely by Google
+    never reach Home Assistant and are not logged. Home Assistant Assist voice commands
+    are not captured. Uses a To-do list rather than the logbook because the recorder
+    keeps only 5 days. Remove this automation and the Voice Command Log list when
+    the study ends. UPDATED 2026-10-13: also logs every spoken announcement Home Assistant
+    sends (tts.speak, media_player.play_media with a media-source://tts URL, and music_assistant.play_announcement),
+    captured from the call_service event, so speaker usage for announcements can be
+    counted alongside voice control. Announcement lines start with TTS in the summary.
+    Trigger ids: google_command, tts_speak, tts_play_media, ma_announcement.'
+  triggers:
+  - event_type: google_assistant_command
+    id: google_command
+    trigger: event
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: tts
+      service: speak
+    id: tts_speak
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: media_player
+      service: play_media
+    id: tts_play_media
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: music_assistant
+      service: play_announcement
+    id: ma_announcement
+  actions:
+  - choose:
+    - alias: Google Assistant voice command
+      conditions:
+      - condition: trigger
+        id: google_command
+      sequence:
+      - alias: Pull the raw entity list and command list from the event
+        variables:
+          ids: '{{ trigger.event.data.entity_id | default([]) }}'
+          execs: '{{ trigger.event.data.execution | default([]) }}'
+      - alias: Build readable entity names and command text
+        variables:
+          names: '{% set ns = namespace(out=[]) %}{% for e in ids %}{% set ns.out
+            = ns.out + [state_attr(e, ''friendly_name'') or e] %}{% endfor %}{{ ns.out
+            | join('', '') }}'
+          cmd: '{% set ns = namespace(out=[]) %}{% for x in execs %}{% set ns.out
+            = ns.out + [(x.command | default(''unknown'') | replace(''action.devices.commands.'',
+            '''')) ~ '' '' ~ (x.params | default({}) | tojson)] %}{% endfor %}{{ ns.out
+            | join(''; '') }}'
+      - action: todo.add_item
+        alias: Append one line to the Voice Command Log
+        data:
+          description: 'Entities: {{ ids | join('', '') }}
+
+            Source: {{ trigger.event.data.source | default(''unknown'') }}
+
+            Request: {{ trigger.event.data.request_id | default('''') }}'
+          item: '{{ now().strftime(''%m/%d %H:%M:%S'') }} | {{ names }} | {{ cmd }}'
+        target:
+          entity_id: todo.voice_command_log
+    - alias: Spoken announcement sent by Home Assistant
+      conditions:
+      - condition: trigger
+        id:
+        - tts_speak
+        - tts_play_media
+        - ma_announcement
+      - condition: template
+        value_template: '{{ trigger.id != ''tts_play_media'' or ((trigger.event.data.service_data
+          | default({})).get(''media_content_id'', '''') | string).startswith(''media-source://tts'')
+          }}'
+      sequence:
+      - alias: Grab the call payload
+        variables:
+          sd: '{{ trigger.event.data.service_data | default({}) }}'
+      - alias: Work out the target speakers and the message
+        variables:
+          tgt: '{% set t = sd.get(''media_player_entity_id'', sd.get(''entity_id'',
+            ''unknown'')) %}{{ t | join('', '') if t is not string and t is iterable
+            else t }}'
+          msg: '{{ (sd.get(''message'') or sd.get(''media_content_id'', '''')) | string
+            }}'
+      - action: todo.add_item
+        alias: Append one TTS line to the Voice Command Log
+        target:
+          entity_id: todo.voice_command_log
+        data:
+          item: '{{ now().strftime(''%m/%d %H:%M:%S'') }} | TTS {{ trigger.event.data.domain
+            }}.{{ trigger.event.data.service }} | {{ tgt }} | {{ msg[:80] }}'
+          description: 'Targets: {{ tgt }}
+
+            Full message: {{ msg }}'
+  max: 20
+  mode: parallel

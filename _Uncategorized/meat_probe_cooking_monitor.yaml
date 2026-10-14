@@ -371,7 +371,7 @@
           title: Cooking monitor auto reset
           tag: cook_autoreset
           channel: Cooking
-          icon: mdi:chef-hat-off
+          icon: mdi:chef-hat
     - alias: Midnight backstop, disarm only if the cook is clearly finished
       conditions:
       - condition: trigger
@@ -397,7 +397,7 @@
           title: Cooking monitor auto reset
           tag: cook_autoreset
           channel: Cooking
-          icon: mdi:chef-hat-off
+          icon: mdi:chef-hat
     - alias: Session ended, clear notifications then check the oven
       conditions:
       - condition: trigger
