@@ -4895,9 +4895,19 @@
   mode: parallel
 - id: '1763771518580'
   alias: Garage Door position change notifications v2
-  description: 'Announces and notifies on garage door open and close. Suppressed while
-    input_boolean.mower_cycle_active is on, so a mower cycle does not fire four TTS
-    announcements and four notifications into the bedroom.
+  description: 'Announces and notifies on garage door open and close: flashes the
+    bedroom alert light red on open and turns it off on close, plays TTS on the bedroom
+    speaker, sends a phone notification, and runs an LED effect on the Bedroom Light
+    Switch (Inovelli).
+
+
+    MOWER CYCLE BEHAVIOR (changed 2026-10-17). While input_boolean.mower_cycle_active
+    is on, the automation still runs so the bedroom alert light and the Inovelli LED
+    effect show that the garage door is open. Only the TTS announcement, the phone
+    notification and the Living Room Floor Lamp 1 turn off are skipped, each wrapped
+    in an if block gated on the flag being off. This replaced the old top level condition
+    that suppressed everything, so a mower cycle no longer fires four TTS announcements
+    and four notifications into the bedroom but still gives a visual.
 
 
     NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
@@ -4923,10 +4933,7 @@
     to:
     - 'off'
     trigger: state
-  conditions:
-  - condition: state
-    entity_id: input_boolean.mower_cycle_active
-    state: 'off'
+  conditions: []
   actions:
   - choose:
     - conditions:
@@ -4954,28 +4961,34 @@
           entity_id:
           - light.living_room_floor_lamp_1
         enabled: false
-      - target:
-          entity_id:
-          - media_player.bedroom_speaker
-        data:
-          media:
-            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
-            media_content_type: provider
-            metadata:
-              title: The garage door has been opened
-              thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
-              media_class: app
-              navigateIds:
-              - {}
-              - media_content_type: app
-                media_content_id: media-source://tts
-              - media_content_type: provider
-                media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
-        action: media_player.play_media
-      - action: script.notify_alert
-        data:
-          message: Garage door has been opened.
-          title: Garage Door Position Changed
+      - alias: Skip TTS and phone notification during a mower cycle
+        if:
+        - condition: state
+          entity_id: input_boolean.mower_cycle_active
+          state: 'off'
+        then:
+        - target:
+            entity_id:
+            - media_player.bedroom_speaker
+          data:
+            media:
+              media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
+              media_content_type: provider
+              metadata:
+                title: The garage door has been opened
+                thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
+                media_class: app
+                navigateIds:
+                - {}
+                - media_content_type: app
+                  media_content_id: media-source://tts
+                - media_content_type: provider
+                  media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+opened&language=en-US&voice=JennyNeural
+          action: media_player.play_media
+        - action: script.notify_alert
+          data:
+            message: Garage door has been opened.
+            title: Garage Door Position Changed
       - type: issue_all_led_effect
         domain: zha
         device_id: cf2b54ede5b6725a721039bc1f9bb552
@@ -4993,24 +5006,30 @@
           entity_id:
           - light.bedroom_alert_light
         action: light.turn_off
-      - target:
-          entity_id:
-          - media_player.bedroom_speaker
-        data:
-          media:
-            media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=JennyNeural
-            media_content_type: provider
-            metadata:
-              title: The garage door has been closed
-              thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
-              media_class: app
-              navigateIds:
-              - {}
-              - media_content_type: app
-                media_content_id: media-source://tts
-              - media_content_type: provider
-                media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=JennyNeural
-        action: media_player.play_media
+      - alias: Skip TTS during a mower cycle
+        if:
+        - condition: state
+          entity_id: input_boolean.mower_cycle_active
+          state: 'off'
+        then:
+        - target:
+            entity_id:
+            - media_player.bedroom_speaker
+          data:
+            media:
+              media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=JennyNeural
+              media_content_type: provider
+              metadata:
+                title: The garage door has been closed
+                thumbnail: https://brands.home-assistant.io/_/cloud/logo.png
+                media_class: app
+                navigateIds:
+                - {}
+                - media_content_type: app
+                  media_content_id: media-source://tts
+                - media_content_type: provider
+                  media_content_id: media-source://tts/cloud?message=The+garage+door+has+been+closed&language=en-US&voice=JennyNeural
+          action: media_player.play_media
       - type: issue_all_led_effect
         domain: zha
         device_id: cf2b54ede5b6725a721039bc1f9bb552
@@ -5018,22 +5037,28 @@
         color: 125
         level: 79
         duration: 15
-      - action: script.notify_alert
-        data:
-          message: Garage door has been closed.
-          title: Garage Door Position Changed
-      - action: light.turn_off
-        target:
-          entity_id:
-          - light.living_room_floor_lamp_1
-        data: {}
-        enabled: false
-      - delay:
-          seconds: 1
-      - action: light.turn_off
-        target:
-          entity_id: light.living_room_floor_lamp_1
-        data: {}
+      - alias: Skip phone notification and floor lamp off during a mower cycle
+        if:
+        - condition: state
+          entity_id: input_boolean.mower_cycle_active
+          state: 'off'
+        then:
+        - action: script.notify_alert
+          data:
+            message: Garage door has been closed.
+            title: Garage Door Position Changed
+        - action: light.turn_off
+          target:
+            entity_id:
+            - light.living_room_floor_lamp_1
+          data: {}
+          enabled: false
+        - delay:
+            seconds: 1
+        - action: light.turn_off
+          target:
+            entity_id: light.living_room_floor_lamp_1
+          data: {}
   mode: single
 - id: '1764114845569'
   alias: Vacation Water and Light Control
@@ -11651,7 +11676,16 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    STARTUP CLEANUP 2026-10-17. Core, OS and Supervisor updates finish across a restart,
+    and the startup guard skips the pending count change that happens during the restart,
+    so the lamp stayed green after the Core 2026.10.2 update. A Home Assistant start
+    trigger (id ha_started) now runs once after every restart: if sensor.pending_updates
+    is 0 and the ownership flag is on, it turns the lamp off and clears the flag.
+    It sends no phone notification and works at any hour. If updates are still pending
+    at startup, or Scott owns the lamp, it does nothing.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -11663,12 +11697,18 @@
   - trigger: time
     at: 08:00:00
     id: quiet_hours_end
+  - trigger: homeassistant
+    event: start
+    id: ha_started
   conditions:
-  - alias: Allow the 8 AM catch up, otherwise skip startup and unavailable transitions
+  - alias: Allow the 8 AM catch up and the startup cleanup, otherwise skip startup
+      and unavailable transitions
     condition: or
     conditions:
     - condition: trigger
       id: quiet_hours_end
+    - condition: trigger
+      id: ha_started
     - alias: Skip startup and unavailable transitions
       condition: template
       value_template: '{{ trigger.from_state is not none and trigger.from_state.state
@@ -11681,6 +11721,23 @@
       - condition: trigger
         id: lamp_turned_off
       sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.fado_update_indicator_active
+    - alias: Startup cleanup, turn the lamp off if an update finished across a restart
+      conditions:
+      - condition: trigger
+        id: ha_started
+      - condition: state
+        entity_id: sensor.pending_updates
+        state: '0'
+      - condition: state
+        entity_id: input_boolean.fado_update_indicator_active
+        state: 'on'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.bedroom_fado_lamp
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.fado_update_indicator_active

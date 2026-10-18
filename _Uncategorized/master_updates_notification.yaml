@@ -72,7 +72,16 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    STARTUP CLEANUP 2026-10-17. Core, OS and Supervisor updates finish across a restart,
+    and the startup guard skips the pending count change that happens during the restart,
+    so the lamp stayed green after the Core 2026.10.2 update. A Home Assistant start
+    trigger (id ha_started) now runs once after every restart: if sensor.pending_updates
+    is 0 and the ownership flag is on, it turns the lamp off and clears the flag.
+    It sends no phone notification and works at any hour. If updates are still pending
+    at startup, or Scott owns the lamp, it does nothing.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -84,12 +93,18 @@
   - trigger: time
     at: 08:00:00
     id: quiet_hours_end
+  - trigger: homeassistant
+    event: start
+    id: ha_started
   conditions:
-  - alias: Allow the 8 AM catch up, otherwise skip startup and unavailable transitions
+  - alias: Allow the 8 AM catch up and the startup cleanup, otherwise skip startup
+      and unavailable transitions
     condition: or
     conditions:
     - condition: trigger
       id: quiet_hours_end
+    - condition: trigger
+      id: ha_started
     - alias: Skip startup and unavailable transitions
       condition: template
       value_template: '{{ trigger.from_state is not none and trigger.from_state.state
@@ -102,6 +117,23 @@
       - condition: trigger
         id: lamp_turned_off
       sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.fado_update_indicator_active
+    - alias: Startup cleanup, turn the lamp off if an update finished across a restart
+      conditions:
+      - condition: trigger
+        id: ha_started
+      - condition: state
+        entity_id: sensor.pending_updates
+        state: '0'
+      - condition: state
+        entity_id: input_boolean.fado_update_indicator_active
+        state: 'on'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.bedroom_fado_lamp
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.fado_update_indicator_active
