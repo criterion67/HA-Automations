@@ -1,56 +1,99 @@
 - id: '1751772259530'
   alias: Washer/Dryer Status Management
-  description: This automation monitors the washer and dryer's status, providing voice
-    notifications for each cycle change. It also uses light color changes and mobile
-    notifications to alert when cycles start or finish. The bedroom ceiling light
-    state is snapshotted at the start of each run and restored at the end, so the
-    notification flash never leaves the light in the wrong state.
+  description: 'This automation monitors the washer and dryer''s status, providing
+    voice notifications for each cycle change. It also uses light color changes and
+    mobile notifications to alert when cycles start or finish. The bedroom ceiling
+    light state is snapshotted at the start of each run and restored at the end, so
+    the notification flash never leaves the light in the wrong state.
+
+
+    ESPHOME MIGRATION 2026-10-21: triggers moved from the dead geappliances MQTT entities
+    (sensor.machine_state_machine_status, sensor.sub_cycle_state_machine_sub_cycle)
+    to the ESPHome GE Ultrafast Combo entities (sensor.ge_ultrafast_combo_state, sensor.ge_ultrafast_combo_sub_cycle).
+    State names changed: Run to Running, Finished to Cycle Complete, Fill to Filling,
+    Cool Down to Cooldown. Trigger IDs are unchanged so the choose branches still
+    match. Every trigger ignores changes coming from unavailable or unknown, so an
+    ESPHome reconnect mid cycle does not repeat an announcement. The Off trigger stays
+    disabled; ESPHome has not been seen reporting Off.'
   triggers:
-  - entity_id: sensor.machine_state_machine_status
-    to: Run
+  - entity_id: sensor.ge_ultrafast_combo_state
+    to: Running
     id: 'On'
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
     to: Load Size Detection
     id: Load Size Detection
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
-    to: Fill
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
+    to: Filling
     id: Fill
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
     to: Wash
     id: Wash
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
     to: Rinse
     id: Rinse
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
     to: Drain
     id: Drain
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
     to: Spin
     id: Spin
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
     to: Drying
     id: Drying
     trigger: state
-  - entity_id: sensor.sub_cycle_state_machine_sub_cycle
-    to: Cool Down
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_sub_cycle
+    to: Cooldown
     id: Cool Down
     trigger: state
-  - entity_id: sensor.machine_state_machine_status
-    to: Finished
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_state
+    to: Cycle Complete
     id: Finished
     trigger: state
-  - entity_id: sensor.machine_state_machine_status
+    not_from:
+    - unavailable
+    - unknown
+  - entity_id: sensor.ge_ultrafast_combo_state
     to: 'Off'
     id: 'Off'
     enabled: false
     trigger: state
+    not_from:
+    - unavailable
+    - unknown
   conditions: []
   actions:
   - action: scene.create

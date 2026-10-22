@@ -55,6 +55,9 @@
           - media_content_type: app
             media_content_id: media-source://media_source
         action: media_player.play_media
+        continue_on_error: true
+        note: continue_on_error so the helper is always turned back off, even if the
+          Dogs speaker group fails to play (helper is exposed to Google Home voice).
       - delay:
           hours: 0
           minutes: 0
