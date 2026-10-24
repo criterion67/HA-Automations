@@ -125,7 +125,16 @@
     script.notify_alert (or script.notify_clear for clear_notification) with the same
     message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
     and icon values. Delivery behavior is unchanged; channel and importance policy
-    now lives in the shared script.'
+    now lives in the shared script.
+
+
+    FAULT REASON 2026-10-23: every branch that raises input_boolean.drainflo_pump_fault
+    also sets input_select.drainflo_fault_reason (Relay offline, Pump stuck on; the
+    dose script sets Dose skipped and Pump did not start), so the dashboard card can
+    say which check fired instead of always reading as a failed dose. script.drainflo_clear_fault
+    and a successful dose reset it to None. Added after the 2026-10-23 03:36 network
+    drop, when the relay offline warning fired and the card wrongly said the monthly
+    dose did not complete.'
   triggers:
   - at: 05:00:00
     id: scheduled_dose
@@ -185,6 +194,12 @@
         alias: Raise the fault flag for the dashboard card
         target:
           entity_id: input_boolean.drainflo_pump_fault
+      - action: input_select.select_option
+        alias: Record why the fault was raised, for the dashboard card
+        target:
+          entity_id: input_select.drainflo_fault_reason
+        data:
+          option: Pump stuck on
       - action: script.notify_alert
         alias: Wake Scott, this one is urgent
         data:
@@ -224,6 +239,12 @@
         alias: Raise the fault flag for the dashboard card
         target:
           entity_id: input_boolean.drainflo_pump_fault
+      - action: input_select.select_option
+        alias: Record why the fault was raised, for the dashboard card
+        target:
+          entity_id: input_select.drainflo_fault_reason
+        data:
+          option: Relay offline
       - action: script.notify_alert
         alias: Warn Scott the relay is unreachable
         data:

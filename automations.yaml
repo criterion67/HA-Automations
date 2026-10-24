@@ -11752,7 +11752,25 @@
     trigger (id ha_started) now runs once after every restart: if sensor.pending_updates
     is 0 and the ownership flag is on, it turns the lamp off and clears the flag.
     It sends no phone notification and works at any hour. If updates are still pending
-    at startup, or Scott owns the lamp, it does nothing.'
+    at startup, or Scott owns the lamp, it does nothing.
+
+
+    DEFECT FIXES 2026-10-23. Two misfires on 2026-10-23 after the Core rollback: (1)
+    the old critical branch fired on ANY change to a critical update, so skipping
+    Core 2026.10.3 sent ''Update Completed for Home Assistant Core'' and turned the
+    lamp green; (2) right after a restart every update entity''s last_changed is reset,
+    so the changed entity was misidentified (''Update Completed for Jason Momower'').
+    Fixes: the critical list now lives once, in the variable critical, and critical_pending
+    says whether any of them is on; the lamp color everywhere is green when critical_pending,
+    otherwise royalblue (rgb 65,105,225), so it reflects what is pending now rather
+    than which entity changed, and the second copy of the list is gone. The separate
+    critical and default branches are replaced by one branch: a newly available update
+    notifies and lights the lamp; a completed or skipped update with others still
+    pending notifies and only recolors the lamp if this automation owns it. A restart
+    settling branch handles updates_changed within 2 minutes of HA start (sensor.uptime):
+    no notifications, lamp synced to what is pending (off if nothing and owned; otherwise
+    lit outside quiet hours only if the lamp is off or owned). title_word now reports
+    Skipped when the update''s skipped_version equals its latest_version.'
   triggers:
   - entity_id: sensor.pending_updates
     id: updates_changed
@@ -11808,6 +11826,55 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.fado_update_indicator_active
+    - alias: 'Restart settling, first 2 minutes after HA starts: sync the lamp to
+        what is pending, no notifications'
+      conditions:
+      - condition: trigger
+        id: updates_changed
+      - alias: HA started less than 2 minutes ago
+        condition: template
+        value_template: '{% set u = as_datetime(states(''sensor.uptime''), none) %}{{
+          u is not none and (now() - u).total_seconds() < 120 }}'
+      sequence:
+      - if:
+        - condition: state
+          entity_id: sensor.pending_updates
+          state: '0'
+        then:
+        - if:
+          - condition: state
+            entity_id: input_boolean.fado_update_indicator_active
+            state: 'on'
+          then:
+          - action: light.turn_off
+            target:
+              entity_id: light.bedroom_fado_lamp
+        - action: input_boolean.turn_off
+          target:
+            entity_id: input_boolean.fado_update_indicator_active
+        else:
+        - if:
+          - condition: time
+            after: 08:00:00
+            before: '22:00:00'
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: input_boolean.fado_update_indicator_active
+              state: 'on'
+            - condition: state
+              entity_id: light.bedroom_fado_lamp
+              state: 'off'
+          then:
+          - alias: Green if any critical update is pending, otherwise royalblue
+            action: light.turn_on
+            target:
+              entity_id: light.bedroom_fado_lamp
+            data:
+              rgb_color: '{{ [0,255,0] if critical_pending else [65,105,225] }}'
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.fado_update_indicator_active
     - alias: 8 AM catch up, light the lamp for updates still pending after quiet hours
       conditions:
       - condition: trigger
@@ -11817,53 +11884,11 @@
         above: 0
       sequence:
       - alias: Green if any critical update is pending, otherwise royalblue
-        if:
-        - condition: state
-          entity_id:
-          - update.home_assistant_operating_system_update
-          - update.home_assistant_supervisor_update
-          - update.home_assistant_core_update
-          - update.esphome_update
-          - update.matter_server_update
-          - update.openthread_border_router_update
-          - update.zigbee2mqtt_update
-          - update.z_wave_js_ui_update
-          - update.mosquitto_broker_update
-          - update.studio_code_server_update
-          - update.terminal_ssh_update
-          - update.file_editor_update
-          - update.samba_share_update
-          - update.advanced_ssh_web_terminal_update
-          - update.home_assistant_mcp_server_update
-          - update.music_assistant_server_update
-          - update.ring_mqtt_with_video_streaming_update
-          - update.usw_flex_mini
-          - update.usw_pro_max_24_poe
-          - update.living_room_usw_flex_mini
-          - update.bedroom_usw_flex_mini
-          - update.usw_aggregation
-          - update.usp_pdu_pro
-          - update.udm_pro
-          - update.usw_flex_2_5g_5
-          - update.garage_ap_u6_lite
-          - update.living_room_ap_u6_lite
-          state: 'on'
-          match: any
-        then:
-        - action: light.turn_on
-          data:
-            rgb_color:
-            - 0
-            - 255
-            - 0
-          target:
-            entity_id: light.bedroom_fado_lamp
-        else:
-        - action: light.turn_on
-          data:
-            color_name: royalblue
-          target:
-            entity_id: light.bedroom_fado_lamp
+        action: light.turn_on
+        target:
+          entity_id: light.bedroom_fado_lamp
+        data:
+          rgb_color: '{{ [0,255,0] if critical_pending else [65,105,225] }}'
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.fado_update_indicator_active
@@ -11897,15 +11922,12 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.fado_update_indicator_active
-    - alias: Critical infrastructure update
+    - alias: Update changed with updates still pending
       conditions:
       - condition: trigger
         id: updates_changed
-      - condition: template
-        value_template: '{% set critical = [''update.home_assistant_operating_system_update'',''update.home_assistant_supervisor_update'',''update.home_assistant_core_update'',''update.esphome_update'',''update.matter_server_update'',''update.openthread_border_router_update'',''update.zigbee2mqtt_update'',''update.z_wave_js_ui_update'',''update.mosquitto_broker_update'',''update.studio_code_server_update'',''update.terminal_ssh_update'',''update.file_editor_update'',''update.samba_share_update'',''update.advanced_ssh_web_terminal_update'',''update.home_assistant_mcp_server_update'',''update.music_assistant_server_update'',''update.ring_mqtt_with_video_streaming_update'',''update.usw_flex_mini'',''update.usw_pro_max_24_poe'',''update.living_room_usw_flex_mini'',''update.bedroom_usw_flex_mini'',''update.usw_aggregation'',''update.usp_pdu_pro'',''update.udm_pro'',''update.usw_flex_2_5g_5'',''update.garage_ap_u6_lite'',''update.living_room_ap_u6_lite'']
-          %}{{ changed_entity in critical }}'
       sequence:
-      - alias: Notify and light the lamp only outside quiet hours (10 PM to 8 AM)
+      - alias: Only outside quiet hours (10 PM to 8 AM)
         if:
         - condition: time
           after: 08:00:00
@@ -11915,39 +11937,34 @@
           data:
             message: '{{ title_word }} for {{ clean_name }}'
             title: Update {{ title_word }}
-        - action: light.turn_on
-          data:
-            rgb_color:
-            - 0
-            - 255
-            - 0
-          target:
-            entity_id: light.bedroom_fado_lamp
-        - action: input_boolean.turn_on
-          target:
-            entity_id: input_boolean.fado_update_indicator_active
-    default:
-    - alias: 'Only on an update change: notify and light the lamp outside quiet hours
-        (10 PM to 8 AM)'
-      if:
-      - condition: trigger
-        id: updates_changed
-      - condition: time
-        after: 08:00:00
-        before: '22:00:00'
-      then:
-      - action: script.notify_alert
-        data:
-          message: '{{ title_word }} for {{ clean_name }}'
-          title: Update {{ title_word }}
-      - action: light.turn_on
-        data:
-          color_name: royalblue
-        target:
-          entity_id: light.bedroom_fado_lamp
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.fado_update_indicator_active
+        - alias: 'New update available: light the lamp. Completed or skipped: only
+            recolor a lamp this automation owns'
+          if:
+          - alias: The changed update became available
+            condition: template
+            value_template: '{{ changed_state == ''on'' }}'
+          then:
+          - alias: Green if any critical update is pending, otherwise royalblue
+            action: light.turn_on
+            target:
+              entity_id: light.bedroom_fado_lamp
+            data:
+              rgb_color: '{{ [0,255,0] if critical_pending else [65,105,225] }}'
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.fado_update_indicator_active
+          else:
+          - if:
+            - condition: state
+              entity_id: input_boolean.fado_update_indicator_active
+              state: 'on'
+            then:
+            - alias: Green if any critical update is pending, otherwise royalblue
+              action: light.turn_on
+              target:
+                entity_id: light.bedroom_fado_lamp
+              data:
+                rgb_color: '{{ [0,255,0] if critical_pending else [65,105,225] }}'
   max: 20
   mode: queued
   variables:
@@ -11959,7 +11976,40 @@
       true) %}{% set n = n | regex_replace(find=''(?i)update'', replace='''') %}{%
       set n = n | regex_replace(find=''(?i)firmware'', replace='''') %}{% set n =
       n | regex_replace(find=''\s+'', replace='' '') %}{{ n.strip().title() }}'
-    title_word: '{{ ''Available'' if changed_state == ''on'' else ''Completed'' }}'
+    title_word: '{% set e = changed_entity %}{{ ''Available'' if changed_state ==
+      ''on'' else (''Skipped'' if state_attr(e,''skipped_version'') is not none and
+      state_attr(e,''skipped_version'') == state_attr(e,''latest_version'') else ''Completed'')
+      }}'
+    critical:
+    - update.home_assistant_operating_system_update
+    - update.home_assistant_supervisor_update
+    - update.home_assistant_core_update
+    - update.esphome_update
+    - update.matter_server_update
+    - update.openthread_border_router_update
+    - update.zigbee2mqtt_update
+    - update.z_wave_js_ui_update
+    - update.mosquitto_broker_update
+    - update.studio_code_server_update
+    - update.terminal_ssh_update
+    - update.file_editor_update
+    - update.samba_share_update
+    - update.advanced_ssh_web_terminal_update
+    - update.home_assistant_mcp_server_update
+    - update.music_assistant_server_update
+    - update.ring_mqtt_with_video_streaming_update
+    - update.usw_flex_mini
+    - update.usw_pro_max_24_poe
+    - update.living_room_usw_flex_mini
+    - update.bedroom_usw_flex_mini
+    - update.usw_aggregation
+    - update.usp_pdu_pro
+    - update.udm_pro
+    - update.usw_flex_2_5g_5
+    - update.garage_ap_u6_lite
+    - update.living_room_ap_u6_lite
+    critical_pending: '{{ critical | select(''is_state'',''on'') | list | count >
+      0 }}'
 - id: '1787268207663'
   alias: NFC Tag Actions (Consolidated)
   description: 'Single handler for 11 NFC tags, replacing 11 separate automations.
@@ -14393,7 +14443,16 @@
     script.notify_alert (or script.notify_clear for clear_notification) with the same
     message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent
     and icon values. Delivery behavior is unchanged; channel and importance policy
-    now lives in the shared script.'
+    now lives in the shared script.
+
+
+    FAULT REASON 2026-10-23: every branch that raises input_boolean.drainflo_pump_fault
+    also sets input_select.drainflo_fault_reason (Relay offline, Pump stuck on; the
+    dose script sets Dose skipped and Pump did not start), so the dashboard card can
+    say which check fired instead of always reading as a failed dose. script.drainflo_clear_fault
+    and a successful dose reset it to None. Added after the 2026-10-23 03:36 network
+    drop, when the relay offline warning fired and the card wrongly said the monthly
+    dose did not complete.'
   triggers:
   - at: 05:00:00
     id: scheduled_dose
@@ -14453,6 +14512,12 @@
         alias: Raise the fault flag for the dashboard card
         target:
           entity_id: input_boolean.drainflo_pump_fault
+      - action: input_select.select_option
+        alias: Record why the fault was raised, for the dashboard card
+        target:
+          entity_id: input_select.drainflo_fault_reason
+        data:
+          option: Pump stuck on
       - action: script.notify_alert
         alias: Wake Scott, this one is urgent
         data:
@@ -14492,6 +14557,12 @@
         alias: Raise the fault flag for the dashboard card
         target:
           entity_id: input_boolean.drainflo_pump_fault
+      - action: input_select.select_option
+        alias: Record why the fault was raised, for the dashboard card
+        target:
+          entity_id: input_select.drainflo_fault_reason
+        data:
+          option: Relay offline
       - action: script.notify_alert
         alias: Warn Scott the relay is unreachable
         data:
