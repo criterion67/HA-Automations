@@ -10112,13 +10112,13 @@
     on the Mobile and Scott''s Dashboard tablet views) and sends one push to the Pixel
     9 tagged bp_reminder. The reminder goes away three ways, all of which end in the
     same state: tapping Dismiss on the phone notification, tapping the dashboard card,
-    or a genuinely new systolic reading arriving from Health Connect. Any of those
-    sets the boolean on and clears the phone notification by tag, so the two surfaces
-    stay in sync. A new systolic reading also stamps input_datetime.last_bp_reading
-    and input_number.last_known_systolic; the value-change guard on that branch prevents
-    Health Connect resyncs and restarts from being mistaken for fresh readings. Replaces
-    four earlier automations: the 30 minute time_pattern morning reminder, the midnight
-    and 7 PM flag reset, the windowed auto dismiss, and the standalone stamp automation.
+    or a genuinely new reading arriving from Health Connect. Any of those sets the
+    boolean on and clears the phone notification by tag, so the two surfaces stay
+    in sync. A new reading also stamps input_datetime.last_bp_reading. input_number.last_known_systolic
+    is updated by its own branch whenever a systolic value arrives, converted from
+    the raw inHg value to mmHg. Replaces four earlier automations: the 30 minute time_pattern
+    morning reminder, the midnight and 7 PM flag reset, the windowed auto dismiss,
+    and the standalone stamp automation.
 
 
     NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
@@ -10126,7 +10126,26 @@
     same message, title, tag, channel, importance, priority, ttl, actions, sticky,
     persistent, color, image, url and icon values, and target set to watch or bill
     where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    and importance policy now lives in the shared scripts.
+
+
+    READING TRIGGER 2026-10-24: the reading trigger now watches the date attribute
+    of both raw Health Connect sensors (sensor.pixel_9_systolic_blood_pressure and
+    sensor.pixel_9_diastolic_blood_pressure) instead of the systolic mmHg template
+    value. A reading counts as new when its date attribute changed and is later than
+    input_datetime.last_bp_reading, so a partial sync where only one value arrives
+    still dismisses the reminder, two readings with the same systolic number both
+    count, and restarts or duplicate arrivals of the same reading are ignored. This
+    replaced the earlier systolic value change guard after a 2026-10-24 reading delivered
+    only the diastolic value and the card stayed up.
+
+
+    SYSTOLIC VALUE BRANCH 2026-10-24: Health Connect delivers the diastolic value
+    first and the systolic value about five minutes later, so the New reading arrived
+    branch usually runs before the new systolic exists and its duplicate guard then
+    skips the late systolic. The separate systolic_value trigger and Systolic value
+    arrived branch set input_number.last_known_systolic from the systolic sensor itself
+    every time its date attribute changes, independent of the reminder logic.'
   triggers:
   - at: 07:00:00
     id: morning
@@ -10134,12 +10153,12 @@
   - at: '19:00:00'
     id: evening
     trigger: time
-  - entity_id: sensor.pixel_9_systolic_bp
+  - trigger: state
+    entity_id:
+    - sensor.pixel_9_systolic_blood_pressure
+    - sensor.pixel_9_diastolic_blood_pressure
+    attribute: date
     id: reading
-    not_to:
-    - unknown
-    - unavailable
-    trigger: state
   - event_data:
       action: DISMISS_BP_REMINDER
     event_type: mobile_app_notification_action
@@ -10149,6 +10168,10 @@
     id: flag_dismissed
     to: 'on'
     trigger: state
+  - trigger: state
+    entity_id: sensor.pixel_9_systolic_blood_pressure
+    attribute: date
+    id: systolic_value
   actions:
   - choose:
     - alias: Morning reminder
@@ -10188,8 +10211,11 @@
       - condition: trigger
         id: reading
       - condition: template
-        value_template: '{{ trigger.to_state.state | float(0) != states(''input_number.last_known_systolic'')
-          | float(0) }}'
+        value_template: '{% set d = trigger.to_state.attributes.date | default('''')
+          %}{% set last = states(''input_datetime.last_bp_reading'') %}{{ d != ''''
+          and trigger.from_state is not none and d != (trigger.from_state.attributes.date
+          | default('''')) and (last in [''unknown'',''unavailable'',''''] or as_datetime(d)
+          > as_local(as_datetime(last))) }}'
       sequence:
       - action: input_boolean.turn_on
         target:
@@ -10202,11 +10228,19 @@
           datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
         target:
           entity_id: input_datetime.last_bp_reading
+    - alias: Systolic value arrived
+      conditions:
+      - condition: trigger
+        id: systolic_value
+      - condition: numeric_state
+        entity_id: sensor.pixel_9_systolic_blood_pressure
+        above: 0
+      sequence:
       - action: input_number.set_value
-        data:
-          value: '{{ trigger.to_state.state | float }}'
         target:
           entity_id: input_number.last_known_systolic
+        data:
+          value: '{{ (trigger.to_state.state | float(0) * 25.4) | round(0) }}'
     - alias: Dismissed from phone notification
       conditions:
       - condition: trigger
