@@ -9,7 +9,10 @@
     that no longer exists. They now use media_player.all_speakers, the house-wide
     Cast speaker group. LOG FIX 2026-09-24: all 8 MQTT triggers now use value_json.action
     with a default, so battery and link quality messages from the remote no longer
-    log template warnings.'
+    log template warnings. BUTTON 1 CLEARED 2026-10-28: button 1 single and double
+    press actions were removed because this remote should not control anything in
+    the office (office lights use the Zooz remote and Lutron Caseta switches). Button
+    1 is unassigned for now.'
   triggers:
   - topic: zigbee2mqtt/Aqara 4 button remote
     value_template: '{{ value_json.action | default('''') }}'
@@ -57,27 +60,11 @@
     - conditions:
       - condition: trigger
         id: 1st pressed 1x
-      sequence:
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id: light.desk_lamp_short
-        data: {}
-      - action: light.turn_on
-        metadata: {}
-        data: {}
-        target:
-          device_id: 745a1199bafbac793894d4b9855eb1cf
+      sequence: []
     - conditions:
       - condition: trigger
         id: 1st pressed 2x
-      sequence:
-      - action: light.turn_off
-        metadata: {}
-        target:
-          area_id: office
-          device_id: 745a1199bafbac793894d4b9855eb1cf
-        data: {}
+      sequence: []
     - conditions:
       - condition: trigger
         id: 2nd pressed 1x
