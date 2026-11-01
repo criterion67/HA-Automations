@@ -1,8 +1,10 @@
 - id: '1782935490153'
   alias: Petkit - Feeding Schedule
-  description: 'Dispenses Gracie''s three daily meals via the Fresh Element Solo and
-    plays the 9000 Hz tone to call her. Schedule: 30g at 7:00 AM, 20g at 12:00 PM,
-    30g at 6:00 PM = 80g daily total.'
+  description: Plays the 9000 Hz tone on the Dogs cast speaker to call Gracie at her
+    three meal times (7:00 AM, 12:00 PM, 6:00 PM). Feeding itself is done by the feeder's
+    own Petkit app schedule (30 g, 20 g, 30 g = 80 g daily), which keeps running offline
+    and on battery during outages. This automation no longer sends feed commands (changed
+    2026-10-31).
   triggers:
   - trigger: time
     at: 07:00:00
@@ -22,33 +24,5 @@
         media_content_id: media-source://media_source/local/oscillator-9000-hz-tone.mp3
         media_content_type: audio/mpeg
         metadata: {}
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: morning
-      sequence:
-      - action: text.set_value
-        target:
-          entity_id: text.fresh_element_solo_manual_feed
-        data:
-          value: '30'
-    - conditions:
-      - condition: trigger
-        id: midday
-      sequence:
-      - action: text.set_value
-        target:
-          entity_id: text.fresh_element_solo_manual_feed
-        data:
-          value: '20'
-    - conditions:
-      - condition: trigger
-        id: evening
-      sequence:
-      - action: text.set_value
-        target:
-          entity_id: text.fresh_element_solo_manual_feed
-        data:
-          value: '30'
   mode: parallel
   max: 3
