@@ -1,7 +1,8 @@
 - id: '1757264925777'
-  alias: NFC - Toggle Garage Door from Truck
-  description: 'NFC tag on dashboard will toggle garage door and lock/unlock laundry
-    room door with failsafe notification.
+  alias: NFC - Toggle Garage Door from Tesla
+  description: 'NFC tag in the Tesla (tag a2768650, replaced the destroyed truck tag
+    2026-11-02) will toggle garage door and lock/unlock laundry room door with failsafe
+    notification.
 
 
     NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
@@ -11,7 +12,7 @@
     where the call went to those devices. Delivery behavior is unchanged; channel
     and importance policy now lives in the shared scripts.'
   triggers:
-  - tag_id: b38fed34-ef7f-4575-a5ba-f28347be2b49
+  - tag_id: a2768650-99bf-45ef-b2da-e4a60ebd88b4
     trigger: tag
   actions:
   - action: cover.toggle

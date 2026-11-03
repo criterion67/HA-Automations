@@ -9,6 +9,6 @@
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts.
 
 RETRY 2026-09-24: the LLM Vision call now retries once after 30 seconds when Gemini is overloaded (503). On 2026-09-24 five delivery checks failed outright on that error. |
-| NFC - Toggle Garage Door from Truck | NFC tag on dashboard will toggle garage door and lock/unlock laundry room door with failsafe notification.
+| NFC - Toggle Garage Door from Tesla | NFC tag in the Tesla (tag a2768650, replaced the destroyed truck tag 2026-11-02) will toggle garage door and lock/unlock laundry room door with failsafe notification.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
