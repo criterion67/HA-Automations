@@ -2,11 +2,16 @@
   alias: 'V2: Doorbell - Button Pressed Notification Chime'
   description: G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime
     and TTS announcement on Dining Room Speaker. Uses medium resolution channel (1440x1920)
-    as high-res portrait stream is not rendered correctly by Chromecast.
+    as high-res portrait stream is not rendered correctly by Chromecast. Triggers
+    on the doorbell ring event entity (the old doorbell binary sensor is deprecated
+    and stops working in 2027.1).
   triggers:
-  - entity_id: binary_sensor.g6_pro_doorbell_doorbell
-    to: 'on'
-    trigger: state
+  - trigger: event.received
+    target:
+      entity_id: event.g6_pro_doorbell_doorbell
+    options:
+      event_type:
+      - ring
   conditions: []
   actions:
   - parallel:
