@@ -2890,11 +2890,16 @@
   mode: single
 - id: '1753663543034'
   alias: 'V2: Doorbell - Button Pressed Notification Chime'
-  description: G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime
+  description: 'G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime
     and TTS announcement on Dining Room Speaker. Uses medium resolution channel (1440x1920)
     as high-res portrait stream is not rendered correctly by Chromecast. Triggers
     on the doorbell ring event entity (the old doorbell binary sensor is deprecated
-    and stops working in 2027.1).
+    and stops working in 2027.1). CHIME FILE 2026-11-16: switched the chime from sounds_sounds_ring_button_Chime.wav
+    to UniFi_Sounds_Ring_button_Chime.mp3 because the Dining Room Speaker refused
+    the WAV (Failed to cast media, went idle at once) while the MP3 (UniFi ring chime
+    by file name) plays in full on that speaker. RESUME GUARD 2026-11-16: the resume
+    step now runs only when the Living Room TV is paused, because calling media_play
+    with nothing queued raised The queue is empty and ended every run in an error.'
   triggers:
   - trigger: event.received
     target:
@@ -2923,10 +2928,10 @@
           sequence:
           - data:
               media:
-                media_content_id: media-source://media_source/local/sounds_sounds_ring_button_Chime.wav
-                media_content_type: audio/x-wav
+                media_content_id: media-source://media_source/local/UniFi_Sounds_Ring_button_Chime.mp3
+                media_content_type: audio/mpeg
                 metadata:
-                  title: sounds_sounds_ring_button_Chime.wav
+                  title: UniFi_Sounds_Ring_button_Chime.mp3
                   thumbnail:
                   media_class: music
                   children_media_class:
@@ -2983,11 +2988,16 @@
         target:
           entity_id: media_player.onn_streaming_device_4k_pro
         data: {}
-      - alias: Resume previous Living Room TV playback
-        action: media_player.media_play
-        target:
+      - alias: Resume previous Living Room TV playback, only if it is paused
+        if:
+        - condition: state
           entity_id: media_player.living_room_tv
-        data: {}
+          state: paused
+        then:
+        - action: media_player.media_play
+          target:
+            entity_id: media_player.living_room_tv
+          data: {}
   mode: single
 - id: '1755733082034'
   alias: 'Ecovacs Mower: Battery Charge Alert'
@@ -13897,7 +13907,7 @@
   mode: single
 - id: '1788391579286'
   alias: Test - Fridge or Freezer Open Sound
-  description: 'TEST AUTOMATION. Plays the UniFi motion alert wav on the dining room
+  description: 'TEST AUTOMATION. Plays the UniFi motion alert mp3 on the dining room
     Cast speaker when the fridge door or the freezer drawer opens. The Cast device
     plays its own cold start tone whenever a new cast session opens, and that tone
     does not repeat while the session stays warm. To hide it, this automation drops
@@ -13905,7 +13915,10 @@
     the volume, then plays the file again into the now warm session. Music Assistant
     was ruled out on 2026-09-02: play_announcement failed with PlayerCommandFailed
     because the Cast speakers cannot reach the stream server on 192.168.10.168 port
-    8097.'
+    8097. MP3 SWITCH 2026-11-16: the Dining Room Speaker refused UniFi_Sounds_Motion_Alert.wav
+    (Failed to cast media, idle within about 60 ms, every run back to at least 2026-11-11),
+    so the same WAV was converted to UniFi_Sounds_Motion_Alert.mp3 (192 kbps, 44.1
+    kHz mono, 2.04 s) and both play steps now use it.'
   triggers:
   - entity_id:
     - binary_sensor.fridge_door_contact
@@ -13929,10 +13942,10 @@
       entity_id: media_player.dining_room_speaker_cast
     data:
       media:
-        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.wav
-        media_content_type: audio/x-wav
+        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.mp3
+        media_content_type: audio/mpeg
         metadata:
-          title: UniFi_Sounds_Motion_Alert.wav
+          title: UniFi_Sounds_Motion_Alert.mp3
           thumbnail:
           media_class: music
           children_media_class:
@@ -13973,10 +13986,10 @@
       entity_id: media_player.dining_room_speaker_cast
     data:
       media:
-        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.wav
-        media_content_type: audio/x-wav
+        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.mp3
+        media_content_type: audio/mpeg
         metadata:
-          title: UniFi_Sounds_Motion_Alert.wav
+          title: UniFi_Sounds_Motion_Alert.mp3
           thumbnail:
           media_class: music
           children_media_class:

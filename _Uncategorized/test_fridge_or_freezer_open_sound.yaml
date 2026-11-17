@@ -1,6 +1,6 @@
 - id: '1788391579286'
   alias: Test - Fridge or Freezer Open Sound
-  description: 'TEST AUTOMATION. Plays the UniFi motion alert wav on the dining room
+  description: 'TEST AUTOMATION. Plays the UniFi motion alert mp3 on the dining room
     Cast speaker when the fridge door or the freezer drawer opens. The Cast device
     plays its own cold start tone whenever a new cast session opens, and that tone
     does not repeat while the session stays warm. To hide it, this automation drops
@@ -8,7 +8,10 @@
     the volume, then plays the file again into the now warm session. Music Assistant
     was ruled out on 2026-09-02: play_announcement failed with PlayerCommandFailed
     because the Cast speakers cannot reach the stream server on 192.168.10.168 port
-    8097.'
+    8097. MP3 SWITCH 2026-11-16: the Dining Room Speaker refused UniFi_Sounds_Motion_Alert.wav
+    (Failed to cast media, idle within about 60 ms, every run back to at least 2026-11-11),
+    so the same WAV was converted to UniFi_Sounds_Motion_Alert.mp3 (192 kbps, 44.1
+    kHz mono, 2.04 s) and both play steps now use it.'
   triggers:
   - entity_id:
     - binary_sensor.fridge_door_contact
@@ -32,10 +35,10 @@
       entity_id: media_player.dining_room_speaker_cast
     data:
       media:
-        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.wav
-        media_content_type: audio/x-wav
+        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.mp3
+        media_content_type: audio/mpeg
         metadata:
-          title: UniFi_Sounds_Motion_Alert.wav
+          title: UniFi_Sounds_Motion_Alert.mp3
           thumbnail: null
           media_class: music
           children_media_class: null
@@ -76,10 +79,10 @@
       entity_id: media_player.dining_room_speaker_cast
     data:
       media:
-        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.wav
-        media_content_type: audio/x-wav
+        media_content_id: media-source://media_source/local/UniFi_Sounds_Motion_Alert.mp3
+        media_content_type: audio/mpeg
         metadata:
-          title: UniFi_Sounds_Motion_Alert.wav
+          title: UniFi_Sounds_Motion_Alert.mp3
           thumbnail: null
           media_class: music
           children_media_class: null

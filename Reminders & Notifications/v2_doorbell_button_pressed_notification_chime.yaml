@@ -1,10 +1,15 @@
 - id: '1753663543034'
   alias: 'V2: Doorbell - Button Pressed Notification Chime'
-  description: G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime
+  description: 'G6 Pro Doorbell button pressed. Streams camera to TVs, plays chime
     and TTS announcement on Dining Room Speaker. Uses medium resolution channel (1440x1920)
     as high-res portrait stream is not rendered correctly by Chromecast. Triggers
     on the doorbell ring event entity (the old doorbell binary sensor is deprecated
-    and stops working in 2027.1).
+    and stops working in 2027.1). CHIME FILE 2026-11-16: switched the chime from sounds_sounds_ring_button_Chime.wav
+    to UniFi_Sounds_Ring_button_Chime.mp3 because the Dining Room Speaker refused
+    the WAV (Failed to cast media, went idle at once) while the MP3 (UniFi ring chime
+    by file name) plays in full on that speaker. RESUME GUARD 2026-11-16: the resume
+    step now runs only when the Living Room TV is paused, because calling media_play
+    with nothing queued raised The queue is empty and ended every run in an error.'
   triggers:
   - trigger: event.received
     target:
@@ -33,10 +38,10 @@
           sequence:
           - data:
               media:
-                media_content_id: media-source://media_source/local/sounds_sounds_ring_button_Chime.wav
-                media_content_type: audio/x-wav
+                media_content_id: media-source://media_source/local/UniFi_Sounds_Ring_button_Chime.mp3
+                media_content_type: audio/mpeg
                 metadata:
-                  title: sounds_sounds_ring_button_Chime.wav
+                  title: UniFi_Sounds_Ring_button_Chime.mp3
                   thumbnail: null
                   media_class: music
                   children_media_class: null
@@ -93,9 +98,14 @@
         target:
           entity_id: media_player.onn_streaming_device_4k_pro
         data: {}
-      - alias: Resume previous Living Room TV playback
-        action: media_player.media_play
-        target:
+      - alias: Resume previous Living Room TV playback, only if it is paused
+        if:
+        - condition: state
           entity_id: media_player.living_room_tv
-        data: {}
+          state: paused
+        then:
+        - action: media_player.media_play
+          target:
+            entity_id: media_player.living_room_tv
+          data: {}
   mode: single
