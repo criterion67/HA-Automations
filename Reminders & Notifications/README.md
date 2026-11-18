@@ -1,6 +1,6 @@
 # Reminders & Notifications
 
-34 automation(s) in this category.
+32 automation(s) in this category.
 
 | Automation | Description |
 |---|---|
@@ -24,7 +24,6 @@ NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by
 | Ego Battery Notification Actions (Combined) | Handles app notification actions for both plugs with a 3-snooze limit.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
-| Garage AC Power Loss Notification | NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
 | Garbage/Recycling Pickup AI Notification | On Thursday mornings between 6:00 and 7:30, a vehicle detection on the Driveway 2 camera sends a frame to LLM Vision (Google Gemini) asking for a structured JSON verdict on whether the green garbage bin and blue recycling bin have been collected. The prompt tells the model to ignore the homeowner's parked pickup, visitor vehicles, lawn equipment, neighbors, pets, and passing traffic. Nothing is written to the timeline automatically. Only when pickup_detected comes back true does the automation create an LLM Vision timeline event labeled Truck and push a notification. This replaces the old version, which stored every Thursday-morning vehicle detection on the timeline and notified unconditionally, so any passing car during that window would alert.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
@@ -43,35 +42,34 @@ NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by
 | Lock Offline: Possible Dead Battery Alert | If any lock stays unavailable past its offline window, send a notification with Snooze 24h and Replaced options. The four Z-Wave locks use a 2 hour window. The bedroom closet Yale Bluetooth lock uses a 6 hour window because Bluetooth dropouts are more frequent and normally self recovering. Uses the same snooze store as the low battery alert. Replaced sets a 7 day snooze.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
-| Master Garage Climate Control | Central controller for garage heat and cool based on button, temperature, and freeze protection.
+| Master Garage Climate Control | Central controller for garage heat and cool. input_boolean.garage_heat_cool_mode ON means cool (AC) mode, OFF means heat mode.
 
+Triggers:
+- Laundry Room Button (Aqara, ZHA ieee 00:15:8d:00:09:26:fc:58) single press toggles the mode with a TTS confirmation on the dining room speaker. Heat: AC off and Rudy's Heater (climate.garage_heater, generic thermostat on switch.garage_heater) to heat at its own setpoint. Cool: heater off and AC to cool at its current setpoint.
+- High temp (above 89 F for 5 min) starts the AC in dry 78 when in heat mode with Bill home.
+- AC internal reading below 72.1 while in dry switches it to cool 78 (cool mode only).
+- Freeze protection: Temp Sensor Garage below 42 F for 5 min ALWAYS switches to heat mode and starts the heater, regardless of mode, vacation or who is home, because Rudy is out there.
 
-NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
+REBUILT 2026-11-17 for heating: the heat press previously never started the heater, the cool press forced dry 80, and freeze protection was gated on AC mode (backwards), required Bill home and only set 44 F without turning the heater on. Mode changed from single to queued so a freeze trigger is never dropped. Heater setpoint (69 F) lives on the thermostat itself, not in this automation.
+
+NOTIFY WRAPPER 2026-09-22: notifications go through script.notify_alert / script.notify_clear. |
 | Master Wonkavator Print Finished TTS | Announce when Wonkavator finishes printing with speaker fallback and light cue
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
 | Master Wonkavator Print Start Reset | Resets announcement state only when a REAL new print begins |
-| Master: Garage Climate Doors | Turns the garage AC off when the GARAGE DOOR has been open for 3 minutes, and resumes cooling when it closes again.
+| Master: Garage Climate Doors | Pauses garage climate when the GARAGE DOOR has been open for 3 minutes and resumes it when the door closes, following the season mode in input_boolean.garage_heat_cool_mode (ON = cool, OFF = heat).
 
-REAR DOOR REMOVED 2026-09-11 19:06. binary_sensor.rear_door no longer has any authority over the garage AC, in either direction. It stuck in the open state twice in eleven hours on 2026-09-11: on at 08:15:25 with no close report until 13:43:22, then on again at 18:55:25 with no close report at all. Each time this automation shut the AC off three minutes later on a reading that was not true, with Rudy in the garage. The first incident reached 86.9 F. A sensor that has failed twice in a day does not get to turn off the cooling. It keeps its monitoring role in automation.garage_safety_net_rudy, which alerts when it goes silent, and that is all it does now.
+Cool mode: door open 3 min turns the AC off; door closed resumes cool at the existing setpoint.
+Heat mode (added 2026-11-17): door open 3 min turns Rudy's Heater (climate.garage_heater) off; door closed resumes heat at the heater's own setpoint. No vacation check on the heat resume, because Rudy may be home during a vacation.
+The resume cool branch now requires cool mode, so closing the garage door in winter no longer forces the AC into cool (it did that on 2026-11-17 12:58). All door-open shutoffs are skipped during a mower cycle (input_boolean.mower_cycle_active).
 
-Do not add the rear door back as a trigger until the Ring node (Z-Wave node 262, 4SD2SZ-0EN0) has been reseated and proven stable over time.
+REAR DOOR REMOVED 2026-09-11: binary_sensor.rear_door stuck open twice and has no authority here; monitoring lives in automation.garage_safety_net_rudy. Do not re-add it until the Ring node (Z-Wave 262) is proven stable.
 
-EARLIER REBUILD, same day, after the first incident:
+RACE FIX 2026-09-27: mode queued (max 10) and the AC shutoff waits up to 15 s for the AC to report off, so a close landing mid shutoff still resumes.
 
-1. The resume branch required the shutoff to be less than 300 seconds old. When the door finally read closed after 5h27m the condition failed and the sequence stopped silently, so the AC was never restored. That 300 second window is gone.
+KNOWN LIMITATION: cool resume always returns to cool, even if the AC was in dry.
 
-2. The 5-minute door-still-open alert required switch.garage_heater to be in state off. That switch has been unavailable since 2026-09-07 16:55, and unavailable does not match off, so the alert was silenced on every one-minute check and Scott got no warning at all. All monitoring and alerting now lives in automation.garage_safety_net_rudy.
-
-3. The heater is physically unplugged for the season. Every reference to switch.garage_heater and input_boolean.garage_heat_cool_mode was removed. Note the two garage automations disagreed on what garage_heat_cool_mode meant: Master Garage Climate Control treats on as AC mode, this one treated on as heat mode. Reintroduce a heater path deliberately in the fall, do not restore the old one.
-
-4. Resume calls climate.set_hvac_mode rather than climate.set_temperature, so Scott's setpoint is preserved instead of being forced to 80.
-
-KNOWN LIMITATION: resume always returns to cool. If the AC was in dry when the garage door opened, it comes back in cool.
-
-NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts.
-
-RACE FIX 2026-09-27: at 17:53:23 the garage door closed 183 ms after the 3 minute open trigger fired. The shutoff run sent climate.turn_off, the close run started immediately, but the unit still reported cool (the off state arrived about a second later), so the resume condition failed and the AC stayed off with the garage at 84.6 F. Fix: mode changed from single to queued (max 10), and the shutoff branch now waits up to 15 seconds for climate.garage_ac to report off before finishing. A close that lands during a shutoff now runs after it, sees the AC off, and resumes cooling. wait_template is used instead of wait_for_trigger on purpose, because the AC may already read off by the time the wait starts. |
+NOTIFY WRAPPER 2026-09-22: notifications go through script.notify_alert / script.notify_clear. |
 | Medication Reminders with Mounjaro | Provides audible reminders and visual alerts for taking medications at designated times and days. Uses parallel actions for efficiency and restores TV lights to their original state after reminders. Includes a single retry if the bedroom Cast group drops the session before the announcement plays. |
 | Network Cabinet Fan Smart Control | Controls the network cabinet fan based on temperature and office presence. Turns on at 85°F or higher, off 5 min after temp drops below 85°F. Disables fan while office is occupied. Honors override via input_boolean.network_cabinet_fan_automation_enabled. |
 | New consumable added to to-do list | NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
@@ -84,7 +82,6 @@ NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by
 | Rear Gate: Open Notification | Contact sensor to monitor whether rear yard gate is open or closed. SUPPRESSED during a full yard mowing cycle: when input_boolean.mower_full_yard_cycle is on, the gate is intentionally open so the mower can reach the rear yard, and automation.mower_gate_reminders owns the messaging.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
-| Rudy's Heater Offline Alert (New) | NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
 | Toothbrush: Battery State Notification | Monitors the battery level for the Oral-B toothbrush and sends a notification when a recharge is necessary and also sends a follow-up notification once it has been recharged.
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |

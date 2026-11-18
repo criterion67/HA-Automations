@@ -422,31 +422,6 @@
       title: Bedroom Closet Alert
     action: script.notify_alert
   mode: single
-- id: '1718479224079'
-  alias: Rudy's Heater Offline Alert (New)
-  description: '
-
-
-    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
-    by script.notify_alert (or script.notify_clear for clear_notification) with the
-    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
-    persistent, color, image, url and icon values, and target set to watch or bill
-    where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
-  triggers:
-  - device_id: b1d404f2cf619b0becc88158a23fea62
-    domain: zha
-    type: device_offline
-    subtype: device_offline
-    trigger: device
-    id: Garage Heater
-  conditions: []
-  actions:
-  - action: script.notify_alert
-    data:
-      message: 'Rudy''s heater is offline. '
-      title: Offline notification
-  mode: single
 - id: '1719185920035'
   alias: 'Attic Lights: Door Controlled'
   description: Attic light is switched on and off based on the open) closed state
@@ -495,34 +470,6 @@
           - switch.attic_garage_light
         data: {}
         action: switch.turn_off
-  mode: single
-- id: '1720565781972'
-  alias: Garage AC Power Loss Notification
-  description: '
-
-
-    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
-    by script.notify_alert (or script.notify_clear for clear_notification) with the
-    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
-    persistent, color, image, url and icon values, and target set to watch or bill
-    where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
-  triggers:
-  - entity_id:
-    - sensor.garage_ac_plug_voltage
-    attribute: Voltage
-    to: '0'
-    for:
-      hours: 0
-      minutes: 1
-      seconds: 0
-    trigger: state
-  conditions: []
-  actions:
-  - data:
-      message: 'Garage AC Energy monitoring smart plug has detected a power loss! '
-      title: 'Garage AC Power Loss! '
-    action: script.notify_alert
   mode: single
 - id: '1722497194862'
   alias: 'Bathroom Mirror: Light Control'
@@ -5415,17 +5362,36 @@
       threshold: 10
 - id: '1764972742421'
   alias: Master Garage Climate Control
-  description: 'Central controller for garage heat and cool based on button, temperature,
-    and freeze protection.
+  description: 'Central controller for garage heat and cool. input_boolean.garage_heat_cool_mode
+    ON means cool (AC) mode, OFF means heat mode.
 
 
+    Triggers:
 
-    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
-    by script.notify_alert (or script.notify_clear for clear_notification) with the
-    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
-    persistent, color, image, url and icon values, and target set to watch or bill
-    where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    - Laundry Room Button (Aqara, ZHA ieee 00:15:8d:00:09:26:fc:58) single press toggles
+    the mode with a TTS confirmation on the dining room speaker. Heat: AC off and
+    Rudy''s Heater (climate.garage_heater, generic thermostat on switch.garage_heater)
+    to heat at its own setpoint. Cool: heater off and AC to cool at its current setpoint.
+
+    - High temp (above 89 F for 5 min) starts the AC in dry 78 when in heat mode with
+    Bill home.
+
+    - AC internal reading below 72.1 while in dry switches it to cool 78 (cool mode
+    only).
+
+    - Freeze protection: Temp Sensor Garage below 42 F for 5 min ALWAYS switches to
+    heat mode and starts the heater, regardless of mode, vacation or who is home,
+    because Rudy is out there.
+
+
+    REBUILT 2026-11-17 for heating: the heat press previously never started the heater,
+    the cool press forced dry 80, and freeze protection was gated on AC mode (backwards),
+    required Bill home and only set 44 F without turning the heater on. Mode changed
+    from single to queued so a freeze trigger is never dropped. Heater setpoint (69
+    F) lives on the thermostat itself, not in this automation.
+
+
+    NOTIFY WRAPPER 2026-09-22: notifications go through script.notify_alert / script.notify_clear.'
   triggers:
   - trigger: event
     event_type: zha_event
@@ -5471,6 +5437,12 @@
           - target:
               entity_id: climate.garage_ac
             action: climate.turn_off
+          - action: climate.set_hvac_mode
+            alias: Start Rudys Heater, keeping its own setpoint (69 F)
+            data:
+              hvac_mode: heat
+            target:
+              entity_id: climate.garage_heater
           - delay:
               seconds: 5
           - target:
@@ -5489,12 +5461,18 @@
           - target:
               entity_id: input_boolean.garage_heat_cool_mode
             action: input_boolean.turn_on
-          - target:
-              entity_id: climate.garage_ac
+          - action: climate.set_hvac_mode
+            alias: Stop Rudys Heater
             data:
-              temperature: 80
-              hvac_mode: dry
-            action: climate.set_temperature
+              hvac_mode: 'off'
+            target:
+              entity_id: climate.garage_heater
+          - action: climate.set_hvac_mode
+            alias: Start the AC in cool, keeping its current setpoint
+            data:
+              hvac_mode: cool
+            target:
+              entity_id: climate.garage_ac
           - delay:
               seconds: 5
           - target:
@@ -5568,97 +5546,65 @@
       - condition: trigger
         id: freeze_protect
       sequence:
-      - condition: and
-        conditions:
-        - condition: state
+      - action: input_boolean.turn_off
+        alias: Switch the garage to heat mode
+        target:
           entity_id: input_boolean.garage_heat_cool_mode
-          state: 'on'
-        - condition: state
-          entity_id: input_boolean.vacation
-          state: 'off'
-        - condition: state
-          entity_id: person.bill_funk
-          state: home
-      - target:
-          entity_id: climate.garage_heater
-        data:
-          temperature: 44
-        action: climate.set_temperature
-      - target:
+      - action: climate.turn_off
+        alias: AC off
+        target:
           entity_id: climate.garage_ac
-        action: climate.turn_off
-      - data:
-          message: Temperature below 42. Heat target set for freeze protection.
-          title: Garage Heater
-        action: script.notify_alert
-  mode: single
+      - action: climate.set_hvac_mode
+        alias: Start Rudys Heater, keeping its own setpoint
+        data:
+          hvac_mode: heat
+        target:
+          entity_id: climate.garage_heater
+      - action: script.notify_alert
+        alias: Tell Scott freeze protection ran
+        data:
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. Freeze protection switched the garage to heat mode and started Rudys
+            Heater.
+          title: Garage Freeze Protection
+          tag: garage_freeze_protect
+          channel: Garage Safety
+          importance: high
+          icon: mdi:snowflake-alert
+  mode: queued
+  max: 10
 - id: '1764972777413'
   alias: 'Master: Garage Climate Doors'
-  description: 'Turns the garage AC off when the GARAGE DOOR has been open for 3 minutes,
-    and resumes cooling when it closes again.
+  description: 'Pauses garage climate when the GARAGE DOOR has been open for 3 minutes
+    and resumes it when the door closes, following the season mode in input_boolean.garage_heat_cool_mode
+    (ON = cool, OFF = heat).
 
 
-    REAR DOOR REMOVED 2026-09-11 19:06. binary_sensor.rear_door no longer has any
-    authority over the garage AC, in either direction. It stuck in the open state
-    twice in eleven hours on 2026-09-11: on at 08:15:25 with no close report until
-    13:43:22, then on again at 18:55:25 with no close report at all. Each time this
-    automation shut the AC off three minutes later on a reading that was not true,
-    with Rudy in the garage. The first incident reached 86.9 F. A sensor that has
-    failed twice in a day does not get to turn off the cooling. It keeps its monitoring
-    role in automation.garage_safety_net_rudy, which alerts when it goes silent, and
-    that is all it does now.
+    Cool mode: door open 3 min turns the AC off; door closed resumes cool at the existing
+    setpoint.
+
+    Heat mode (added 2026-11-17): door open 3 min turns Rudy''s Heater (climate.garage_heater)
+    off; door closed resumes heat at the heater''s own setpoint. No vacation check
+    on the heat resume, because Rudy may be home during a vacation.
+
+    The resume cool branch now requires cool mode, so closing the garage door in winter
+    no longer forces the AC into cool (it did that on 2026-11-17 12:58). All door-open
+    shutoffs are skipped during a mower cycle (input_boolean.mower_cycle_active).
 
 
-    Do not add the rear door back as a trigger until the Ring node (Z-Wave node 262,
-    4SD2SZ-0EN0) has been reseated and proven stable over time.
+    REAR DOOR REMOVED 2026-09-11: binary_sensor.rear_door stuck open twice and has
+    no authority here; monitoring lives in automation.garage_safety_net_rudy. Do not
+    re-add it until the Ring node (Z-Wave 262) is proven stable.
 
 
-    EARLIER REBUILD, same day, after the first incident:
+    RACE FIX 2026-09-27: mode queued (max 10) and the AC shutoff waits up to 15 s
+    for the AC to report off, so a close landing mid shutoff still resumes.
 
 
-    1. The resume branch required the shutoff to be less than 300 seconds old. When
-    the door finally read closed after 5h27m the condition failed and the sequence
-    stopped silently, so the AC was never restored. That 300 second window is gone.
+    KNOWN LIMITATION: cool resume always returns to cool, even if the AC was in dry.
 
 
-    2. The 5-minute door-still-open alert required switch.garage_heater to be in state
-    off. That switch has been unavailable since 2026-09-07 16:55, and unavailable
-    does not match off, so the alert was silenced on every one-minute check and Scott
-    got no warning at all. All monitoring and alerting now lives in automation.garage_safety_net_rudy.
-
-
-    3. The heater is physically unplugged for the season. Every reference to switch.garage_heater
-    and input_boolean.garage_heat_cool_mode was removed. Note the two garage automations
-    disagreed on what garage_heat_cool_mode meant: Master Garage Climate Control treats
-    on as AC mode, this one treated on as heat mode. Reintroduce a heater path deliberately
-    in the fall, do not restore the old one.
-
-
-    4. Resume calls climate.set_hvac_mode rather than climate.set_temperature, so
-    Scott''s setpoint is preserved instead of being forced to 80.
-
-
-    KNOWN LIMITATION: resume always returns to cool. If the AC was in dry when the
-    garage door opened, it comes back in cool.
-
-
-    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
-    by script.notify_alert (or script.notify_clear for clear_notification) with the
-    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
-    persistent, color, image, url and icon values, and target set to watch or bill
-    where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.
-
-
-    RACE FIX 2026-09-27: at 17:53:23 the garage door closed 183 ms after the 3 minute
-    open trigger fired. The shutoff run sent climate.turn_off, the close run started
-    immediately, but the unit still reported cool (the off state arrived about a second
-    later), so the resume condition failed and the AC stayed off with the garage at
-    84.6 F. Fix: mode changed from single to queued (max 10), and the shutoff branch
-    now waits up to 15 seconds for climate.garage_ac to report off before finishing.
-    A close that lands during a shutoff now runs after it, sees the AC off, and resumes
-    cooling. wait_template is used instead of wait_for_trigger on purpose, because
-    the AC may already read off by the time the wait starts.'
+    NOTIFY WRAPPER 2026-09-22: notifications go through script.notify_alert / script.notify_clear.'
   triggers:
   - entity_id: cover.garage_door
     for: 00:03:00
@@ -5712,6 +5658,9 @@
         entity_id: cover.garage_door
         state: closed
       - condition: state
+        entity_id: input_boolean.garage_heat_cool_mode
+        state: 'on'
+      - condition: state
         entity_id: input_boolean.vacation
         state: 'off'
       - condition: state
@@ -5736,6 +5685,51 @@
         alias: Tell Scott the AC is back on
         data:
           message: Garage door closed. Garage AC has resumed cooling.
+          title: Garage Climate
+          tag: garage_climate_resume
+          channel: Garage Safety
+          importance: high
+    - alias: Garage door has been open 3 minutes, shut Rudys Heater down
+      conditions:
+      - condition: trigger
+        id: door_open
+      - condition: state
+        entity_id: input_boolean.mower_cycle_active
+        state: 'off'
+      - condition: state
+        entity_id: climate.garage_heater
+        state: heat
+      sequence:
+      - action: climate.set_hvac_mode
+        alias: Turn the heater off
+        data:
+          hvac_mode: 'off'
+        target:
+          entity_id: climate.garage_heater
+    - alias: Garage door is closed, resume heating
+      conditions:
+      - condition: trigger
+        id: doors_closed
+      - condition: state
+        entity_id: cover.garage_door
+        state: closed
+      - condition: state
+        entity_id: input_boolean.garage_heat_cool_mode
+        state: 'off'
+      - condition: state
+        entity_id: climate.garage_heater
+        state: 'off'
+      sequence:
+      - action: climate.set_hvac_mode
+        alias: Resume heating, preserving the heater setpoint
+        data:
+          hvac_mode: heat
+        target:
+          entity_id: climate.garage_heater
+      - action: script.notify_alert
+        alias: Tell Scott the heater is back on
+        data:
+          message: Garage door closed. Rudys Heater has resumed heating.
           title: Garage Climate
           tag: garage_climate_resume
           channel: Garage Safety
@@ -9377,67 +9371,6 @@
       sequence:
       - action: script.hvac_filter_replaced
   mode: single
-- id: '1782751117583'
-  alias: Garage AC - Restore Setpoint After Unauthorized Adjustment
-  description: If the garage AC temperature setpoint is lowered below 80°F while in
-    cooling mode, silently restore it to 80°F after a 5-minute delay. Resets the timer
-    if adjusted again before the delay expires.
-  triggers:
-  - trigger: numeric_state
-    entity_id: climate.garage_ac
-    attribute: temperature
-    below: 80
-    id: setpoint_lowered
-  conditions:
-  - condition: state
-    entity_id: input_boolean.garage_heat_cool_mode
-    state: 'on'
-  - condition: not
-    conditions:
-    - condition: state
-      entity_id: climate.garage_ac
-      state: 'off'
-  actions:
-  - delay:
-      minutes: 5
-  - condition: numeric_state
-    entity_id: climate.garage_ac
-    attribute: temperature
-    below: 80
-  - action: climate.set_temperature
-    target:
-      entity_id: climate.garage_ac
-    data:
-      temperature: 80
-  mode: restart
-- id: '1782752306790'
-  alias: Garage AC - Apply Bill Setpoint
-  description: When Bill adjusts the dummy thermostat helper, apply the value to the
-    real garage AC only if it is 80°F or above. Values below 80 are silently ignored
-    — the restore automation handles snapping the AC back.
-  triggers:
-  - trigger: state
-    entity_id: input_number.garage_ac_bill_setpoint
-    id: bill_adjusted
-  conditions:
-  - condition: numeric_state
-    entity_id: input_number.garage_ac_bill_setpoint
-    above: 79.9
-  - condition: state
-    entity_id: input_boolean.garage_heat_cool_mode
-    state: 'on'
-  - condition: not
-    conditions:
-    - condition: state
-      entity_id: climate.garage_ac
-      state: 'off'
-  actions:
-  - action: climate.set_temperature
-    target:
-      entity_id: climate.garage_ac
-    data:
-      temperature: '{{ states(''input_number.garage_ac_bill_setpoint'') | float }}'
-  mode: restart
 - id: '1782935490153'
   alias: Petkit - Feeding Schedule
   description: Plays the 9000 Hz tone on the Dogs cast speaker to call Gracie at her
@@ -14062,7 +13995,27 @@
     script.notify_alert (or script.notify_clear for clear_notification) with the same
     message, title, tag, channel, importance, priority, ttl, actions and icon values.
     Delivery behavior is unchanged; channel and importance policy now lives in the
-    shared script.'
+    shared script.
+
+
+    WINTER COVERAGE added 2026-11-17:
+
+    - 55 F warning and 45 F critical (alarm_stream) on sensor.temp_sensor_garage,
+    5 minutes each. Alerts only; freeze protection at 42 F in automation.master_garage_climate_control
+    is what forces heat on.
+
+    - switch.garage_heater or sensor.temp_sensor_rudys_crate (the heater''s target
+    sensor) unavailable for 15 minutes alerts, but only in heat mode (input_boolean.garage_heat_cool_mode
+    OFF), because the heater plug is unplugged all summer by design. Rudy''s Heater
+    is a generic thermostat and cannot heat without the crate sensor; that sensor
+    was dead from late August until its CR2032 battery was replaced on 2026-11-17.
+
+
+    BACKUP CRATE SENSOR 2026-11-17: climate.garage_heater now follows sensor.rudy_s_crate_temperature,
+    a Min/Max (mean) helper of Crate 1 (sensor.temp_sensor_rudys_crate, Aqara ZHA)
+    and Crate 2 (sensor.hvac_test_sensor_2_temperature, Govee H5105 beside the crate).
+    The two tracked within about 0.3 F once settled. Crate 2 was added to heat_gear_unavailable
+    so either sensor dropping out in heat mode alerts.'
   triggers:
   - above: 82
     entity_id: sensor.temp_sensor_garage
@@ -14117,6 +14070,26 @@
     event_type: mobile_app_notification_action
     id: resume_dry
     trigger: event
+  - below: 55
+    entity_id: sensor.temp_sensor_garage
+    for: 00:05:00
+    id: cold_warn
+    trigger: numeric_state
+  - below: 45
+    entity_id: sensor.temp_sensor_garage
+    for: 00:05:00
+    id: cold_critical
+    trigger: numeric_state
+  - entity_id:
+    - switch.garage_heater
+    - sensor.temp_sensor_rudys_crate
+    - sensor.hvac_test_sensor_2_temperature
+    for: 00:15:00
+    id: heat_gear_unavailable
+    to:
+    - unavailable
+    - unknown
+    trigger: state
   conditions: []
   actions:
   - choose:
@@ -14308,6 +14281,56 @@
       - action: script.notify_clear
         data:
           tag: garage_climate_alert
+    - alias: Garage below 55 F for 5 minutes
+      conditions:
+      - condition: trigger
+        id: cold_warn
+      sequence:
+      - action: script.notify_alert
+        alias: Warn Scott
+        data:
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. Rudy's Heater is {{ states('climate.garage_heater') }}, mode is
+            {{ 'cool' if is_state('input_boolean.garage_heat_cool_mode', 'on') else
+            'heat' }}. Rudy is out there.
+          title: Garage Cold
+          tag: garage_cold_alert
+          channel: Garage Safety
+          importance: high
+          icon: mdi:dog
+    - alias: Garage below 45 F for 5 minutes, emergency
+      conditions:
+      - condition: trigger
+        id: cold_critical
+      sequence:
+      - action: script.notify_alert
+        alias: Alarm Scott
+        data:
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. Rudy's Heater is {{ states('climate.garage_heater') }}. Check on
+            Rudy now.
+          title: GARAGE TOO COLD FOR RUDY
+          tag: garage_cold_critical
+          channel: alarm_stream
+          icon: mdi:snowflake-alert
+    - alias: Heater plug or crate sensor offline 15 minutes while in heat mode
+      conditions:
+      - condition: trigger
+        id: heat_gear_unavailable
+      - condition: state
+        entity_id: input_boolean.garage_heat_cool_mode
+        state: 'off'
+      sequence:
+      - action: script.notify_alert
+        data:
+          message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
+            true) }} has been {{ states(trigger.entity_id) }} for 15 minutes. Rudy''s
+            Heater cannot heat without it.'
+          title: Garage Heat Offline
+          tag: garage_offline_{{ trigger.entity_id }}
+          channel: Garage Safety
+          importance: high
+          icon: mdi:radiator-off
   max: 10
   mode: parallel
 - id: '1789438222294'
@@ -14739,82 +14762,6 @@
           entity_id: input_boolean.dishwasher_needs_unloading
   mode: parallel
   max: 5
-- id: '1790548106400'
-  alias: Garage AC Setpoint Change Logger (Diagnostic)
-  description: 'TEMPORARY DIAGNOSTIC, created 2026-09-27. Scott found the garage AC
-    setpoint reverting from 77 to 76 (15:03:13 on 2026-09-27) with no Home Assistant
-    automation, script or scene writing 76, and the physical remote never used (no
-    batteries). Two logbook entries on climate.garage_ac: (1) ''Garage AC action''
-    logs every climate action sent to it (UI, Google, Assist, automations, scripts,
-    API) with its data and caller; (2) ''Garage AC setpoint'' logs every target temperature
-    change. Read them together: a setpoint change with a matching ''Garage AC action''
-    just before it came from Home Assistant; a setpoint change with no action before
-    it came from the ESPHome node or the unit itself. The setpoint entry''s own ''device
-    side'' label is NOT reliable on its own, because service calls with no user attached
-    (for example the HA MCP tools) also carry no user or parent. Added the action
-    trigger the same day after a 76 to 77 change made through the MCP tools logged
-    as device side. Transitions to or from unavailable are ignored. Category Testing.
-    Remove once the source is identified.'
-  triggers:
-  - attribute: temperature
-    entity_id: climate.garage_ac
-    trigger: state
-    id: setpoint_changed
-  - trigger: event
-    event_type: call_service
-    event_data:
-      domain: climate
-    id: climate_action
-  conditions: []
-  actions:
-  - choose:
-    - alias: A climate action was sent to the garage AC
-      conditions:
-      - condition: trigger
-        id: climate_action
-      - '{% set e = trigger.event.data.service_data.entity_id | default([]) %}{{ ''climate.garage_ac''
-        in ([e] if e is string else e | list) }}'
-      sequence:
-      - action: logbook.log
-        alias: Log the action, its data and its caller
-        data:
-          entity_id: climate.garage_ac
-          name: Garage AC action
-          message: '{% set sd = trigger.event.data.service_data %}{% set c = trigger.event.context
-            %}{% set p = states.person | selectattr(''attributes.user_id'',''eq'',
-            c.user_id) | map(attribute=''name'') | list if c.user_id else [] %}{%
-            set a = (states.automation | list + states.script | list) | selectattr(''context.id'',''eq'',
-            c.parent_id) | map(attribute=''name'') | list if c.parent_id else [] %}action
-            climate.{{ trigger.event.data.service }} with {{ sd | dictsort | rejectattr(0,''eq'',''entity_id'')
-            | list }}. Caller: {% if p %}user {{ p[0] }}{% elif c.user_id %}user id
-            {{ c.user_id }} (no matching person){% elif a %}{{ a[0] }}{% elif c.parent_id
-            %}unresolved parent context {{ c.parent_id }}{% else %}no user attached
-            (API or integration call){% endif %}. Context {{ c.id }}'
-    - alias: The garage AC setpoint changed
-      conditions:
-      - condition: trigger
-        id: setpoint_changed
-      - '{{ trigger.from_state is not none and trigger.to_state is not none and trigger.from_state.attributes.temperature
-        is not none and trigger.to_state.attributes.temperature is not none }}'
-      sequence:
-      - action: logbook.log
-        alias: Write the setpoint change and its source to the logbook
-        data:
-          entity_id: climate.garage_ac
-          message: '{% set c = trigger.to_state.context %}{% set p = states.person
-            | selectattr(''attributes.user_id'',''eq'', c.user_id) | map(attribute=''name'')
-            | list if c.user_id else [] %}{% set a = (states.automation | list + states.script
-            | list) | selectattr(''context.id'',''eq'', c.parent_id) | map(attribute=''name'')
-            | list if c.parent_id else [] %}changed {{ trigger.from_state.attributes.temperature
-            }} to {{ trigger.to_state.attributes.temperature }} (mode {{ trigger.to_state.state
-            }}, preset {{ trigger.to_state.attributes.preset_mode }}). Source: {%
-            if p %}user {{ p[0] }}{% elif c.user_id %}user id {{ c.user_id }} (no
-            matching person){% elif a %}{{ a[0] }}{% elif c.parent_id %}unresolved
-            parent context {{ c.parent_id }}{% else %}no Home Assistant user or automation,
-            device side{% endif %}. Context {{ c.id }}'
-          name: Garage AC setpoint
-  max: 10
-  mode: queued
 - id: '1791911244957'
   alias: Voice Command and Announcement Logger
   description: 'Temporary usage study started 2026-10-13. Every time Google Assistant

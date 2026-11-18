@@ -1,16 +1,35 @@
 - id: '1764972742421'
   alias: Master Garage Climate Control
-  description: 'Central controller for garage heat and cool based on button, temperature,
-    and freeze protection.
+  description: 'Central controller for garage heat and cool. input_boolean.garage_heat_cool_mode
+    ON means cool (AC) mode, OFF means heat mode.
 
 
+    Triggers:
 
-    NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced
-    by script.notify_alert (or script.notify_clear for clear_notification) with the
-    same message, title, tag, channel, importance, priority, ttl, actions, sticky,
-    persistent, color, image, url and icon values, and target set to watch or bill
-    where the call went to those devices. Delivery behavior is unchanged; channel
-    and importance policy now lives in the shared scripts.'
+    - Laundry Room Button (Aqara, ZHA ieee 00:15:8d:00:09:26:fc:58) single press toggles
+    the mode with a TTS confirmation on the dining room speaker. Heat: AC off and
+    Rudy''s Heater (climate.garage_heater, generic thermostat on switch.garage_heater)
+    to heat at its own setpoint. Cool: heater off and AC to cool at its current setpoint.
+
+    - High temp (above 89 F for 5 min) starts the AC in dry 78 when in heat mode with
+    Bill home.
+
+    - AC internal reading below 72.1 while in dry switches it to cool 78 (cool mode
+    only).
+
+    - Freeze protection: Temp Sensor Garage below 42 F for 5 min ALWAYS switches to
+    heat mode and starts the heater, regardless of mode, vacation or who is home,
+    because Rudy is out there.
+
+
+    REBUILT 2026-11-17 for heating: the heat press previously never started the heater,
+    the cool press forced dry 80, and freeze protection was gated on AC mode (backwards),
+    required Bill home and only set 44 F without turning the heater on. Mode changed
+    from single to queued so a freeze trigger is never dropped. Heater setpoint (69
+    F) lives on the thermostat itself, not in this automation.
+
+
+    NOTIFY WRAPPER 2026-09-22: notifications go through script.notify_alert / script.notify_clear.'
   triggers:
   - trigger: event
     event_type: zha_event
@@ -56,6 +75,12 @@
           - target:
               entity_id: climate.garage_ac
             action: climate.turn_off
+          - action: climate.set_hvac_mode
+            alias: Start Rudys Heater, keeping its own setpoint (69 F)
+            data:
+              hvac_mode: heat
+            target:
+              entity_id: climate.garage_heater
           - delay:
               seconds: 5
           - target:
@@ -74,12 +99,18 @@
           - target:
               entity_id: input_boolean.garage_heat_cool_mode
             action: input_boolean.turn_on
-          - target:
-              entity_id: climate.garage_ac
+          - action: climate.set_hvac_mode
+            alias: Stop Rudys Heater
             data:
-              temperature: 80
-              hvac_mode: dry
-            action: climate.set_temperature
+              hvac_mode: 'off'
+            target:
+              entity_id: climate.garage_heater
+          - action: climate.set_hvac_mode
+            alias: Start the AC in cool, keeping its current setpoint
+            data:
+              hvac_mode: cool
+            target:
+              entity_id: climate.garage_ac
           - delay:
               seconds: 5
           - target:
@@ -153,27 +184,30 @@
       - condition: trigger
         id: freeze_protect
       sequence:
-      - condition: and
-        conditions:
-        - condition: state
+      - action: input_boolean.turn_off
+        alias: Switch the garage to heat mode
+        target:
           entity_id: input_boolean.garage_heat_cool_mode
-          state: 'on'
-        - condition: state
-          entity_id: input_boolean.vacation
-          state: 'off'
-        - condition: state
-          entity_id: person.bill_funk
-          state: home
-      - target:
-          entity_id: climate.garage_heater
-        data:
-          temperature: 44
-        action: climate.set_temperature
-      - target:
+      - action: climate.turn_off
+        alias: AC off
+        target:
           entity_id: climate.garage_ac
-        action: climate.turn_off
-      - data:
-          message: Temperature below 42. Heat target set for freeze protection.
-          title: Garage Heater
-        action: script.notify_alert
-  mode: single
+      - action: climate.set_hvac_mode
+        alias: Start Rudys Heater, keeping its own setpoint
+        data:
+          hvac_mode: heat
+        target:
+          entity_id: climate.garage_heater
+      - action: script.notify_alert
+        alias: Tell Scott freeze protection ran
+        data:
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. Freeze protection switched the garage to heat mode and started Rudys
+            Heater.
+          title: Garage Freeze Protection
+          tag: garage_freeze_protect
+          channel: Garage Safety
+          importance: high
+          icon: mdi:snowflake-alert
+  mode: queued
+  max: 10

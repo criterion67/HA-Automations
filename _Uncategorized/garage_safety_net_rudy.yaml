@@ -56,7 +56,27 @@
     script.notify_alert (or script.notify_clear for clear_notification) with the same
     message, title, tag, channel, importance, priority, ttl, actions and icon values.
     Delivery behavior is unchanged; channel and importance policy now lives in the
-    shared script.'
+    shared script.
+
+
+    WINTER COVERAGE added 2026-11-17:
+
+    - 55 F warning and 45 F critical (alarm_stream) on sensor.temp_sensor_garage,
+    5 minutes each. Alerts only; freeze protection at 42 F in automation.master_garage_climate_control
+    is what forces heat on.
+
+    - switch.garage_heater or sensor.temp_sensor_rudys_crate (the heater''s target
+    sensor) unavailable for 15 minutes alerts, but only in heat mode (input_boolean.garage_heat_cool_mode
+    OFF), because the heater plug is unplugged all summer by design. Rudy''s Heater
+    is a generic thermostat and cannot heat without the crate sensor; that sensor
+    was dead from late August until its CR2032 battery was replaced on 2026-11-17.
+
+
+    BACKUP CRATE SENSOR 2026-11-17: climate.garage_heater now follows sensor.rudy_s_crate_temperature,
+    a Min/Max (mean) helper of Crate 1 (sensor.temp_sensor_rudys_crate, Aqara ZHA)
+    and Crate 2 (sensor.hvac_test_sensor_2_temperature, Govee H5105 beside the crate).
+    The two tracked within about 0.3 F once settled. Crate 2 was added to heat_gear_unavailable
+    so either sensor dropping out in heat mode alerts.'
   triggers:
   - above: 82
     entity_id: sensor.temp_sensor_garage
@@ -111,6 +131,26 @@
     event_type: mobile_app_notification_action
     id: resume_dry
     trigger: event
+  - below: 55
+    entity_id: sensor.temp_sensor_garage
+    for: 00:05:00
+    id: cold_warn
+    trigger: numeric_state
+  - below: 45
+    entity_id: sensor.temp_sensor_garage
+    for: 00:05:00
+    id: cold_critical
+    trigger: numeric_state
+  - entity_id:
+    - switch.garage_heater
+    - sensor.temp_sensor_rudys_crate
+    - sensor.hvac_test_sensor_2_temperature
+    for: 00:15:00
+    id: heat_gear_unavailable
+    to:
+    - unavailable
+    - unknown
+    trigger: state
   conditions: []
   actions:
   - choose:
@@ -302,5 +342,55 @@
       - action: script.notify_clear
         data:
           tag: garage_climate_alert
+    - alias: Garage below 55 F for 5 minutes
+      conditions:
+      - condition: trigger
+        id: cold_warn
+      sequence:
+      - action: script.notify_alert
+        alias: Warn Scott
+        data:
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. Rudy's Heater is {{ states('climate.garage_heater') }}, mode is
+            {{ 'cool' if is_state('input_boolean.garage_heat_cool_mode', 'on') else
+            'heat' }}. Rudy is out there.
+          title: Garage Cold
+          tag: garage_cold_alert
+          channel: Garage Safety
+          importance: high
+          icon: mdi:dog
+    - alias: Garage below 45 F for 5 minutes, emergency
+      conditions:
+      - condition: trigger
+        id: cold_critical
+      sequence:
+      - action: script.notify_alert
+        alias: Alarm Scott
+        data:
+          message: Garage is {{ states('sensor.temp_sensor_garage') | float(0) | round(1)
+            }} F. Rudy's Heater is {{ states('climate.garage_heater') }}. Check on
+            Rudy now.
+          title: GARAGE TOO COLD FOR RUDY
+          tag: garage_cold_critical
+          channel: alarm_stream
+          icon: mdi:snowflake-alert
+    - alias: Heater plug or crate sensor offline 15 minutes while in heat mode
+      conditions:
+      - condition: trigger
+        id: heat_gear_unavailable
+      - condition: state
+        entity_id: input_boolean.garage_heat_cool_mode
+        state: 'off'
+      sequence:
+      - action: script.notify_alert
+        data:
+          message: '{{ state_attr(trigger.entity_id, ''friendly_name'') | default(trigger.entity_id,
+            true) }} has been {{ states(trigger.entity_id) }} for 15 minutes. Rudy''s
+            Heater cannot heat without it.'
+          title: Garage Heat Offline
+          tag: garage_offline_{{ trigger.entity_id }}
+          channel: Garage Safety
+          importance: high
+          icon: mdi:radiator-off
   max: 10
   mode: parallel
