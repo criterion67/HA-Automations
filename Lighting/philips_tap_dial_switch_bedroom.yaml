@@ -1,39 +1,46 @@
 - id: '1700846828462'
   alias: Philips Tap Dial Switch- Bedroom
-  description: 'Rotary dimmer and button 1 controls the bedside lights, button 2 controls
-    TV lights and underbed light, button 4 initiates Bill''s bedtime scene. TTS/chime
-    target fixed 2026-08-29: button 2 cast to media_player.whole_house, a Music Assistant
-    entity that no longer exists. It now uses media_player.all_speakers, the house-wide
-    Cast speaker group.'
-  use_blueprint:
-    path: nnmalex/philips_tap_dial_switch.yaml
-    input:
-      remote: 8f23b644213ddd76bca48ee94edbe7e8
-      dimmable_light:
-        entity_id: light.bedroom_bedside_lamps_group
-      button_1_press:
-      - action: light.toggle
-        metadata: {}
-        data: {}
+  description: Hue Tap Dial 1 (ZHA, bedroom). Dial steps light.bedroom_bedside_lamps_group
+    brightness up or down by the dial's step size. Button 1 toggles the bedside lamps.
+    Buttons 2, 3 and 4 are unassigned (Button 2 doorbell sound removed 2026-11-25
+    at Scott's request). Converted from the nnmalex Tap Dial blueprint on 2026-11-25;
+    triggers use the dial's IEEE address so they survive a re-pair.
+  triggers:
+  - event_data:
+      command: step_with_on_off
+      device_ieee: 00:17:88:01:0d:7c:0d:e7
+    event_type: zha_event
+    id: dial
+    trigger: event
+  - event_data:
+      command: recall
+      device_ieee: 00:17:88:01:0d:7c:0d:e7
+    event_type: zha_event
+    id: button
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: dial
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_step_pct: '{{ trigger.event.data.params.step_size if trigger.event.data.params.step_mode
+            in [0, ''StepMode.Up''] else -trigger.event.data.params.step_size }}'
+          transition: 1
         target:
           entity_id: light.bedroom_bedside_lamps_group
-      button_2_press:
-      - metadata: {}
-        data:
-          volume: 0.6
-          media_file:
-            entity_id: media_player.all_speakers
-            media_content_id: media-source://media_source/local/Doorbell_1.mp3
-            media_content_type: audio/mpeg
-            metadata:
-              title: Doorbell_1.mp3
-              thumbnail: null
-              media_class: music
-              children_media_class: null
-              navigateIds:
-              - {}
-              - media_content_type: app
-                media_content_id: media-source://media_source
-        action: script.cast_media_with_no_chime
-      button_4_press: []
-      button_3_press: []
+    - alias: Button 1
+      conditions:
+      - condition: trigger
+        id: button
+      - condition: template
+        value_template: '{{ trigger.event.data.args[1] == 1 }}'
+      sequence:
+      - action: light.toggle
+        target:
+          entity_id: light.bedroom_bedside_lamps_group
+  max_exceeded: silent
+  mode: restart

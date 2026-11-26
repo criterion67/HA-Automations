@@ -1,34 +1,106 @@
 - id: '1761723459974'
   alias: 'Bedroom Light Control: Rodret Remote'
-  description: Updated for light.bedroom_bedside_lamps_group
-  use_blueprint:
-    path: damru/ikea-rodret_E2201_ZHA-Z2M_control-anything.yaml
-    input:
-      remote_device: 5f9179111485c8a6e2eb7b365b887b6e
-      on_press_action:
-      - target:
+  description: IKEA Rodret remote (IKEA Dimmer 1, ZHA) controls light.bedroom_bedside_lamps_group.
+    On press turns the lamps on, off press turns them off. Holding on or off steps
+    brightness up or down by 20 every 250 ms (max 20 steps); releasing the button
+    restarts the automation, which stops the stepping. Converted from the damru Rodret
+    blueprint on 2026-11-25; the unused double press wait (which delayed every single
+    press) was dropped. Triggers use the remote's IEEE address so they survive a re-pair.
+  triggers:
+  - event_data:
+      cluster_id: 6
+      command: 'on'
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: press_on
+    trigger: event
+  - event_data:
+      cluster_id: 6
+      command: 'off'
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: press_off
+    trigger: event
+  - event_data:
+      args:
+      - 0
+      - 83
+      cluster_id: 8
+      command: move_with_on_off
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: hold_on
+    trigger: event
+  - event_data:
+      args:
+      - 1
+      - 83
+      - 0
+      - 0
+      cluster_id: 8
+      command: move
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: hold_off
+    trigger: event
+  - event_data:
+      cluster_id: 8
+      command: stop_with_on_off
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: release
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: press_on
+      sequence:
+      - action: light.turn_on
+        target:
           entity_id: light.bedroom_bedside_lamps_group
-        action: light.turn_on
-      off_press_action:
-      - target:
+    - conditions:
+      - condition: trigger
+        id: press_off
+      sequence:
+      - action: light.turn_off
+        target:
           entity_id: light.bedroom_bedside_lamps_group
-        action: light.turn_off
-      on_hold_action:
-      - target:
-          entity_id: light.bedroom_bedside_lamps_group
-        data:
-          brightness_step: 20
-          transition: 0.3
-        action: light.turn_on
-      off_hold_action:
-      - target:
-          entity_id: light.bedroom_bedside_lamps_group
-        data:
-          brightness_step: -20
-          transition: 0.3
-        action: light.turn_on
-      on_double_press: true
-      on_double_press_action: []
-      off_double_press: true
-      off_double_press_action: []
-      helper_double_press_delay: 255
+    - conditions:
+      - condition: trigger
+        id: hold_on
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - action: light.turn_on
+            data:
+              brightness_step: 20
+              transition: 0.3
+            target:
+              entity_id: light.bedroom_bedside_lamps_group
+          - delay:
+              milliseconds: 250
+    - conditions:
+      - condition: trigger
+        id: hold_off
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - action: light.turn_on
+            data:
+              brightness_step: -20
+              transition: 0.3
+            target:
+              entity_id: light.bedroom_bedside_lamps_group
+          - delay:
+              milliseconds: 250
+  max_exceeded: silent
+  mode: restart

@@ -7,10 +7,19 @@
     (today''s dispense count, resets at midnight) is below the expected count: 1 at
     7:05, 2 at 12:05, 3 at 18:05. They no longer use binary_sensor.fresh_element_solo_feeding,
     which only changes for manual feeds (changed 2026-11-01). Other branches: dispense
-    confirmation, low food, and three battery branches. KNOWN ISSUE: the battery branches
-    key on the battery sensor reading ''Not in use'', but it reports a percentage,
-    so they likely never fire; to be rebuilt with the 20% low battery alert (home-tasks
-    #46). Mode parallel, max 10.'
+    confirmation (manual feeds only, same sensor limitation), and low food. POWER
+    BRANCHES rebuilt 2026-11-25 (home-tasks #46) on sensor.fresh_element_solo_device_status
+    (enum: offline, online_ac, online_battery, unknown): USB lost fires on online_ac
+    to online_battery, USB restored fires on online_battery to online_ac. Chosen because
+    the 2026-10-30 plug power cut test recorded exactly those two changes (online_battery
+    at 7:35:13 PM, back to online_ac at 7:35:34 PM); sensor.sunroom_fresh_element_solo_power_type
+    was not verified in that test. The old branches keyed on the battery sensor reading
+    ''Not in use'', which never happens since it reports a percentage. The battery
+    removed branch was dropped 2026-11-25 after Petkit removed binary_sensor.fresh_element_solo_battery_installed.
+    LOW BATTERY: fires when sensor.fresh_element_solo_battery_level drops below 20%
+    or the power type becomes on_battery_low; sent via script.notify_alert on Quiet
+    Notices (low importance) per the notification channel policy. Mode parallel, max
+    10.'
   triggers:
   - entity_id: binary_sensor.fresh_element_solo_feeding
     from: 'on'
@@ -31,18 +40,24 @@
   - at: '18:05:00'
     id: evening_check
     trigger: time
-  - entity_id: sensor.fresh_element_solo_battery_level
-    from: Not in use
+  - trigger: state
+    entity_id: sensor.fresh_element_solo_device_status
+    from: online_ac
+    to: online_battery
     id: running_on_battery
-    trigger: state
-  - entity_id: binary_sensor.fresh_element_solo_battery_installed
-    id: battery_removed
-    to: 'off'
-    trigger: state
-  - entity_id: sensor.fresh_element_solo_battery_level
+  - trigger: state
+    entity_id: sensor.fresh_element_solo_device_status
+    from: online_battery
+    to: online_ac
     id: usb_restored
-    to: Not in use
-    trigger: state
+  - trigger: numeric_state
+    entity_id: sensor.fresh_element_solo_battery_level
+    below: 20
+    id: battery_low
+  - trigger: state
+    entity_id: sensor.sunroom_fresh_element_solo_power_type
+    to: on_battery_low
+    id: battery_low
   actions:
   - choose:
     - alias: Feeding completed
@@ -124,20 +139,8 @@
         data:
           message: 'The Fresh Element Solo has lost USB power and is now running on
             battery backup. Current battery level: {{ states(''sensor.fresh_element_solo_battery_level'')
-            }}'
+            }}%'
           title: ⚠️ Gracie's Feeder — USB Power Lost
-        target:
-          entity_id: notify.scott_s_phone
-    - alias: Backup batteries removed
-      conditions:
-      - condition: trigger
-        id: battery_removed
-      sequence:
-      - action: notify.send_message
-        data:
-          message: The backup batteries have been removed from the Fresh Element Solo.
-            The feeder has no backup power if USB is disconnected.
-          title: ⚠️ Gracie's Feeder — Battery Removed
         target:
           entity_id: notify.scott_s_phone
     - alias: USB power restored
@@ -152,5 +155,19 @@
           title: ✅ Gracie's Feeder — USB Power Restored
         target:
           entity_id: notify.scott_s_phone
+    - alias: Backup battery low, below 20% or feeder reports on_battery_low
+      conditions:
+      - condition: trigger
+        id: battery_low
+      sequence:
+      - action: script.notify_alert
+        data:
+          title: '🔋 Gracie''s Feeder: Battery Low'
+          message: The Fresh Element Solo backup batteries are low ({{ states('sensor.fresh_element_solo_battery_level')
+            }}%). Replace the 5 AAA batteries.
+          tag: gracie_feeder_battery_low
+          channel: Quiet Notices
+          importance: low
+          icon: mdi:battery-low
   max: 10
   mode: parallel

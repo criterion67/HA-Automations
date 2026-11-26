@@ -1,6 +1,12 @@
 - id: '1745982816417'
   alias: Office- Desk Lighting Remote (Unified)
-  description: Unified automation to handle both remote control and wall switch control.
+  description: 'Office lighting control. Wall switch (switch.office_lamps) on/off
+    drives the Office Lamps group. Office Scene Controller (Zooz ZEN37) buttons via
+    its event entities: B1 single toggles desk lamps, B1 double toggles Office Lamps,
+    B1 hold reserved; B2 single toggles ceiling presence mode, B2 double toggles ceiling
+    light; B3 single toggles office fan; B4 single toggles Office Lamps (Zigbee group).
+    Moved from zwave_js_value_notification bus events to event.received on 2026-11-25
+    after those bus events stopped firing.'
   triggers:
   - entity_id: switch.office_lamps
     to: 'on'
@@ -10,55 +16,55 @@
     to: 'off'
     id: switch-off
     trigger: state
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 001
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_001
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene001_single
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 001
-      value: KeyPressed2x
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_001
+    options:
+      event_type:
+      - KeyPressed2x
     id: zen37_scene001_double
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 001
-      value: KeyHeldDown
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_001
+    options:
+      event_type:
+      - KeyHeldDown
     id: zen37_scene001_hold
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 002
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_002
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene002_single
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 002
-      value: KeyPressed2x
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_002
+    options:
+      event_type:
+      - KeyPressed2x
     id: zen37_scene002_double
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 003
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_003
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene003_single
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 004
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_004
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene004_single
-    trigger: event
   conditions: []
   actions:
   - choose:

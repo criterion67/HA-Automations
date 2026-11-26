@@ -1,37 +1,120 @@
 - id: '1779399127025'
   alias: 'Hue Tap Dial 2: Bathroom Era 100 Media Controls'
-  description: 'Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2. Dial
-    adjusts volume. Button 1: Play/Pause. Button 2 short: Spotify playlist. Button
-    2 long: 1000 80s Hits radio (RadioBrowser via MA). Button 3: Previous Track. Button
-    4: Next Track.'
-  use_blueprint:
-    path: gtunes-dev/zha-philips-hue-tap-dial-media-controls.yaml
-    input:
-      remote: 16ca9fd804841b78ea804052b698c5f4
-      volume_player: media_player.era_100_bathroom
-      transport_player: media_player.era_100_bathroom
-      logbook_enabled: false
-      small_rotation_increment: 3
-      medium_rotation_increment: 6
-      large_rotation_increment: 10
-      button_2_short:
-      - action: media_player.shuffle_set
+  description: 'Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2 (ZHA).
+    Dial adjusts volume (step size up to 13 = 3%, up to 24 = 6%, larger = 10%; spurious
+    steps with transition_time 8 are ignored). Button 1: Play/Pause. Button 2 short:
+    Spotify playlist (shuffled). Button 2 long: 1000 80s Hits radio (RadioBrowser
+    via MA). Button 3: Previous Track. Button 4: Next Track. Converted from the gtunes-dev
+    Tap Dial Media blueprint on 2026-11-25; triggers use the dial''s IEEE address
+    so they survive a re-pair.'
+  triggers:
+  - event_data:
+      command: step_with_on_off
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: dial
+    trigger: event
+  - event_data:
+      command: button_1_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b1_short
+    trigger: event
+  - event_data:
+      command: button_2_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b2_short
+    trigger: event
+  - event_data:
+      command: button_2_hold
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b2_hold
+    trigger: event
+  - event_data:
+      command: button_3_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b3_short
+    trigger: event
+  - event_data:
+      command: button_4_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b4_short
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: 'Dial: volume'
+      conditions:
+      - condition: trigger
+        id: dial
+      - condition: template
+        value_template: '{{ trigger.event.data.params.transition_time != 8 and trigger.event.data.params.step_mode
+          in [0, 1, ''StepMode.Up'', ''StepMode.Down''] }}'
+      sequence:
+      - action: media_player.volume_set
+        data:
+          volume_level: '{% set p = trigger.event.data.params %}{% set inc = 3 if
+            p.step_size <= 13 else (6 if p.step_size <= 24 else 10) %}{% set v = state_attr(''media_player.era_100_bathroom'',
+            ''volume_level'') | float(0) + ((inc if p.step_mode in [0, ''StepMode.Up'']
+            else -inc) / 100) %}{{ [[v, 0] | max, 1] | min }}'
         target:
-          entity_id: media_player.era_100_bathroom_ma
+          entity_id: media_player.era_100_bathroom
+    - alias: 'Button 1: play/pause'
+      conditions:
+      - condition: trigger
+        id: b1_short
+      sequence:
+      - action: media_player.media_play_pause
+        target:
+          entity_id: media_player.era_100_bathroom
+    - alias: 'Button 2 short: Spotify playlist'
+      conditions:
+      - condition: trigger
+        id: b2_short
+      sequence:
+      - action: media_player.shuffle_set
         data:
           shuffle: true
-      - action: music_assistant.play_media
         target:
           entity_id: media_player.era_100_bathroom_ma
+      - action: music_assistant.play_media
         data:
+          enqueue: replace
           media_id: spotify://playlist/6KQhQhMXMnihs5q07Qj6o3
           media_type: playlist
-          enqueue: replace
-      button_2_long:
-      - action: music_assistant.play_media
         target:
           entity_id: media_player.era_100_bathroom_ma
+    - alias: 'Button 2 long: 80s radio'
+      conditions:
+      - condition: trigger
+        id: b2_hold
+      sequence:
+      - action: music_assistant.play_media
         data:
+          enqueue: replace
           media_id: 1000 80s Hits
           media_type: radio
-          enqueue: replace
+        target:
+          entity_id: media_player.era_100_bathroom_ma
+    - alias: 'Button 3: previous track'
+      conditions:
+      - condition: trigger
+        id: b3_short
+      sequence:
+      - action: media_player.media_previous_track
+        target:
+          entity_id: media_player.era_100_bathroom
+    - alias: 'Button 4: next track'
+      conditions:
+      - condition: trigger
+        id: b4_short
+      sequence:
+      - action: media_player.media_next_track
+        target:
+          entity_id: media_player.era_100_bathroom
+  max_exceeded: silent
+  mode: restart

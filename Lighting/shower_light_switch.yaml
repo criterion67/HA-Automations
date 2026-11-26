@@ -1,52 +1,40 @@
 - id: '1761411307247'
   alias: Shower Light Switch
-  description: ''
+  description: 'Bathroom Shower Switch (Zooz ZEN72) paddle event entities control
+    light.bathroom_shower_downlight. Single press upper paddle turns the downlight
+    on; single press lower paddle turns it off. Double taps on the same paddles are
+    handled by Bathroom Mirror: Light Control. Converted from Z-Wave device triggers
+    (device_id) to event.received on 2026-11-25.'
   triggers:
-  - device_id: 9feca4abd44983e0914a94ca19a0107b
-    domain: zwave_js
-    type: event.value_notification.central_scene
-    property: scene
-    property_key: '002'
-    endpoint: 0
-    command_class: 91
-    subtype: Endpoint 0 Scene 002
-    trigger: device
-    id: Shower Light OFF
-    value: 0
-  - device_id: 9feca4abd44983e0914a94ca19a0107b
-    domain: zwave_js
-    type: event.value_notification.central_scene
-    property: scene
-    property_key: '001'
-    endpoint: 0
-    command_class: 91
-    subtype: Endpoint 0 Scene 001
-    trigger: device
-    id: Shower Light ON
-    value: 0
+  - id: Shower Light ON
+    options:
+      event_type:
+      - KeyPressed
+    target:
+      entity_id: event.bathroom_shower_switch_scene_001
+    trigger: event.received
+  - id: Shower Light OFF
+    options:
+      event_type:
+      - KeyPressed
+    target:
+      entity_id: event.bathroom_shower_switch_scene_002
+    trigger: event.received
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: trigger
-        id:
-        - Shower Light ON
+        id: Shower Light ON
       sequence:
       - action: light.turn_on
-        metadata: {}
-        data: {}
         target:
-          entity_id:
-          - light.bathroom_shower_downlight
+          entity_id: light.bathroom_shower_downlight
     - conditions:
       - condition: trigger
-        id:
-        - Shower Light OFF
+        id: Shower Light OFF
       sequence:
       - action: light.turn_off
-        metadata: {}
-        data: {}
         target:
-          entity_id:
-          - light.bathroom_shower_downlight
+          entity_id: light.bathroom_shower_downlight
   mode: single

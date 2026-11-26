@@ -1,26 +1,40 @@
 - id: '1722497194862'
   alias: 'Bathroom Mirror: Light Control'
-  description: Lighting control for bathroom mirror on/off
-  use_blueprint:
-    path: IOT_Ninja/zooz-zen72.yaml
-    input:
-      zooz_zen72: 9feca4abd44983e0914a94ca19a0107b
-      dimmer_up_2x:
+  description: Bathroom mirror on/off from the Bathroom Shower Switch (Zooz ZEN72)
+    paddle event entities. Double tap upper paddle turns the mirror on; double tap
+    lower paddle turns it off. Converted from the IOT_Ninja ZEN72 blueprint on 2026-11-25
+    after Z-Wave JS renamed the scene labels (Scene 001 to Upper Paddle) and the blueprint
+    stopped matching.
+  triggers:
+  - id: upper_double
+    options:
+      event_type:
+      - KeyPressed2x
+    target:
+      entity_id: event.bathroom_shower_switch_scene_001
+    trigger: event.received
+  - id: lower_double
+    options:
+      event_type:
+      - KeyPressed2x
+    target:
+      entity_id: event.bathroom_shower_switch_scene_002
+    trigger: event.received
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: upper_double
+      sequence:
       - action: switch.turn_on
         target:
           entity_id: switch.bathroom_mirror
-        data: {}
-      dimmer_up_1x: []
-      dimmer_up_hold: []
-      dimmer_down_1x: []
-      dimmer_down_hold: []
-      dimmer_up_3x: []
-      dimmer_down_3x: []
-      dimmer_up_4x: []
-      dimmer_down_4x: []
-      dimmer_up_5x: []
-      dimmer_down_2x:
+    - conditions:
+      - condition: trigger
+        id: lower_double
+      sequence:
       - action: switch.turn_off
         target:
           entity_id: switch.bathroom_mirror
-        data: {}
+  mode: single

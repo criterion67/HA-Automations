@@ -8,7 +8,7 @@
 
 
 NOTIFY WRAPPER 2026-09-22: every direct notify.mobile_app_* call was replaced by script.notify_alert (or script.notify_clear for clear_notification) with the same message, title, tag, channel, importance, priority, ttl, actions, sticky, persistent, color, image, url and icon values, and target set to watch or bill where the call went to those devices. Delivery behavior is unchanged; channel and importance policy now lives in the shared scripts. |
-| Office- Desk Lighting Remote (Unified) | Unified automation to handle both remote control and wall switch control. |
+| Office- Desk Lighting Remote (Unified) | Office lighting control. Wall switch (switch.office_lamps) on/off drives the Office Lamps group. Office Scene Controller (Zooz ZEN37) buttons via its event entities: B1 single toggles desk lamps, B1 double toggles Office Lamps, B1 hold reserved; B2 single toggles ceiling presence mode, B2 double toggles ceiling light; B3 single toggles office fan; B4 single toggles Office Lamps (Zigbee group). Moved from zwave_js_value_notification bus events to event.received on 2026-11-25 after those bus events stopped firing. |
 | Scent Diffuser - Scheduled 10 Minute Cycle | Turn on the scent diffuser for 60 seconds every 10 minutes when Scott is home, the thermostat is in cool or heat mode, the fan is actively running, and the time is between 8:00 a.m. and 8:00 p.m. |
 | V2- Doorbell - Person Detected | G6 Pro Doorbell person detection triggers cooldown, bedroom alert light, notification, and camera stream to bedroom TV. Pauses active TV playback before stream and resumes after 1 minute. Only runs when Scott is home. On HA restart, resets any stuck cooldown boolean.
 

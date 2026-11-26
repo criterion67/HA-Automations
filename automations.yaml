@@ -138,43 +138,50 @@
   mode: single
 - id: '1700846828462'
   alias: Philips Tap Dial Switch- Bedroom
-  description: 'Rotary dimmer and button 1 controls the bedside lights, button 2 controls
-    TV lights and underbed light, button 4 initiates Bill''s bedtime scene. TTS/chime
-    target fixed 2026-08-29: button 2 cast to media_player.whole_house, a Music Assistant
-    entity that no longer exists. It now uses media_player.all_speakers, the house-wide
-    Cast speaker group.'
-  use_blueprint:
-    path: nnmalex/philips_tap_dial_switch.yaml
-    input:
-      remote: 8f23b644213ddd76bca48ee94edbe7e8
-      dimmable_light:
-        entity_id: light.bedroom_bedside_lamps_group
-      button_1_press:
-      - action: light.toggle
-        metadata: {}
-        data: {}
+  description: Hue Tap Dial 1 (ZHA, bedroom). Dial steps light.bedroom_bedside_lamps_group
+    brightness up or down by the dial's step size. Button 1 toggles the bedside lamps.
+    Buttons 2, 3 and 4 are unassigned (Button 2 doorbell sound removed 2026-11-25
+    at Scott's request). Converted from the nnmalex Tap Dial blueprint on 2026-11-25;
+    triggers use the dial's IEEE address so they survive a re-pair.
+  triggers:
+  - event_data:
+      command: step_with_on_off
+      device_ieee: 00:17:88:01:0d:7c:0d:e7
+    event_type: zha_event
+    id: dial
+    trigger: event
+  - event_data:
+      command: recall
+      device_ieee: 00:17:88:01:0d:7c:0d:e7
+    event_type: zha_event
+    id: button
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: dial
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_step_pct: '{{ trigger.event.data.params.step_size if trigger.event.data.params.step_mode
+            in [0, ''StepMode.Up''] else -trigger.event.data.params.step_size }}'
+          transition: 1
         target:
           entity_id: light.bedroom_bedside_lamps_group
-      button_2_press:
-      - metadata: {}
-        data:
-          volume: 0.6
-          media_file:
-            entity_id: media_player.all_speakers
-            media_content_id: media-source://media_source/local/Doorbell_1.mp3
-            media_content_type: audio/mpeg
-            metadata:
-              title: Doorbell_1.mp3
-              thumbnail:
-              media_class: music
-              children_media_class:
-              navigateIds:
-              - {}
-              - media_content_type: app
-                media_content_id: media-source://media_source
-        action: script.cast_media_with_no_chime
-      button_4_press: []
-      button_3_press: []
+    - alias: Button 1
+      conditions:
+      - condition: trigger
+        id: button
+      - condition: template
+        value_template: '{{ trigger.event.data.args[1] == 1 }}'
+      sequence:
+      - action: light.toggle
+        target:
+          entity_id: light.bedroom_bedside_lamps_group
+  max_exceeded: silent
+  mode: restart
 - id: '1703350668667'
   alias: Garage Lights on when Garage door opened
   description: Garage lights will turn on when garage door is opened between sunset
@@ -473,30 +480,44 @@
   mode: single
 - id: '1722497194862'
   alias: 'Bathroom Mirror: Light Control'
-  description: Lighting control for bathroom mirror on/off
-  use_blueprint:
-    path: IOT_Ninja/zooz-zen72.yaml
-    input:
-      zooz_zen72: 9feca4abd44983e0914a94ca19a0107b
-      dimmer_up_2x:
+  description: Bathroom mirror on/off from the Bathroom Shower Switch (Zooz ZEN72)
+    paddle event entities. Double tap upper paddle turns the mirror on; double tap
+    lower paddle turns it off. Converted from the IOT_Ninja ZEN72 blueprint on 2026-11-25
+    after Z-Wave JS renamed the scene labels (Scene 001 to Upper Paddle) and the blueprint
+    stopped matching.
+  triggers:
+  - id: upper_double
+    options:
+      event_type:
+      - KeyPressed2x
+    target:
+      entity_id: event.bathroom_shower_switch_scene_001
+    trigger: event.received
+  - id: lower_double
+    options:
+      event_type:
+      - KeyPressed2x
+    target:
+      entity_id: event.bathroom_shower_switch_scene_002
+    trigger: event.received
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: upper_double
+      sequence:
       - action: switch.turn_on
         target:
           entity_id: switch.bathroom_mirror
-        data: {}
-      dimmer_up_1x: []
-      dimmer_up_hold: []
-      dimmer_down_1x: []
-      dimmer_down_hold: []
-      dimmer_up_3x: []
-      dimmer_down_3x: []
-      dimmer_up_4x: []
-      dimmer_down_4x: []
-      dimmer_up_5x: []
-      dimmer_down_2x:
+    - conditions:
+      - condition: trigger
+        id: lower_double
+      sequence:
       - action: switch.turn_off
         target:
           entity_id: switch.bathroom_mirror
-        data: {}
+  mode: single
 - id: '1722498990756'
   alias: Garage Door Chime
   description: ''
@@ -1632,7 +1653,13 @@
   mode: single
 - id: '1745982816417'
   alias: Office- Desk Lighting Remote (Unified)
-  description: Unified automation to handle both remote control and wall switch control.
+  description: 'Office lighting control. Wall switch (switch.office_lamps) on/off
+    drives the Office Lamps group. Office Scene Controller (Zooz ZEN37) buttons via
+    its event entities: B1 single toggles desk lamps, B1 double toggles Office Lamps,
+    B1 hold reserved; B2 single toggles ceiling presence mode, B2 double toggles ceiling
+    light; B3 single toggles office fan; B4 single toggles Office Lamps (Zigbee group).
+    Moved from zwave_js_value_notification bus events to event.received on 2026-11-25
+    after those bus events stopped firing.'
   triggers:
   - entity_id: switch.office_lamps
     to: 'on'
@@ -1642,55 +1669,55 @@
     to: 'off'
     id: switch-off
     trigger: state
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 001
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_001
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene001_single
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 001
-      value: KeyPressed2x
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_001
+    options:
+      event_type:
+      - KeyPressed2x
     id: zen37_scene001_double
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 001
-      value: KeyHeldDown
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_001
+    options:
+      event_type:
+      - KeyHeldDown
     id: zen37_scene001_hold
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 002
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_002
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene002_single
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 002
-      value: KeyPressed2x
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_002
+    options:
+      event_type:
+      - KeyPressed2x
     id: zen37_scene002_double
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 003
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_003
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene003_single
-    trigger: event
-  - event_type: zwave_js_value_notification
-    event_data:
-      node_id: 6
-      label: Scene 004
-      value: KeyPressed
+  - trigger: event.received
+    target:
+      entity_id: event.zen37_switch_scene_controller_scene_004
+    options:
+      event_type:
+      - KeyPressed
     id: zen37_scene004_single
-    trigger: event
   conditions: []
   actions:
   - choose:
@@ -4381,90 +4408,150 @@
   mode: single
 - id: '1761411307247'
   alias: Shower Light Switch
-  description: ''
+  description: 'Bathroom Shower Switch (Zooz ZEN72) paddle event entities control
+    light.bathroom_shower_downlight. Single press upper paddle turns the downlight
+    on; single press lower paddle turns it off. Double taps on the same paddles are
+    handled by Bathroom Mirror: Light Control. Converted from Z-Wave device triggers
+    (device_id) to event.received on 2026-11-25.'
   triggers:
-  - device_id: 9feca4abd44983e0914a94ca19a0107b
-    domain: zwave_js
-    type: event.value_notification.central_scene
-    property: scene
-    property_key: '002'
-    endpoint: 0
-    command_class: 91
-    subtype: Endpoint 0 Scene 002
-    trigger: device
-    id: Shower Light OFF
-    value: 0
-  - device_id: 9feca4abd44983e0914a94ca19a0107b
-    domain: zwave_js
-    type: event.value_notification.central_scene
-    property: scene
-    property_key: '001'
-    endpoint: 0
-    command_class: 91
-    subtype: Endpoint 0 Scene 001
-    trigger: device
-    id: Shower Light ON
-    value: 0
+  - id: Shower Light ON
+    options:
+      event_type:
+      - KeyPressed
+    target:
+      entity_id: event.bathroom_shower_switch_scene_001
+    trigger: event.received
+  - id: Shower Light OFF
+    options:
+      event_type:
+      - KeyPressed
+    target:
+      entity_id: event.bathroom_shower_switch_scene_002
+    trigger: event.received
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: trigger
-        id:
-        - Shower Light ON
+        id: Shower Light ON
       sequence:
       - action: light.turn_on
-        metadata: {}
-        data: {}
         target:
-          entity_id:
-          - light.bathroom_shower_downlight
+          entity_id: light.bathroom_shower_downlight
     - conditions:
       - condition: trigger
-        id:
-        - Shower Light OFF
+        id: Shower Light OFF
       sequence:
       - action: light.turn_off
-        metadata: {}
-        data: {}
         target:
-          entity_id:
-          - light.bathroom_shower_downlight
+          entity_id: light.bathroom_shower_downlight
   mode: single
 - id: '1761723459974'
   alias: 'Bedroom Light Control: Rodret Remote'
-  description: Updated for light.bedroom_bedside_lamps_group
-  use_blueprint:
-    path: damru/ikea-rodret_E2201_ZHA-Z2M_control-anything.yaml
-    input:
-      remote_device: 5f9179111485c8a6e2eb7b365b887b6e
-      on_press_action:
-      - target:
+  description: IKEA Rodret remote (IKEA Dimmer 1, ZHA) controls light.bedroom_bedside_lamps_group.
+    On press turns the lamps on, off press turns them off. Holding on or off steps
+    brightness up or down by 20 every 250 ms (max 20 steps); releasing the button
+    restarts the automation, which stops the stepping. Converted from the damru Rodret
+    blueprint on 2026-11-25; the unused double press wait (which delayed every single
+    press) was dropped. Triggers use the remote's IEEE address so they survive a re-pair.
+  triggers:
+  - event_data:
+      cluster_id: 6
+      command: 'on'
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: press_on
+    trigger: event
+  - event_data:
+      cluster_id: 6
+      command: 'off'
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: press_off
+    trigger: event
+  - event_data:
+      args:
+      - 0
+      - 83
+      cluster_id: 8
+      command: move_with_on_off
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: hold_on
+    trigger: event
+  - event_data:
+      args:
+      - 1
+      - 83
+      - 0
+      - 0
+      cluster_id: 8
+      command: move
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: hold_off
+    trigger: event
+  - event_data:
+      cluster_id: 8
+      command: stop_with_on_off
+      device_ieee: 5c:c7:c1:ff:fe:87:67:d1
+      endpoint_id: 1
+    event_type: zha_event
+    id: release
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: press_on
+      sequence:
+      - action: light.turn_on
+        target:
           entity_id: light.bedroom_bedside_lamps_group
-        action: light.turn_on
-      off_press_action:
-      - target:
+    - conditions:
+      - condition: trigger
+        id: press_off
+      sequence:
+      - action: light.turn_off
+        target:
           entity_id: light.bedroom_bedside_lamps_group
-        action: light.turn_off
-      on_hold_action:
-      - target:
-          entity_id: light.bedroom_bedside_lamps_group
-        data:
-          brightness_step: 20
-          transition: 0.3
-        action: light.turn_on
-      off_hold_action:
-      - target:
-          entity_id: light.bedroom_bedside_lamps_group
-        data:
-          brightness_step: -20
-          transition: 0.3
-        action: light.turn_on
-      on_double_press: true
-      on_double_press_action: []
-      off_double_press: true
-      off_double_press_action: []
-      helper_double_press_delay: 255
+    - conditions:
+      - condition: trigger
+        id: hold_on
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - action: light.turn_on
+            data:
+              brightness_step: 20
+              transition: 0.3
+            target:
+              entity_id: light.bedroom_bedside_lamps_group
+          - delay:
+              milliseconds: 250
+    - conditions:
+      - condition: trigger
+        id: hold_off
+      sequence:
+      - repeat:
+          count: 20
+          sequence:
+          - action: light.turn_on
+            data:
+              brightness_step: -20
+              transition: 0.3
+            target:
+              entity_id: light.bedroom_bedside_lamps_group
+          - delay:
+              milliseconds: 250
+  max_exceeded: silent
+  mode: restart
 - id: '1761861452794'
   alias: 'Lutron Aurora: Living Room Floor Lamps v2.5 (Performance Edition)'
   description: Ultra-responsive control with true off, daylight toggle, and stabilized
@@ -9267,41 +9354,124 @@
   mode: single
 - id: '1779399127025'
   alias: 'Hue Tap Dial 2: Bathroom Era 100 Media Controls'
-  description: 'Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2. Dial
-    adjusts volume. Button 1: Play/Pause. Button 2 short: Spotify playlist. Button
-    2 long: 1000 80s Hits radio (RadioBrowser via MA). Button 3: Previous Track. Button
-    4: Next Track.'
-  use_blueprint:
-    path: gtunes-dev/zha-philips-hue-tap-dial-media-controls.yaml
-    input:
-      remote: 16ca9fd804841b78ea804052b698c5f4
-      volume_player: media_player.era_100_bathroom
-      transport_player: media_player.era_100_bathroom
-      logbook_enabled: false
-      small_rotation_increment: 3
-      medium_rotation_increment: 6
-      large_rotation_increment: 10
-      button_2_short:
-      - action: media_player.shuffle_set
+  description: 'Controls the Sonos Era 100 in the bathroom using Hue Tap Dial 2 (ZHA).
+    Dial adjusts volume (step size up to 13 = 3%, up to 24 = 6%, larger = 10%; spurious
+    steps with transition_time 8 are ignored). Button 1: Play/Pause. Button 2 short:
+    Spotify playlist (shuffled). Button 2 long: 1000 80s Hits radio (RadioBrowser
+    via MA). Button 3: Previous Track. Button 4: Next Track. Converted from the gtunes-dev
+    Tap Dial Media blueprint on 2026-11-25; triggers use the dial''s IEEE address
+    so they survive a re-pair.'
+  triggers:
+  - event_data:
+      command: step_with_on_off
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: dial
+    trigger: event
+  - event_data:
+      command: button_1_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b1_short
+    trigger: event
+  - event_data:
+      command: button_2_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b2_short
+    trigger: event
+  - event_data:
+      command: button_2_hold
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b2_hold
+    trigger: event
+  - event_data:
+      command: button_3_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b3_short
+    trigger: event
+  - event_data:
+      command: button_4_short_release
+      device_ieee: 00:17:88:01:0d:7c:12:fd
+    event_type: zha_event
+    id: b4_short
+    trigger: event
+  conditions: []
+  actions:
+  - choose:
+    - alias: 'Dial: volume'
+      conditions:
+      - condition: trigger
+        id: dial
+      - condition: template
+        value_template: '{{ trigger.event.data.params.transition_time != 8 and trigger.event.data.params.step_mode
+          in [0, 1, ''StepMode.Up'', ''StepMode.Down''] }}'
+      sequence:
+      - action: media_player.volume_set
+        data:
+          volume_level: '{% set p = trigger.event.data.params %}{% set inc = 3 if
+            p.step_size <= 13 else (6 if p.step_size <= 24 else 10) %}{% set v = state_attr(''media_player.era_100_bathroom'',
+            ''volume_level'') | float(0) + ((inc if p.step_mode in [0, ''StepMode.Up'']
+            else -inc) / 100) %}{{ [[v, 0] | max, 1] | min }}'
         target:
-          entity_id: media_player.era_100_bathroom_ma
+          entity_id: media_player.era_100_bathroom
+    - alias: 'Button 1: play/pause'
+      conditions:
+      - condition: trigger
+        id: b1_short
+      sequence:
+      - action: media_player.media_play_pause
+        target:
+          entity_id: media_player.era_100_bathroom
+    - alias: 'Button 2 short: Spotify playlist'
+      conditions:
+      - condition: trigger
+        id: b2_short
+      sequence:
+      - action: media_player.shuffle_set
         data:
           shuffle: true
-      - action: music_assistant.play_media
         target:
           entity_id: media_player.era_100_bathroom_ma
+      - action: music_assistant.play_media
         data:
+          enqueue: replace
           media_id: spotify://playlist/6KQhQhMXMnihs5q07Qj6o3
           media_type: playlist
-          enqueue: replace
-      button_2_long:
-      - action: music_assistant.play_media
         target:
           entity_id: media_player.era_100_bathroom_ma
+    - alias: 'Button 2 long: 80s radio'
+      conditions:
+      - condition: trigger
+        id: b2_hold
+      sequence:
+      - action: music_assistant.play_media
         data:
+          enqueue: replace
           media_id: 1000 80s Hits
           media_type: radio
-          enqueue: replace
+        target:
+          entity_id: media_player.era_100_bathroom_ma
+    - alias: 'Button 3: previous track'
+      conditions:
+      - condition: trigger
+        id: b3_short
+      sequence:
+      - action: media_player.media_previous_track
+        target:
+          entity_id: media_player.era_100_bathroom
+    - alias: 'Button 4: next track'
+      conditions:
+      - condition: trigger
+        id: b4_short
+      sequence:
+      - action: media_player.media_next_track
+        target:
+          entity_id: media_player.era_100_bathroom
+  max_exceeded: silent
+  mode: restart
 - id: '1782396479145'
   alias: HVAC Filter Reminder - Daily Check
   description: 'Checks daily if HVAC filters are due and sends an actionable notification
@@ -12755,10 +12925,19 @@
     (today''s dispense count, resets at midnight) is below the expected count: 1 at
     7:05, 2 at 12:05, 3 at 18:05. They no longer use binary_sensor.fresh_element_solo_feeding,
     which only changes for manual feeds (changed 2026-11-01). Other branches: dispense
-    confirmation, low food, and three battery branches. KNOWN ISSUE: the battery branches
-    key on the battery sensor reading ''Not in use'', but it reports a percentage,
-    so they likely never fire; to be rebuilt with the 20% low battery alert (home-tasks
-    #46). Mode parallel, max 10.'
+    confirmation (manual feeds only, same sensor limitation), and low food. POWER
+    BRANCHES rebuilt 2026-11-25 (home-tasks #46) on sensor.fresh_element_solo_device_status
+    (enum: offline, online_ac, online_battery, unknown): USB lost fires on online_ac
+    to online_battery, USB restored fires on online_battery to online_ac. Chosen because
+    the 2026-10-30 plug power cut test recorded exactly those two changes (online_battery
+    at 7:35:13 PM, back to online_ac at 7:35:34 PM); sensor.sunroom_fresh_element_solo_power_type
+    was not verified in that test. The old branches keyed on the battery sensor reading
+    ''Not in use'', which never happens since it reports a percentage. The battery
+    removed branch was dropped 2026-11-25 after Petkit removed binary_sensor.fresh_element_solo_battery_installed.
+    LOW BATTERY: fires when sensor.fresh_element_solo_battery_level drops below 20%
+    or the power type becomes on_battery_low; sent via script.notify_alert on Quiet
+    Notices (low importance) per the notification channel policy. Mode parallel, max
+    10.'
   triggers:
   - entity_id: binary_sensor.fresh_element_solo_feeding
     from: 'on'
@@ -12779,18 +12958,24 @@
   - at: '18:05:00'
     id: evening_check
     trigger: time
-  - entity_id: sensor.fresh_element_solo_battery_level
-    from: Not in use
+  - trigger: state
+    entity_id: sensor.fresh_element_solo_device_status
+    from: online_ac
+    to: online_battery
     id: running_on_battery
-    trigger: state
-  - entity_id: binary_sensor.fresh_element_solo_battery_installed
-    id: battery_removed
-    to: 'off'
-    trigger: state
-  - entity_id: sensor.fresh_element_solo_battery_level
+  - trigger: state
+    entity_id: sensor.fresh_element_solo_device_status
+    from: online_battery
+    to: online_ac
     id: usb_restored
-    to: Not in use
-    trigger: state
+  - trigger: numeric_state
+    entity_id: sensor.fresh_element_solo_battery_level
+    below: 20
+    id: battery_low
+  - trigger: state
+    entity_id: sensor.sunroom_fresh_element_solo_power_type
+    to: on_battery_low
+    id: battery_low
   actions:
   - choose:
     - alias: Feeding completed
@@ -12872,20 +13057,8 @@
         data:
           message: 'The Fresh Element Solo has lost USB power and is now running on
             battery backup. Current battery level: {{ states(''sensor.fresh_element_solo_battery_level'')
-            }}'
+            }}%'
           title: ⚠️ Gracie's Feeder — USB Power Lost
-        target:
-          entity_id: notify.scott_s_phone
-    - alias: Backup batteries removed
-      conditions:
-      - condition: trigger
-        id: battery_removed
-      sequence:
-      - action: notify.send_message
-        data:
-          message: The backup batteries have been removed from the Fresh Element Solo.
-            The feeder has no backup power if USB is disconnected.
-          title: ⚠️ Gracie's Feeder — Battery Removed
         target:
           entity_id: notify.scott_s_phone
     - alias: USB power restored
@@ -12900,6 +13073,20 @@
           title: ✅ Gracie's Feeder — USB Power Restored
         target:
           entity_id: notify.scott_s_phone
+    - alias: Backup battery low, below 20% or feeder reports on_battery_low
+      conditions:
+      - condition: trigger
+        id: battery_low
+      sequence:
+      - action: script.notify_alert
+        data:
+          title: "\U0001F50B Gracie's Feeder: Battery Low"
+          message: The Fresh Element Solo backup batteries are low ({{ states('sensor.fresh_element_solo_battery_level')
+            }}%). Replace the 5 AAA batteries.
+          tag: gracie_feeder_battery_low
+          channel: Quiet Notices
+          importance: low
+          icon: mdi:battery-low
   max: 10
   mode: parallel
 - id: mower_outbound_door_close
